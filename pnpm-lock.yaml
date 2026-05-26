@@ -180,6 +180,9 @@ importers:
       '@logtape/redaction':
         specifier: ^2.0.0
         version: 2.0.7(@logtape/logtape@2.0.7)
+      dayjs:
+        specifier: ^1.0.0
+        version: 1.11.20
       drizzle-orm:
         specifier: ^0.45.0
         version: 0.45.2(@cloudflare/workers-types@4.20260517.1)(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)
@@ -187,17 +190,14 @@ importers:
         specifier: ^4.0.0
         version: 4.12.18
       zod:
-        specifier: ^4.4.3
+        specifier: ^4.0.0
         version: 4.4.3
     devDependencies:
       '@cloudflare/vitest-pool-workers':
-        specifier: ^0.16.6
+        specifier: ^0.16.0
         version: 0.16.6(@cloudflare/workers-types@4.20260517.1)(@vitest/runner@4.1.6)(@vitest/snapshot@4.1.6)(vitest@4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.8.0)(typescript@6.0.3))(vite@8.0.13(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.47.1)(tsx@4.22.0)(yaml@2.9.0)))
-      '@cloudflare/workers-types':
-        specifier: ^4.20260517.1
-        version: 4.20260517.1
       '@types/node':
-        specifier: ^25.8.0
+        specifier: ^25.0.0
         version: 25.8.0
       drizzle-kit:
         specifier: ^0.31.0
@@ -206,7 +206,7 @@ importers:
         specifier: ^6.0.0
         version: 6.0.3
       vitest:
-        specifier: ^4.1.6
+        specifier: ^4.0.0
         version: 4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.8.0)(typescript@6.0.3))(vite@8.0.13(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.47.1)(tsx@4.22.0)(yaml@2.9.0))
       wrangler:
         specifier: ^4.0.0
@@ -3680,6 +3680,9 @@ packages:
     resolution: {integrity: sha512-23XHcCF+coGYevirZceTVD7NdJOqVn+49IHyxgszm+JIiHLoB2TkmPtsYkNWT1pvRSGkc35L6NHs0yHkN2SumA==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
+  dayjs@1.11.20:
+    resolution: {integrity: sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ==}
+
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
     engines: {node: '>=6.0'}
@@ -6162,7 +6165,8 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260515.1':
     optional: true
 
-  '@cloudflare/workers-types@4.20260517.1': {}
+  '@cloudflare/workers-types@4.20260517.1':
+    optional: true
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -9128,6 +9132,8 @@ snapshots:
       whatwg-url: 16.0.1(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - '@noble/hashes'
+
+  dayjs@1.11.20: {}
 
   debug@4.4.3:
     dependencies:

@@ -21,7 +21,7 @@ export default class NotesDAL {
       const noteResponse = await this.db
         .insert(notes)
         .values({
-          userId: params.userId,
+          createdBy: params.userId,
           title: params.title,
           body: params.body,
           createdAt: now,

@@ -7,46 +7,48 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "ALLOWED_CORS_ORIGIN": "http://localhost:3000",
+    // DEV_NOTE: Placeholder so wrangler types generates CLERK_SECRET_KEY in Env. Real value comes from .dev.vars locally and wrangler secret in prod.
+    "CLERK_SECRET_KEY": ""
   },
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "scaffold-db",
-      "database_id": "c950b22e-c50c-4840-bb9b-f91143980fe1",
+      "database_name": "isotope-db",
+      "database_id": "ade49f6b-b66a-4f50-9cf0-2f32f8974a6f",
       "migrations_dir": "src/db/migrations",
-      "remote": true,
-    },
+      "remote": true
+    }
   ],
   "env": {
     "staging": {
       "name": "scaffold-worker-staging",
       "vars": {
-        "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://scaffold-web-staging.hatiprithwish.workers.dev",
+        "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://scaffold-web-staging.hatiprithwish.workers.dev"
       },
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "scaffold-db",
-          "database_id": "c950b22e-c50c-4840-bb9b-f91143980fe1",
+          "database_name": "isotope-db",
+          "database_id": "ade49f6b-b66a-4f50-9cf0-2f32f8974a6f",
           "migrations_dir": "src/db/migrations",
-          "remote": true,
-        },
-      ],
+          "remote": true
+        }
+      ]
     },
     "production": {
       "name": "scaffold-worker",
       "vars": {
-        "ALLOWED_CORS_ORIGIN": "https://scaffold-web.hatiprithwish.workers.dev",
+        "ALLOWED_CORS_ORIGIN": "https://scaffold-web.hatiprithwish.workers.dev"
       },
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "scaffold-db",
-          "database_id": "c950b22e-c50c-4840-bb9b-f91143980fe1",
+          "database_name": "isotope-db",
+          "database_id": "ade49f6b-b66a-4f50-9cf0-2f32f8974a6f",
           "migrations_dir": "src/db/migrations",
-          "remote": true,
-        },
-      ],
-    },
-  },
+          "remote": true
+        }
+      ]
+    }
+  }
 }

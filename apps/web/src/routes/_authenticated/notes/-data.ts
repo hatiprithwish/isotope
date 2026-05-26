@@ -2,6 +2,7 @@ import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query
 import { useAuth } from "@clerk/tanstack-react-start";
 import { apiClient } from "@/providers/apiClient";
 import type * as Schemas from "@app/schemas";
+import { toast } from "sonner";
 
 export class NotesQueries {
   // DEV_NOTE: Keys form a hierarchy — detail extends all. Invalidating all() also invalidates every detail, so one call clears the entire notes cache.
@@ -44,6 +45,9 @@ export function useCreateNote() {
         queryKey: NotesQueries.keys.all(),
       });
     },
+    onError: () => {
+      toast.error("Failed to create note. Please try again.");
+    },
   });
 }
 
@@ -65,6 +69,9 @@ export function useUpdateNote() {
         queryKey: NotesQueries.keys.all(),
       });
     },
+    onError: () => {
+      toast.error("Failed to update note. Please try again.");
+    },
   });
 }
 
@@ -79,6 +86,9 @@ export function useDeleteNote() {
       await queryClient.invalidateQueries({
         queryKey: NotesQueries.keys.all(),
       });
+    },
+    onError: () => {
+      toast.error("Failed to delete note. Please try again.");
     },
   });
 }

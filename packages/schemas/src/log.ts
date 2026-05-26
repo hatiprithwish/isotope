@@ -20,4 +20,11 @@ export enum LogAction {
   ListNotes = "ListNotes",
   UpdateNote = "UpdateNote",
   DeleteNote = "DeleteNote",
+
+  // Companies
+  CreateCompany = "CreateCompany",
+  GetCompanyDetails = "GetCompanyDetails",
+  ListCompanies = "ListCompanies",
+  UpdateCompany = "UpdateCompany",
+  DeleteCompany = "DeleteCompany",
 }
