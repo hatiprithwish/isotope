@@ -1,0 +1,146 @@
+.
+├── CLAUDE.md
+├── README.md
+├── apps
+│   ├── web
+│   │   ├── components.json
+│   │   ├── eslint.config.js
+│   │   ├── instrument.server.mjs
+│   │   ├── package.json
+│   │   ├── public
+│   │   ├── src
+│   │   │   ├── client.tsx
+│   │   │   ├── lib
+│   │   │   │   └── utils.ts
+│   │   │   ├── providers
+│   │   │   │   ├── apiClient.ts
+│   │   │   │   └── queryClient.ts
+│   │   │   ├── router.tsx
+│   │   │   ├── routes
+│   │   │   │   ├── __root.tsx
+│   │   │   │   ├── _authenticated
+│   │   │   │   │   ├── notes
+│   │   │   │   │   │   ├── $noteId
+│   │   │   │   │   │   │   ├── -NoteForm.tsx
+│   │   │   │   │   │   │   ├── -NoteHeader.tsx
+│   │   │   │   │   │   │   ├── -ViewNote.tsx
+│   │   │   │   │   │   │   └── index.tsx
+│   │   │   │   │   │   ├── -NoteCard.tsx
+│   │   │   │   │   │   ├── -data.ts
+│   │   │   │   │   │   ├── -utils.ts
+│   │   │   │   │   │   ├── index.tsx
+│   │   │   │   │   │   └── new
+│   │   │   │   │   │       └── index.tsx
+│   │   │   │   │   └── route.tsx
+│   │   │   │   ├── auth
+│   │   │   │   │   ├── sign-in
+│   │   │   │   │   │   ├── $.tsx
+│   │   │   │   │   │   ├── index.tsx
+│   │   │   │   │   │   └── sso-callback.tsx
+│   │   │   │   │   └── sign-up
+│   │   │   │   │       ├── $.tsx
+│   │   │   │   │       └── index.tsx
+│   │   │   │   └── index.tsx
+│   │   │   ├── server.ts
+│   │   │   ├── shadcn
+│   │   │   │   └── ui
+│   │   │   │       ├── button.tsx
+│   │   │   │       ├── card.tsx
+│   │   │   │       ├── field.tsx
+│   │   │   │       ├── input.tsx
+│   │   │   │       ├── label.tsx
+│   │   │   │       ├── separator.tsx
+│   │   │   │       ├── sonner.tsx
+│   │   │   │       └── textarea.tsx
+│   │   │   ├── styles.css
+│   │   │   └── tests
+│   │   │       ├── NoteCard.test.tsx
+│   │   │       └── setup.ts
+│   │   ├── tsconfig.json
+│   │   ├── vite.config.ts
+│   │   ├── vitest.config.ts
+│   │   ├── worker-configuration.d.ts
+│   │   └── wrangler.jsonc
+│   └── worker
+│       ├── drizzle.config.ts
+│       ├── eslint.config.js
+│       ├── package.json
+│       ├── src
+│       │   ├── config
+│       │   │   ├── AppContext.ts
+│       │   │   ├── Constants.ts
+│       │   │   └── EnvConfig.ts
+│       │   ├── data-access-layer
+│       │   │   ├── NotesDAL.ts
+│       │   │   └── UsersDAL.ts
+│       │   ├── db
+│       │   │   ├── dbClient.ts
+│       │   │   ├── migrations
+│       │   │   │   ├── 0000_scaffold.sql
+│       │   │   │   └── meta
+│       │   │   │       ├── 0000_snapshot.json
+│       │   │   │       └── _journal.json
+│       │   │   └── tables.ts
+│       │   ├── index.ts
+│       │   ├── middlewares
+│       │   │   └── AuthMiddleware.ts
+│       │   ├── providers
+│       │   │   ├── clerk.ts
+│       │   │   └── logger.ts
+│       │   ├── repositories
+│       │   │   ├── NotesRepo.ts
+│       │   │   └── UsersRepo.ts
+│       │   ├── routes
+│       │   │   ├── NotesRoutes.ts
+│       │   │   └── UserRoutes.ts
+│       │   ├── tests
+│       │   │   └── notes.test.ts
+│       │   └── utils
+│       │       └── Utility.ts
+│       ├── tsconfig.json
+│       ├── vitest.config.mts
+│       ├── worker-configuration.d.ts
+│       └── wrangler.jsonc
+├── eslint.config.js
+├── llm-context
+│   ├── clerk.md
+│   ├── cloudflare.md
+│   ├── drizzle.md
+│   ├── eslint.md
+│   ├── github-actions.md
+│   ├── hono.md
+│   ├── logtape.md
+│   ├── pnpm.md
+│   ├── prettier.md
+│   ├── sentry.md
+│   ├── shadcn.md
+│   ├── tailwind..md
+│   ├── tanstack.md
+│   ├── vitest.md
+│   ├── zod.md
+│   └── zustand.md
+├── package.json
+├── packages
+│   └── schemas
+│       ├── eslint.config.js
+│       ├── package.json
+│       ├── src
+│       │   ├── common.ts
+│       │   ├── index.ts
+│       │   ├── log.ts
+│       │   ├── notes
+│       │   │   ├── NotesApiRequest.ts
+│       │   │   ├── NotesApiResponse.ts
+│       │   │   ├── NotesCommon.ts
+│       │   │   ├── NotesDALRequest.ts
+│       │   │   └── index.ts
+│       │   └── users
+│       │       ├── UsersApiRequest.ts
+│       │       ├── UsersApiResponse.ts
+│       │       ├── UsersCommon.ts
+│       │       ├── UsersDALRequest.ts
+│       │       └── index.ts
+│       └── tsconfig.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+└── structure.txt

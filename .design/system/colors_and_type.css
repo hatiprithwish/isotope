@@ -1,0 +1,328 @@
+/* =============================================================
+   Isotope — Design Tokens
+   Reference: design.md §2 (Visual Identity)
+   ============================================================= */
+
+/* Figtree — local brand font files */
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("fonts/Figtree-Light.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url("fonts/Figtree-LightItalic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/Figtree-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/Figtree-Italic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/Figtree-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fonts/Figtree-MediumItalic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/Figtree-SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/Figtree-SemiBoldItalic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/Figtree-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fonts/Figtree-BoldItalic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("fonts/Figtree-ExtraBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-weight: 800;
+  font-display: swap;
+  src: url("fonts/Figtree-ExtraBoldItalic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("fonts/Figtree-Black.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+  src: url("fonts/Figtree-BlackItalic.ttf") format("truetype");
+}
+
+/* -----------------------------------------------------------
+   LIGHT MODE (default)
+   ----------------------------------------------------------- */
+:root {
+  /* Surfaces */
+  --bg: #f7f5f2;
+  --surface: #ffffff;
+  --surface-2: #f2efe9;
+  --sidebar: #efece6;
+  --border: #e2ddd6;
+  --border-strong: #ccc7bf;
+
+  /* Text */
+  --text-primary: #1c1917;
+  --text-secondary: #78716c;
+  --text-muted: #a8a29e;
+
+  /* Accent — deep moss-olive. Reserved for actions + active states.
+     Sits in the yellow-green slot nothing else in the palette occupies. */
+  --accent: #4d7c0f;
+  --accent-hover: #3f6212;
+  --accent-bg: #f0f5e0;
+  --accent-text: #365314;
+
+  /* Copper — RESERVED exclusively for AI-generated content.
+     Warm analogous neighbor to moss accent. */
+  --amber: #b45309;
+  --amber-bg: #fdf6e3;
+  --amber-border: #f59e0b;
+  --amber-text: #78350f;
+
+  /* Semantic — success / pipeline / re-engage / danger / neutral
+     Tuned to harmonize with the moss accent. */
+  --success: #047857; /* emerald — cooler green cousin to moss */
+  --success-bg: #e6f4ec;
+  --success-text: #064e3b;
+
+  --pipeline: #6b21a8; /* aubergine — complement of moss */
+  --pipeline-bg: #f3e8ff;
+  --pipeline-text: #581c87;
+
+  /* legacy alias — keep --sky tokens pointing at pipeline so older refs don't break */
+  --sky: var(--pipeline);
+  --sky-bg: var(--pipeline-bg);
+  --sky-text: var(--pipeline-text);
+
+  --warning: #c2410c; /* terracotta — warm, sits between amber & danger */
+  --warning-bg: #fdece2;
+  --warning-text: #7c2d12;
+
+  --danger: #9f1239; /* wine — deepened to feel earthy, not stop-sign */
+  --danger-bg: #fce7ec;
+  --danger-text: #6b0f23;
+
+  --neutral-bg: #f5f3ef;
+  --neutral-text: #57534e;
+
+  /* Type scale (px values, designed for 13-14px base UI) */
+  --font-sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --fs-page-title: 16px; /* sidebar page name, topbar title */
+  --fs-section: 13px; /* panel section labels, card headers */
+  --fs-table-hdr: 11px; /* uppercase 0.05em */
+  --fs-body: 13px; /* table cells, panel content */
+  --fs-draft: 13px; /* longer reading content, lh 1.75 */
+  --fs-meta: 11px; /* timestamps, secondary info */
+  --fs-badge: 11px;
+  --fs-button: 13px;
+  --fs-nav: 13px;
+  --fs-section-label: 10px; /* uppercase 0.06em — panel internal */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semi: 600;
+
+  /* Spacing — 4px base */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Radii */
+  --radius-card: 8px; /* cards, panels, inputs, buttons */
+  --radius-badge: 6px; /* badges, chips */
+  --radius-chip: 7px; /* filter chips, sidebar active state */
+  --radius-onboard: 12px; /* onboarding cards */
+  --radius-pill: 999px;
+  --radius-avatar: 50%;
+
+  /* Layout */
+  --sidebar-w: 196px;
+  --content-max: 1280px;
+  --row-h: 50px;
+  --panel-w: 400px; /* 380–420 */
+  --topbar-h: 52px;
+
+  /* Buttons */
+  --btn-h: 31px;
+  --btn-h-sm: 25px;
+  --btn-px: 13px;
+  --input-h: 36px;
+  --chip-h: 28px;
+  --badge-h: 20px;
+
+  /* Transitions — minimal */
+  --t-panel: 200ms ease-out;
+  --t-confirm: 150ms ease;
+  --t-hover: 120ms ease;
+}
+
+/* -----------------------------------------------------------
+   DARK MODE — independent palette, NOT inverted
+   warm stone-brown base, not grey or black
+   ----------------------------------------------------------- */
+[data-theme="dark"],
+.theme-dark {
+  --bg: #1c1917;
+  --surface: #292524;
+  --surface-2: #211f1d;
+  --sidebar: #231f1d;
+  --border: #3c3734;
+  --border-strong: #57534e;
+
+  --text-primary: #faf9f7;
+  --text-secondary: #a8a29e;
+  --text-muted: #57534e;
+
+  --accent: #a3e635;
+  --accent-hover: #bef264;
+  --accent-bg: #1f2a0a;
+  --accent-text: #d9f99d;
+
+  --amber: #f59e0b;
+  --amber-bg: #2a1f0a;
+  --amber-border: #b45309;
+  --amber-text: #fde68a;
+
+  --success: #34d399; /* emerald */
+  --success-bg: #042f2e;
+  --success-text: #a7f3d0;
+
+  --pipeline: #c084fc; /* aubergine → lavender on dark */
+  --pipeline-bg: #2a1b3d;
+  --pipeline-text: #e9d5ff;
+
+  --sky: var(--pipeline);
+  --sky-bg: var(--pipeline-bg);
+  --sky-text: var(--pipeline-text);
+
+  --warning: #fb923c; /* terracotta → warm orange on dark */
+  --warning-bg: #2a1a0e;
+  --warning-text: #fed7aa;
+
+  --danger: #fb7185; /* wine → rose on dark */
+  --danger-bg: #2a1218;
+  --danger-text: #fecdd3;
+
+  --neutral-bg: #292524;
+  --neutral-text: #a8a29e;
+}
+
+/* -----------------------------------------------------------
+   Semantic helpers — typography
+   ----------------------------------------------------------- */
+.t-page-title {
+  font: var(--fw-semi) var(--fs-page-title)/1.2 var(--font-sans);
+  color: var(--text-primary);
+  letter-spacing: -0.005em;
+}
+.t-section {
+  font: var(--fw-semi) var(--fs-section)/1.3 var(--font-sans);
+  color: var(--text-primary);
+}
+.t-table-hdr {
+  font: var(--fw-semi) var(--fs-table-hdr)/1 var(--font-sans);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.t-body {
+  font: var(--fw-regular) var(--fs-body)/1.65 var(--font-sans);
+  color: var(--text-primary);
+}
+.t-draft {
+  font: var(--fw-regular) var(--fs-draft)/1.75 var(--font-sans);
+  color: var(--text-primary);
+}
+.t-meta {
+  font: var(--fw-regular) var(--fs-meta)/1 var(--font-sans);
+  color: var(--text-muted);
+}
+.t-badge {
+  font: var(--fw-semi) var(--fs-badge)/1 var(--font-sans);
+}
+.t-button {
+  font: var(--fw-medium) var(--fs-button)/1 var(--font-sans);
+}
+.t-nav {
+  font: var(--fw-medium) var(--fs-nav)/1 var(--font-sans);
+}
+.t-section-label {
+  font: var(--fw-semi) var(--fs-section-label)/1 var(--font-sans);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* -----------------------------------------------------------
+   Defaults
+   ----------------------------------------------------------- */
+html,
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

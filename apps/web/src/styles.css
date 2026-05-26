@@ -6,117 +6,257 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: var(--font-sans);
+  /* ── Typography ──────────────────────────────────────────── */
   --font-sans: "Figtree Variable", sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
+  --font-heading: var(--font-sans);
+  --font-mono: ui-monospace, "Cascadia Code", monospace;
+
+  /* ── shadcn colour bridge ────────────────────────────────── */
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* ── Sidebar colour bridge ───────────────────────────────── */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── Chart colour bridge ─────────────────────────────────── */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* ── Radius scale (derived from --radius base) ───────────── */
+  --radius-sm: calc(var(--radius) * 0.6); /* ~5px  at 8px base */
+  --radius-md: calc(var(--radius) * 0.8); /* ~6px  */
+  --radius-lg: var(--radius); /* 8px   */
+  --radius-xl: calc(var(--radius) * 1.4); /* ~11px */
+  --radius-2xl: calc(var(--radius) * 1.8); /* ~14px */
+  --radius-3xl: calc(var(--radius) * 2.2); /* ~18px */
+  --radius-4xl: calc(var(--radius) * 2.6); /* ~21px */
 }
 
+/* ============================================================
+   BLOCK 1 — shadcn tokens  (light mode)
+   Override values here. Never change variable names.
+   ============================================================ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.852 0.199 91.936);
-  --primary-foreground: oklch(0.421 0.095 57.708);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.852 0.199 91.936);
-  --accent-foreground: oklch(0.421 0.095 57.708);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.681 0.162 75.834);
-  --sidebar-primary-foreground: oklch(0.987 0.026 102.212);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Surface */
+  --background: oklch(0.971 0.004 78.2); /* #F7F5F2 warm off-white   */
+  --foreground: oklch(0.216 0.006 56); /* #1C1917 stone-brown      */
+
+  --card: oklch(1 0 263.3); /* #FFFFFF white            */
+  --card-foreground: oklch(0.216 0.006 56);
+  --popover: oklch(1 0 263.3);
+  --popover-foreground: oklch(0.216 0.006 56);
+
+  /* Brand */
+  --primary: oklch(0.532 0.141 131.6); /* #4D7C0F moss             */
+  --primary-foreground: oklch(1 0 263.3); /* #FFFFFF white on moss    */
+
+  /* Secondary surface (hovered rows, filled inputs) */
+  --secondary: oklch(0.953 0.009 84.6); /* #F2EFE9                  */
+  --secondary-foreground: oklch(0.216 0.006 56);
+
+  /* Neutral (badges, empty states, disabled fills) */
+  --muted: oklch(0.965 0.006 84.6); /* #F5F3EF                  */
+  --muted-foreground: oklch(0.716 0.009 56.1); /* #A8A29E                  */
+
+  /* Ghost hover target */
+  --accent: oklch(0.953 0.009 84.6); /* #F2EFE9 = secondary      */
+  --accent-foreground: oklch(0.216 0.006 56);
+
+  /* Danger / destructive */
+  --destructive: oklch(0.455 0.171 13.7); /* #9F1239 wine red         */
+
+  /* Structure */
+  --border: oklch(0.9 0.011 76.5); /* #E2DDD6                  */
+  --input: oklch(0.9 0.011 76.5); /* #E2DDD6                  */
+  --ring: oklch(0.532 0.141 131.6); /* #4D7C0F = primary        */
+  --radius: 0.5rem; /* 8px base                 */
+
+  /* Sidebar */
+  --sidebar: oklch(0.944 0.009 84.6); /* #EFECE6             */
+  --sidebar-foreground: oklch(0.216 0.006 56);
+  --sidebar-primary: oklch(0.532 0.141 131.6); /* moss                */
+  --sidebar-primary-foreground: oklch(1 0 263.3);
+  --sidebar-accent: oklch(0.953 0.009 84.6); /* secondary hover     */
+  --sidebar-accent-foreground: oklch(0.216 0.006 56);
+  --sidebar-border: oklch(0.9 0.011 76.5);
+  --sidebar-ring: oklch(0.532 0.141 131.6);
+
+  /* Charts — moss · aubergine · emerald · terracotta · wine */
+  --chart-1: oklch(0.532 0.141 131.6); /* #4D7C0F moss        */
+  --chart-2: oklch(0.438 0.198 303.7); /* #6B21A8 aubergine   */
+  --chart-3: oklch(0.596 0.127 163.3); /* #059669 emerald     */
+  --chart-4: oklch(0.553 0.174 38.4); /* #C2410C terracotta  */
+  --chart-5: oklch(0.455 0.171 13.7); /* #9F1239 wine        */
+}
+
+/* ============================================================
+   BLOCK 2 — shadcn tokens  (dark mode)
+   Warm stone-brown base. NOT cold black. NOT inverted light.
+   ============================================================ */
+.dark {
+  /* Surface */
+  --background: oklch(0.216 0.006 56); /* #1C1917 stone-brown      */
+  --foreground: oklch(0.982 0.003 84.6); /* #FAF9F7 warm white       */
+
+  --card: oklch(0.268 0.006 34.1); /* #292524                  */
+  --card-foreground: oklch(0.982 0.003 84.6);
+  --popover: oklch(0.268 0.006 34.1);
+  --popover-foreground: oklch(0.982 0.003 84.6);
+
+  /* Brand */
+  --primary: oklch(0.849 0.207 128.9); /* #A3E635 lime             */
+  --primary-foreground: oklch(0.216 0.006 56); /* dark text on lime        */
+
+  /* Secondary surface */
+  --secondary: oklch(0.241 0.005 67.5); /* #211F1D                  */
+  --secondary-foreground: oklch(0.982 0.003 84.6);
+
+  /* Neutral */
+  --muted: oklch(0.268 0.006 34.1); /* #292524                  */
+  --muted-foreground: oklch(0.444 0.01 73.6); /* #57534E                  */
+
+  /* Ghost hover target */
+  --accent: oklch(0.241 0.005 67.5); /* #211F1D = secondary      */
+  --accent-foreground: oklch(0.982 0.003 84.6);
+
+  /* Danger */
+  --destructive: oklch(0.719 0.169 13.4); /* #FB7185 rose             */
+
+  /* Structure */
+  --border: oklch(0.341 0.009 53.1); /* #3C3734                  */
+  --input: oklch(0.341 0.009 53.1);
+  --ring: oklch(0.849 0.207 128.9); /* lime = primary           */
+  /* --radius inherited from :root */
+
+  /* Sidebar */
+  --sidebar: oklch(0.243 0.007 48.3); /* #231F1D             */
+  --sidebar-foreground: oklch(0.982 0.003 84.6);
+  --sidebar-primary: oklch(0.849 0.207 128.9); /* lime                */
+  --sidebar-primary-foreground: oklch(0.216 0.006 56);
+  --sidebar-accent: oklch(0.241 0.005 67.5);
+  --sidebar-accent-foreground: oklch(0.982 0.003 84.6);
+  --sidebar-border: oklch(0.341 0.009 53.1);
+  --sidebar-ring: oklch(0.849 0.207 128.9);
+
+  /* Charts — lime · light purple · light emerald · terracotta · rose */
+  --chart-1: oklch(0.849 0.207 128.9); /* #A3E635 lime             */
+  --chart-2: oklch(0.722 0.177 305.5); /* #C084FC light purple     */
+  --chart-3: oklch(0.773 0.153 163.3); /* #34D399 light emerald    */
+  --chart-4: oklch(0.758 0.159 55.9); /* #FB923C light terracotta */
+  --chart-5: oklch(0.719 0.169 13.4); /* #FB7185 rose             */
+}
+
+/* ============================================================
+   BLOCK 3 — Extended scaffold tokens
+   Names are fixed. Override values per app in both :root and .dark.
+   See DESIGN_TOKENS.md for usage rules.
+   ============================================================ */
+:root {
+  /* ── Text hierarchy ──────────────────────────────────────── */
+  --text-secondary: oklch(0.553 0.012 58); /* #78716C mid-tone text    */
+
+  /* ── Surface layering ────────────────────────────────────── */
+  --surface-raised: oklch(0.953 0.009 84.6); /* #F2EFE9 hovered rows     */
+
+  /* ── Success ─────────────────────────────────────────────── */
+  --success: oklch(0.596 0.127 163.3); /* #059669 emerald          */
+  --success-bg: oklch(0.979 0.021 166.3); /* #ECFDF5                  */
+  --success-text: oklch(0.432 0.086 166.9); /* #065F46                  */
+
+  /* ── Warning ─────────────────────────────────────────────── */
+  --warning: oklch(0.666 0.157 58.3); /* #D97706 amber            */
+  --warning-bg: oklch(0.987 0.021 95.3); /* #FFFBEB                  */
+  --warning-text: oklch(0.473 0.125 46.2); /* #92400E                  */
+
+  /* ── Pipeline / in-progress ──────────────────────────────── */
+  --pipeline: oklch(0.588 0.139 242); /* #0284C7 sky blue         */
+  --pipeline-bg: oklch(0.977 0.013 236.8); /* #F0F9FF                  */
+  --pipeline-text: oklch(0.443 0.1 240.8); /* #075985                  */
+
+  /* ── Danger extended ─────────────────────────────────────── */
+  --danger: var(--destructive); /* alias — always in sync   */
+  --danger-bg: oklch(0.971 0.013 17); /* #FEF2F2                  */
+  --danger-text: oklch(0.444 0.161 26.9); /* #991B1B                  */
+
+  /* ── AI / machine-generated content ─────────────────────── */
+  --ai: oklch(0.666 0.157 58.3); /* #D97706 amber            */
+  --ai-bg: oklch(0.987 0.021 95.3); /* #FFFBEB                  */
+  --ai-border: oklch(0.879 0.153 91.6); /* #FCD34D                  */
+  --ai-text: oklch(0.473 0.125 46.2); /* #92400E                  */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.795 0.184 86.047);
-  --primary-foreground: oklch(0.421 0.095 57.708);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.795 0.184 86.047);
-  --accent-foreground: oklch(0.421 0.095 57.708);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.795 0.184 86.047);
-  --sidebar-primary-foreground: oklch(0.987 0.026 102.212);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* ── Text hierarchy ──────────────────────────────────────── */
+  --text-secondary: oklch(0.716 0.009 56.1); /* #A8A29E                  */
+
+  /* ── Surface layering ────────────────────────────────────── */
+  --surface-raised: oklch(0.241 0.005 67.5); /* #211F1D                  */
+
+  /* ── Success ─────────────────────────────────────────────── */
+  --success: oklch(0.773 0.153 163.3); /* #34D399 light emerald    */
+  --success-bg: oklch(0.267 0.058 157.2); /* #052E1A                  */
+  --success-text: oklch(0.905 0.089 164.2); /* #A7F3D0                  */
+
+  /* ── Warning ─────────────────────────────────────────────── */
+  --warning: oklch(0.879 0.153 91.6); /* #FCD34D light amber      */
+  --warning-bg: oklch(0.251 0.031 78.4); /* #2A2010                  */
+  --warning-text: oklch(0.924 0.115 95.8); /* #FDE68A                  */
+
+  /* ── Pipeline / in-progress ──────────────────────────────── */
+  --pipeline: oklch(0.753 0.139 232.7); /* #38BDF8 light sky        */
+  --pipeline-bg: oklch(0.234 0.043 241.2); /* #082030                  */
+  --pipeline-text: oklch(0.901 0.056 230.9); /* #BAE6FD                  */
+
+  /* ── Danger extended ─────────────────────────────────────── */
+  --danger: var(--destructive);
+  --danger-bg: oklch(0.218 0.04 20.8); /* #2A1212                  */
+  --danger-text: oklch(0.808 0.103 19.5); /* #FCA5A5                  */
+
+  /* ── AI / machine-generated content ─────────────────────── */
+  --ai: oklch(0.879 0.153 91.6); /* #FCD34D stays warm       */
+  --ai-bg: oklch(0.251 0.031 78.4); /* #2A2010                  */
+  --ai-border: oklch(0.666 0.157 58.3); /* #D97706                  */
+  --ai-text: oklch(0.924 0.115 95.8); /* #FDE68A                  */
 }
 
+/* ============================================================
+   BLOCK 4 — App-specific tokens  (Isotope)
+   These tokens have no universal equivalent.
+   Every future app adds its own block here with its own prefix.
+   Names in this block are NOT part of the scaffold contract.
+   ============================================================ */
+
+/* none for Isotope — all required tokens are covered above */
+
+/* ============================================================
+   BASE LAYER
+   ============================================================ */
 @layer base {
   * {
     @apply border-border outline-ring/50;

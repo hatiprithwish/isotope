@@ -1,0 +1,935 @@
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  .sm {
+    padding: 1rem 0 2rem;
+    font-size: 13px;
+    color: var(--color-text-primary);
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .leg {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .d-fe {
+    background: #534ab7;
+  }
+  .d-api {
+    background: #0f6e56;
+  }
+  .d-cron {
+    background: #854f0b;
+  }
+  .d-auth {
+    background: #5f5e5a;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .branch {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+  }
+  .branch-hdr {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+  .branch-hdr.fe {
+    background: #eeedfe;
+    color: #3c3489;
+    border-bottom-color: #afa9ec;
+  }
+  .branch-hdr.api {
+    background: #e1f5ee;
+    color: #085041;
+    border-bottom-color: #5dcaa5;
+  }
+  .branch-hdr.cron {
+    background: #faeeda;
+    color: #633806;
+    border-bottom-color: #ef9f27;
+  }
+  @media (prefers-color-scheme: dark) {
+    .branch-hdr.fe {
+      background: #3c3489;
+      color: #cecbf6;
+      border-bottom-color: #534ab7;
+    }
+    .branch-hdr.api {
+      background: #085041;
+      color: #9fe1cb;
+      border-bottom-color: #0f6e56;
+    }
+    .branch-hdr.cron {
+      background: #633806;
+      color: #fac775;
+      border-bottom-color: #ba7517;
+    }
+  }
+  .tree {
+    padding: 10px 10px 10px 14px;
+  }
+  .group {
+    margin-bottom: 14px;
+  }
+  .group:last-child {
+    margin-bottom: 0;
+  }
+  .g-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    margin-bottom: 6px;
+    padding-left: 2px;
+  }
+  .node {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin-bottom: 3px;
+  }
+  .node:last-child {
+    margin-bottom: 0;
+  }
+  .pipe-h {
+    display: flex;
+    align-items: center;
+    width: 20px;
+    flex-shrink: 0;
+  }
+  .pipe-h::before {
+    content: "";
+    display: block;
+    width: 1px;
+    height: 14px;
+    background: var(--color-border-secondary);
+  }
+  .pipe-h::after {
+    content: "";
+    display: block;
+    width: 10px;
+    height: 1px;
+    background: var(--color-border-secondary);
+  }
+  .pill {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: default;
+    border: 0.5px solid transparent;
+    transition: border-color 0.15s;
+    flex: 1;
+    min-width: 0;
+  }
+  .pill:hover {
+    border-color: var(--color-border-secondary);
+  }
+  .pill.fe {
+    background: #eeedfe;
+  }
+  .pill.api {
+    background: #e1f5ee;
+  }
+  .pill.cron {
+    background: #faeeda;
+  }
+  .pill.auth {
+    background: #f1efe8;
+  }
+  @media (prefers-color-scheme: dark) {
+    .pill.fe {
+      background: #26215c;
+    }
+    .pill.api {
+      background: #04342c;
+    }
+    .pill.cron {
+      background: #412402;
+    }
+    .pill.auth {
+      background: #2c2c2a;
+    }
+  }
+  .pill-route {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: #3c3489;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pill-route.api {
+    color: #085041;
+  }
+  .pill-route.cron {
+    color: #633806;
+  }
+  .pill-route.auth {
+    color: #444441;
+  }
+  @media (prefers-color-scheme: dark) {
+    .pill-route {
+      color: #afa9ec;
+    }
+    .pill-route.api {
+      color: #5dcaa5;
+    }
+    .pill-route.cron {
+      color: #fac775;
+    }
+    .pill-route.auth {
+      color: #b4b2a9;
+    }
+  }
+  .pill-sub {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .method {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-right: 4px;
+  }
+  .get {
+    background: #e1f5ee;
+    color: #085041;
+  }
+  .post {
+    background: #eeedfe;
+    color: #3c3489;
+  }
+  .put {
+    background: #faeeda;
+    color: #633806;
+  }
+  @media (prefers-color-scheme: dark) {
+    .get {
+      background: #04342c;
+      color: #5dcaa5;
+    }
+    .post {
+      background: #26215c;
+      color: #afa9ec;
+    }
+    .put {
+      background: #412402;
+      color: #fac775;
+    }
+  }
+  .divider {
+    border: none;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    margin: 1.25rem 0;
+  }
+  .ext-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 1.25rem;
+  }
+  .ext-card {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 8px 10px;
+  }
+  .ext-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+  .ext-role {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+  }
+  .lc-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 1rem;
+  }
+  .lc-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 10px 12px;
+  }
+  .lc-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-tertiary);
+    margin-bottom: 8px;
+  }
+  .lc-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .lc-step {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 0.5px solid var(--color-border-tertiary);
+    color: var(--color-text-secondary);
+    background: var(--color-background-secondary);
+    white-space: nowrap;
+  }
+  .lc-step.active {
+    background: #eeedfe;
+    color: #3c3489;
+    border-color: #afa9ec;
+  }
+  .lc-step.terminal {
+    background: #faece7;
+    color: #712b13;
+    border-color: #f0997b;
+  }
+  .lc-step.warn {
+    background: #faeeda;
+    color: #633806;
+    border-color: #ef9f27;
+  }
+  .lc-step.success {
+    background: #e1f5ee;
+    color: #085041;
+    border-color: #5dcaa5;
+  }
+  @media (prefers-color-scheme: dark) {
+    .lc-step.active {
+      background: #26215c;
+      color: #afa9ec;
+      border-color: #534ab7;
+    }
+    .lc-step.terminal {
+      background: #4a1b0c;
+      color: #f5c4b3;
+      border-color: #993c1d;
+    }
+    .lc-step.warn {
+      background: #412402;
+      color: #fac775;
+      border-color: #ba7517;
+    }
+    .lc-step.success {
+      background: #04342c;
+      color: #5dcaa5;
+      border-color: #0f6e56;
+    }
+  }
+  .arr {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    margin: 1.5rem 0 0.75rem;
+  }
+  .note {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    border-left: 2px solid var(--color-border-secondary);
+    padding-left: 8px;
+    margin: 6px 0 10px;
+    border-radius: 0;
+  }
+</style>
+
+<div class="sm">
+  <h2 class="sr-only">
+    JobTracker v1.7 sitemap — frontend routes, API endpoints, and cron workers
+  </h2>
+
+  <div class="legend">
+    <div class="leg">
+      <div class="dot d-fe"></div>
+      Frontend page
+    </div>
+    <div class="leg">
+      <div class="dot d-api"></div>
+      API endpoint
+    </div>
+    <div class="leg">
+      <div class="dot d-cron"></div>
+      Cron worker
+    </div>
+    <div class="leg">
+      <div class="dot d-auth"></div>
+      Auth flow
+    </div>
+  </div>
+
+  <div class="cols">
+    <!-- FRONTEND -->
+    <div class="branch">
+      <div class="branch-hdr fe">Frontend</div>
+      <div class="tree">
+        <div class="group">
+          <div class="g-label">Auth</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill auth">
+              <span class="pill-route auth">/login</span
+              ><span class="pill-sub">Clerk-hosted · ?redirect=[url]</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill auth">
+              <span class="pill-route auth">/signup</span
+              ><span class="pill-sub">Email + social SSO</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill auth">
+              <span class="pill-route auth">/sso/callback</span
+              ><span class="pill-sub">OAuth return handler</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">Onboarding</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/onboarding</span
+              ><span class="pill-sub">Quick start vs full wizard</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/onboarding/quick</span
+              ><span class="pill-sub">Seed defaults, skip wizard</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/onboarding/wizard/step/1</span
+              ><span class="pill-sub">Company research form</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/onboarding/wizard/step/2</span
+              ><span class="pill-sub">Job search form</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/onboarding/wizard/step/3</span
+              ><span class="pill-sub">A/B testing form</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">Companies</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/companies</span
+              ><span class="pill-sub">Table: name, fit band, status</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/companies/[id]</span
+              ><span class="pill-sub">Detail panel, inline score editor</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/companies/[id]/contacts</span
+              ><span class="pill-sub">Linked contacts list</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">Contacts</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/contacts</span><span class="pill-sub">Table + filters</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/contacts/[id]</span
+              ><span class="pill-sub">Draft, history, CTA buttons</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/contacts/new</span
+              ><span class="pill-sub">Manual add form</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">Jobs</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/jobs</span
+              ><span class="pill-sub">Table: title, company, status</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/jobs/[id]</span
+              ><span class="pill-sub">JD text, accept/reject</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/jobs/new</span><span class="pill-sub">Manual add form</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">Settings</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/settings/frameworks</span
+              ><span class="pill-sub">?tab=company | job | ab</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/settings/ab</span
+              ><span class="pill-sub">A/B analytics · reply rate table</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/settings/digest</span
+              ><span class="pill-sub">Time + timezone config</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill fe">
+              <span class="pill-route">/settings/account</span
+              ><span class="pill-sub">Clerk-hosted account UI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API -->
+    <div class="branch">
+      <div class="branch-hdr api">API</div>
+      <div class="tree">
+        <div class="group">
+          <div class="g-label">/api/auth</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method post">POST</span>/sso</span
+              ><span class="pill-sub">Initiate SSO flow</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method post">POST</span>/sso/callback</span
+              ><span class="pill-sub">OAuth token exchange</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">/api/companies</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/</span
+              ><span class="pill-sub">List, filter by status/band</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method post">POST</span>/</span
+              ><span class="pill-sub">Create company record</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/[id]</span
+              ><span class="pill-sub">Full detail + fit scores</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method put">PUT</span>/[id]</span
+              ><span class="pill-sub">Edit fields, status, user_context</span>
+            </div>
+          </div>
+          <div class="note">Status transitions (accept, reject, retry) via PUT { status }</div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">/api/contacts</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/</span
+              ><span class="pill-sub">List, filter by status/co</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method post">POST</span>/</span
+              ><span class="pill-sub">Create contact record</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/[id]</span
+              ><span class="pill-sub">Draft, history, A/B info</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method put">PUT</span>/[id]</span
+              ><span class="pill-sub">All field + status updates</span>
+            </div>
+          </div>
+          <div class="note">
+            Handles: status, linkedin_connected, manual_personalization_notes, mark-sent, replied,
+            dead, retry — all via PUT { field }
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method post">POST</span>/[id]/draft</span
+              ><span class="pill-sub">Force draft generation (async)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">/api/jobs</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/</span
+              ><span class="pill-sub">List by status/source</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method post">POST</span>/</span
+              ><span class="pill-sub">Add job manually</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/[id]</span
+              ><span class="pill-sub">JD text + linked company</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method put">PUT</span>/[id]</span
+              ><span class="pill-sub">Edit fields + status transitions</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method post">POST</span>/discover</span
+              ><span class="pill-sub">Trigger AI job search (async)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">/api/frameworks</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/[type]</span
+              ><span class="pill-sub">Latest saved version</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/[type]/versions</span
+              ><span class="pill-sub">Last 5 versions</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method put">PUT</span>/[type]</span
+              ><span class="pill-sub">Save new version (incl. A/B config)</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"
+                ><span class="method post">POST</span>/[type]/generate</span
+              ><span class="pill-sub">Form → framework text (async)</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"
+                ><span class="method post">POST</span>/[type]/restore/[v]</span
+              ><span class="pill-sub">Restore previous version</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">/api/ab</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/results</span
+              ><span class="pill-sub">Reply rate by variant + variable</span>
+            </div>
+          </div>
+          <div class="note">A/B config changes go through PUT /api/frameworks/ab</div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">/api/digest</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method get">GET</span>/preview</span
+              ><span class="pill-sub">In-app digest preview</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill api">
+              <span class="pill-route api"><span class="method put">PUT</span>/config</span
+              ><span class="pill-sub">Time + timezone settings</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRON -->
+    <div class="branch">
+      <div class="branch-hdr cron">Cron workers</div>
+      <div class="tree">
+        <div class="group">
+          <div class="g-label">Daily · 1:00 AM</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">company-researcher</span
+              ><span class="pill-sub">status=Not Started cos</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">email-drafter</span
+              ><span class="pill-sub">Not Started + next_touch due</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">re-engage-drafter</span
+              ><span class="pill-sub">status=Re-Engage + due</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">dead-marker</span
+              ><span class="pill-sub">Touch 3 + 7d no reply</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">re-engage-scheduler</span
+              ><span class="pill-sub">status=Dead + 60d elapsed</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">On status change</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">contact-finder</span
+              ><span class="pill-sub">company → Accepted by Human</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">Daily · digest time</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">stalled-draft-detector</span
+              ><span class="pill-sub">Draft Ready for 3+ days</span>
+            </div>
+          </div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">morning-digest</span
+              ><span class="pill-sub">Compile 7 sections → Resend</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-label">Weekly / on-demand</div>
+          <div class="node">
+            <div class="pipe-h"></div>
+            <div class="pill cron">
+              <span class="pill-route cron">job-finder</span
+              ><span class="pill-sub">Triggered by POST /jobs/discover</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <div class="section-label">External integrations</div>
+  <div class="ext-row">
+    <div class="ext-card">
+      <div class="ext-name">Clerk</div>
+      <div class="ext-role">Auth, SSO, session</div>
+    </div>
+    <div class="ext-card">
+      <div class="ext-name">Apollo.io</div>
+      <div class="ext-role">Contact enrichment</div>
+    </div>
+    <div class="ext-card">
+      <div class="ext-name">Resend</div>
+      <div class="ext-role">Morning digest email</div>
+    </div>
+    <div class="ext-card">
+      <div class="ext-name">Anthropic API</div>
+      <div class="ext-role">Drafts + research</div>
+    </div>
+    <div class="ext-card">
+      <div class="ext-name">DuckDuckGo</div>
+      <div class="ext-role">Personalization search</div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <div class="section-label">Status lifecycles</div>
+  <div class="lc-row">
+    <div class="lc-card">
+      <div class="lc-title">Company</div>
+      <div class="lc-flow">
+        <span class="lc-step">Not started</span><span class="arr">→</span>
+        <span class="lc-step active">Waiting for human</span><span class="arr">→</span>
+        <span class="lc-step active">Accepted</span><span class="arr">→</span>
+        <span class="lc-step active">Contacts added</span>
+      </div>
+      <div class="lc-flow">
+        <span class="lc-step success">Interviewed</span>
+        <span class="lc-step success">Offer</span>
+        <span class="lc-step terminal">Rejected</span>
+        <span class="lc-step terminal">Failed</span>
+      </div>
+    </div>
+    <div class="lc-card">
+      <div class="lc-title">Contact</div>
+      <div class="lc-flow">
+        <span class="lc-step">Not started</span><span class="arr">→</span>
+        <span class="lc-step active">Draft ready</span><span class="arr">→</span>
+        <span class="lc-step active">In pipeline</span>
+      </div>
+      <div class="lc-flow">
+        <span class="lc-step success">Replied</span>
+        <span class="lc-step success">Closed</span>
+        <span class="lc-step terminal">Dead</span><span class="arr">→</span>
+        <span class="lc-step warn">Re-engage</span>
+        <span class="lc-step terminal">Failed</span>
+      </div>
+    </div>
+  </div>
+</div>

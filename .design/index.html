@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Isotope — Full app design (mobile + desktop)</title>
+    <link rel="stylesheet" href="app.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f0eee9;
+        height: 100%;
+      }
+      body {
+        font-family: "Figtree", system-ui, sans-serif;
+      }
+
+      /* Top utility bar floats over the design canvas */
+      .iso-utility {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 200;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 999px;
+        padding: 4px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      }
+      .iso-utility .seg {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 999px;
+        padding: 3px;
+      }
+      .iso-utility .seg button {
+        height: 28px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: none;
+        background: transparent;
+        font:
+          500 12px/1 "Figtree",
+          system-ui;
+        color: rgba(40, 30, 20, 0.65);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .iso-utility .seg button.active {
+        background: #fff;
+        color: rgba(40, 30, 20, 0.95);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      /* When dark mode is active across canvas, override defaults on every screen */
+      body.iso-dark .iso-screen:not([data-theme="light-force"]) {
+        /* Each screen carries data-theme="dark" set programmatically */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="iso-utility">
+      <div class="seg" id="theme-toggle">
+        <button data-mode="light" class="active">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="4"></circle>
+            <path
+              d="M3 12h1M12 3v1M20 12h1M12 20v1M5.6 5.6l.7 .7M18.4 5.6l-.7 .7M17.7 17.7l.7 .7M6.3 17.7l-.7 .7"
+            ></path>
+          </svg>
+          Light
+        </button>
+        <button data-mode="dark">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path
+              d="M12 3a9 9 0 1 0 9 9c0 -.46 -.04 -.92 -.1 -1.36a5.389 5.389 0 0 1 -4.4 2.36a5.4 5.4 0 0 1 -4.9 -7.4 9 9 0 0 1 .4 -2.6z"
+            ></path>
+          </svg>
+          Dark
+        </button>
+      </div>
+    </div>
+
+    <div id="root"></div>
+
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Starter components -->
+    <script type="text/babel" src="starters/design-canvas.jsx"></script>
+    <script type="text/babel" src="starters/android-frame.jsx"></script>
+    <script type="text/babel" src="starters/browser-window.jsx"></script>
+
+    <!-- App: shared library + screens + canvas -->
+    <script type="text/babel" src="screens/shared.jsx"></script>
+    <script type="text/babel" src="screens/auth.jsx"></script>
+    <script type="text/babel" src="screens/onboarding.jsx"></script>
+    <script type="text/babel" src="screens/today.jsx"></script>
+    <script type="text/babel" src="screens/companies.jsx"></script>
+    <script type="text/babel" src="screens/contacts.jsx"></script>
+    <script type="text/babel" src="screens/jobs.jsx"></script>
+    <script type="text/babel" src="screens/settings.jsx"></script>
+    <script type="text/babel" src="screens/digest.jsx"></script>
+    <script type="text/babel" src="canvas.jsx"></script>
+
+    <script>
+      // Light/dark toggle — sets `data-theme` on every .iso-screen, so each
+      // mockup independently picks up its tokens from app.css.
+      const toggle = document.getElementById("theme-toggle");
+      function setTheme(mode) {
+        document.body.classList.toggle("iso-dark", mode === "dark");
+        document.querySelectorAll(".iso-screen").forEach((el) => {
+          el.setAttribute("data-theme", mode);
+        });
+        toggle.querySelectorAll("button").forEach((b) => {
+          b.classList.toggle("active", b.dataset.mode === mode);
+        });
+      }
+      toggle.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-mode]");
+        if (btn) setTheme(btn.dataset.mode);
+      });
+      // Re-apply on dynamic mounts.
+      new MutationObserver(() => {
+        const mode = document.body.classList.contains("iso-dark") ? "dark" : "light";
+        document
+          .querySelectorAll(".iso-screen:not([data-theme])")
+          .forEach((el) => el.setAttribute("data-theme", mode));
+      }).observe(document.body, { childList: true, subtree: true });
+    </script>
+  </body>
+</html>

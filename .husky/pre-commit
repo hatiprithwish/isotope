@@ -1,3 +1,8 @@
-pnpm format:check
+pnpm format
+
+# Re-stage formatted files
+
+git add -A
+
 pnpm build:worker
 pnpm build:web
