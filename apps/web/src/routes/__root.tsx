@@ -5,6 +5,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
 import type { ReactNode } from "react";
 import { Toaster } from "../shadcn/ui/sonner";
+import { ThemeProvider } from "../providers/ThemeProvider";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -49,13 +50,15 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   }),
   component: () => (
     <RootDocument>
-      <ClerkProvider
-        publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
-        signInUrl="/auth/sign-in"
-        signUpUrl="/auth/sign-up"
-      >
-        <Outlet />
-      </ClerkProvider>
+      <ThemeProvider defaultTheme="system" storageKey="isotope-theme">
+        <ClerkProvider
+          publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+          signInUrl="/auth/sign-in"
+          signUpUrl="/auth/sign-up"
+        >
+          <Outlet />
+        </ClerkProvider>
+      </ThemeProvider>
     </RootDocument>
   ),
   errorComponent: ({ error }) => <RootErrorComponent error={error} />,
