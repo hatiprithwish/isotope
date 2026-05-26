@@ -283,6 +283,8 @@ const mutation = useMutation({
 - Tailwind utility classes only — no inline `style={{}}` except for dynamic values impossible in Tailwind
 - shadcn components used as-is or extended via `className` — never modify files in `src/shadcn/ui/`
 - No CSS modules, no styled-components
+- **PIXEL-PERFECT + RESPONSIVE (non-negotiable):** Every component must match the design spec exactly — spacing, sizing, color, typography, borders — using only Tailwind tokens from `styles.css`. Never write arbitrary pixel values when a Tailwind class can express the intent. Use responsive prefixes (`md:`, `lg:`) for breakpoint differences. If a design value cannot be expressed in Tailwind, FLAG IT before writing anything. Do not silently approximate.
+- Design tokens map: `--sidebar` → `bg-sidebar`, `--border` → `border-border`, `--text-secondary` → `text-[var(--text-secondary)]`, `--surface-raised` → `bg-[var(--surface-raised)]`. Always check `styles.css` for the exact token name before writing a color class.
 
 ---
 
