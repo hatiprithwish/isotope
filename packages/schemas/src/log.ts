@@ -4,6 +4,7 @@ export enum LogCategory {
   Repo = "Repo",
   Middleware = "Middleware",
   DB = "DB",
+  Provider = "Provider",
 }
 
 export enum LogAction {
@@ -28,6 +29,9 @@ export enum LogAction {
   ListCompanies = "ListCompanies",
   UpdateCompany = "UpdateCompany",
   DeleteCompany = "DeleteCompany",
+
+  // AI
+  AiRun = "AiRun",
 
   // Contacts
   CreateContact = "CreateContact",

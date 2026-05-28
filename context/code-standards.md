@@ -60,6 +60,24 @@
 - Wrap all LLM calls in try/catch. On failure: set `failed_at = now`, increment `retry_count`. After `retry_count >= 3`, set `status = Failed`.
 - Claude Haiku is used exclusively for personalisation research (Step 5 of Contact Finder). All other AI work uses Claude Sonnet or higher.
 
+## Logging
+
+Logging is mandatory throughout the backend. Silent failures are forbidden.
+
+**Backend (`AppLogger` in `apps/worker/src/providers/logger.ts`)**
+
+- Every DAL method must log on every error path — both caught exceptions and "not found" branches — using `AppLogger.error()`.
+- Every Repo / AI method must log at the start of meaningful operations (`AppLogger.info()`) and on all error paths (`AppLogger.error()`).
+- Always pass `category` (`LogCategory`), `action` (`LogAction`), `message`, and `metadata` (the input params, redacted of secrets automatically by the sink). Pass `error` on exception paths.
+- `LogCategory` and `LogAction` enums live in `packages/schemas/src/log.ts`. Add a new `LogAction` entry for every new feature operation before writing any log call — never use a string literal.
+- Reference pattern: `NotesDAL` — logs every error branch; `AiProvider` — logs inference start, completion, and every retry/failure.
+
+**Frontend (`-data.ts` mutation hooks)**
+
+- Every `useMutation` must declare an `onError` handler that surfaces the failure via `toast.error(...)` from `sonner`.
+- `onError` is the frontend's logging boundary — it is the only place a mutation failure becomes visible. Silent or absent `onError` is forbidden (see also architecture invariant #5).
+- Reference pattern: `apps/web/src/routes/_authenticated/notes/-data.ts` — every mutation has an explicit `onError` toast.
+
 ## Data and Storage
 
 - All types and Zod schemas belong in `packages/schemas/src/<feature>/` — the single source of truth
