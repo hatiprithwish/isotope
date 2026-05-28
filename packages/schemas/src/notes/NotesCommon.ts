@@ -10,8 +10,8 @@ export type NoteBase = z.infer<typeof ZNoteBase>;
 // Whole Note Body
 export const ZNote = ZNoteBase.extend({
   id: z.number(),
-  userId: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date().nullable().optional(),
+  createdBy: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
 });
 export type Note = z.infer<typeof ZNote>;

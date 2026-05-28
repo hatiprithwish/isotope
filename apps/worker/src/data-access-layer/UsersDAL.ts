@@ -4,6 +4,7 @@ import getDbClient from "@/db/dbClient";
 import { users } from "@/db/tables";
 import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/logger";
+import Utility from "@/utils";
 
 export default class UsersDAL {
   private db: DrizzleD1Database;
@@ -64,7 +65,7 @@ export default class UsersDAL {
       isSuccess: false,
     };
     try {
-      const now = new Date();
+      const now = Utility.getCurrentISOTimestamp();
 
       await this.db
         .insert(users)

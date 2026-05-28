@@ -1,4 +1,10 @@
-function MobileCompanyRow({ company }: { company: Company }) {
+import { Link } from "@tanstack/react-router";
+import { WarningIcon } from "@phosphor-icons/react";
+import { StatusBadge } from "./-StatusBadge";
+import Avatar from "./-Avatar";
+import type * as Schemas from "@app/schemas";
+
+function MobileCompanyRow({ company }: { company: Schemas.Company }) {
   const score = company.weightedScore ?? 0;
   const max = 135;
   const hasEthicsFlag = company.isEthicsCompliant === false;

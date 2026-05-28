@@ -9,7 +9,7 @@ export default class Utility {
     ) as any;
   }
 
-  static createISOTimestamp() {
+  static getCurrentISOTimestamp() {
     return dayjs().toISOString();
   }
 }

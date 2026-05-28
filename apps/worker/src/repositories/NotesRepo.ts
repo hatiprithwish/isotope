@@ -10,7 +10,7 @@ export default class NotesRepo {
 
   async createNote(params: Schemas.CreateNoteApiRequest & { userId: string }) {
     return await this.dal.createNote({
-      userId: params.userId,
+      createdBy: params.userId,
       title: params.note.title,
       body: params.note.body,
     });
@@ -27,7 +27,7 @@ export default class NotesRepo {
   async updateNote(params: Schemas.UpdateNoteApiRequest & { userId: string; id: number }) {
     return await this.dal.updateNote({
       id: params.id,
-      userId: params.userId,
+      createdBy: params.userId,
       title: params.note.title ?? null,
       body: params.note.body ?? null,
     });

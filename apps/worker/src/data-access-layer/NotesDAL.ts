@@ -5,6 +5,7 @@ import getDbClient from "@/db/dbClient";
 import { notes } from "@/db/tables";
 import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/logger";
+import Utility from "@/utils";
 
 export default class NotesDAL {
   private db: DrizzleD1Database;
@@ -17,14 +18,13 @@ export default class NotesDAL {
     const response: Schemas.CreateNoteApiResponse = { isSuccess: false };
 
     try {
-      const now = new Date();
       const noteResponse = await this.db
         .insert(notes)
         .values({
-          createdBy: params.userId,
+          createdBy: params.createdBy,
           title: params.title,
           body: params.body,
-          createdAt: now,
+          createdAt: Utility.getCurrentISOTimestamp(),
           updatedAt: null,
         })
         .returning()
@@ -52,7 +52,7 @@ export default class NotesDAL {
     const response: Schemas.GetNoteApiResponse = { isSuccess: false };
 
     try {
-      const conditions: SQL[] = [eq(notes.id, params.id), eq(notes.userId, params.userId)];
+      const conditions: SQL[] = [eq(notes.id, params.id), eq(notes.createdBy, params.createdBy)];
 
       const [note] = await this.db
         .select()
@@ -97,7 +97,7 @@ export default class NotesDAL {
       const notesResponse = await this.db
         .select()
         .from(notes)
-        .where(eq(notes.userId, params.userId));
+        .where(eq(notes.createdBy, params.createdBy));
 
       response.isSuccess = true;
       response.message = "Notes fetched successfully";
@@ -121,7 +121,6 @@ export default class NotesDAL {
     const response: Schemas.UpdateNoteApiResponse = { isSuccess: false };
 
     try {
-      const now = new Date();
       const noteResponse = await this.db
         .update(notes)
         .set({
@@ -129,9 +128,9 @@ export default class NotesDAL {
           title: params.title ?? undefined,
           // DEV_NOTE: When params.body === null, it's NOT ignored
           body: params.body,
-          updatedAt: now,
+          updatedAt: Utility.getCurrentISOTimestamp(),
         })
-        .where(and(eq(notes.id, params.id), eq(notes.userId, params.userId)))
+        .where(and(eq(notes.id, params.id), eq(notes.createdBy, params.createdBy)))
         .returning()
         .get();
 
@@ -171,7 +170,7 @@ export default class NotesDAL {
     try {
       await this.db
         .delete(notes)
-        .where(and(eq(notes.id, params.id), eq(notes.userId, params.userId)));
+        .where(and(eq(notes.id, params.id), eq(notes.createdBy, params.createdBy)));
 
       response.isSuccess = true;
       response.message = "Note deleted successfully";

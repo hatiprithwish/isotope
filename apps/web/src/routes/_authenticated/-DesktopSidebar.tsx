@@ -1,16 +1,33 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { useUser } from "@clerk/tanstack-react-start";
-import { GearSixIcon } from "@phosphor-icons/react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useUser, useAuth, useClerk } from "@clerk/tanstack-react-start";
+import { GearSixIcon, SignOutIcon } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import HomeUtils from "./-utils";
 import Utilities from "@/utils";
+import { apiClient } from "@/providers/apiClient";
 
 export function DesktopSidebar() {
   const { user } = useUser();
+  const { getToken } = useAuth();
+  const { signOut } = useClerk();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const name = user?.fullName ?? "";
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
   const initials = name ? Utilities.getInitials(name) : "?";
+
+  async function handleSignOut() {
+    try {
+      await apiClient("/auth/sign-out", getToken, { method: "POST" });
+    } catch {
+      // Session revocation failed on server — still sign out client-side
+      toast.error("Sign out encountered an issue. Clearing session locally.");
+    } finally {
+      await signOut();
+      navigate({ to: "/auth/sign-in" });
+    }
+  }
 
   return (
     <aside className="w-48 shrink-0 bg-sidebar border-r border-border flex flex-col p-4 px-3">
@@ -51,6 +68,20 @@ export function DesktopSidebar() {
 
       {/* Divider */}
       <div className="h-px bg-border mx-1.5 my-3.5" />
+
+      {/* Sign out */}
+      <button
+        onClick={handleSignOut}
+        className={[
+          "flex items-center gap-2.25 py-1.75 px-2.5 rounded-lg w-full",
+          "text-xs font-medium leading-none border border-transparent",
+          "transition-colors duration-120",
+          "text-(--text-secondary) hover:text-foreground",
+        ].join(" ")}
+      >
+        <SignOutIcon size={16} weight="regular" />
+        Sign out
+      </button>
 
       {/* Settings */}
       <Link

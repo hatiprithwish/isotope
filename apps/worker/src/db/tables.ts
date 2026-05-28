@@ -46,6 +46,67 @@ export const companies = table(
   (table) => [t.index("IDX_companies_created_by").on(table.createdBy)],
 );
 
+export const contacts = table(
+  "contacts",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    companyId: t.int("company_id").notNull(),
+    jobId: t.int("job_id"),
+    name: t.text().notNull(),
+    designation: t.text(),
+    email: t.text(),
+    linkedinUrl: t.text("linkedin_url"),
+    linkedinConnected: t.integer("linkedin_connected", { mode: "boolean" }),
+    sequencePosition: t.integer("sequence_position"),
+    lastTouchAt: t.text("last_touch_at"),
+    nextTouchDueAt: t.text("next_touch_due_at"),
+    deadAt: t.text("dead_at"),
+    reEngageAt: t.text("re_engage_at"),
+    abVariable: t.text("ab_variable"),
+    abVariant: t.text("ab_variant"),
+    abReplied: t.integer("ab_replied", { mode: "boolean" }),
+    status: t.integer().$type<Schemas.ContactStatusIntEnum>().notNull(),
+    draftBody: t.text("draft_body"),
+    draftSubject: t.text("draft_subject"),
+    personalizationNotes: t.text("personalization_notes"),
+    manualPersonalizationNotes: t.text("manual_personalization_notes"),
+    reengagementRecommendation: t.text("reengagement_recommendation"),
+    source: t.integer().$type<Schemas.ContactSourceIntEnum>(),
+    notes: t.text(),
+    failedAt: t.text("failed_at"),
+    retryCount: t.integer("retry_count"),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [
+    t.index("IDX_contacts_created_by").on(table.createdBy),
+    t.index("IDX_contacts_company_id").on(table.companyId),
+  ],
+);
+
+export const contactHistory = table(
+  "contact_history",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    contactId: t.int("contact_id").notNull(),
+    type: t.text().notNull(),
+    channel: t.text().notNull(),
+    subject: t.text(),
+    body: t.text().notNull(),
+    sequencePosition: t.integer("sequence_position"),
+    abVariable: t.text("ab_variable"),
+    abVariant: t.text("ab_variant"),
+    sentAt: t.text("sent_at").notNull(),
+    createdAt: t.text("created_at").notNull(),
+  },
+  (table) => [
+    t.index("IDX_contact_history_contact_id").on(table.contactId),
+    t.index("IDX_contact_history_created_by").on(table.createdBy),
+  ],
+);
+
 export const notes = table(
   "notes",
   {

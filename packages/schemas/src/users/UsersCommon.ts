@@ -14,6 +14,6 @@ export interface UserBase {
 }
 
 export interface User extends UserBase {
-  createdAt: Date;
-  updatedAt?: Date | null;
+  createdAt: string;
+  updatedAt?: string | null;
 }

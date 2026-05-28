@@ -37,7 +37,7 @@ export default class CompaniesDAL {
           userContext: params.userContext,
           notes: params.notes,
           status: params.status,
-          createdAt: Utility.createISOTimestamp(),
+          createdAt: Utility.getCurrentISOTimestamp(),
           updatedAt: null,
         })
         .returning({
@@ -223,7 +223,7 @@ export default class CompaniesDAL {
           userContext: params.userContext,
           notes: params.notes,
           status: params.status ?? undefined,
-          updatedAt: Utility.createISOTimestamp(),
+          updatedAt: Utility.getCurrentISOTimestamp(),
         })
         .where(and(eq(companies.id, params.id), eq(companies.createdBy, params.createdBy)))
         .returning({ id: companies.id })
