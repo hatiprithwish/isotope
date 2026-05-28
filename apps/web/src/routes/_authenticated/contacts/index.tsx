@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
@@ -7,6 +8,7 @@ import { ContactsQueries } from "./-data";
 import MobileContactRow from "./-MobileContactRow";
 import DesktopContactRow from "./-DesktopContactRow";
 import DesktopPanel from "./-DesktopPanel";
+import AddContactModal from "./-AddContactModal";
 
 const searchSchema = z.object({
   panel: z.number().optional(),
@@ -21,6 +23,7 @@ function ContactsPage() {
   const { getToken } = useAuth();
   const { panel } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { data, isPending, isError } = useQuery(ContactsQueries.list(getToken));
   const contacts = data?.contacts ?? [];
@@ -183,6 +186,7 @@ function ContactsPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setShowAddModal(true)}
                 className="h-7.75 px-3 flex items-center gap-1.5 rounded-lg text-[13px] font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors"
               >
                 <PlusIcon size={13} />
@@ -267,6 +271,8 @@ function ContactsPage() {
           </div>
         )}
       </div>
+
+      {showAddModal && <AddContactModal onClose={() => setShowAddModal(false)} />}
     </>
   );
 }

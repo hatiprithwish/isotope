@@ -40,6 +40,8 @@ export const companies = table(
     userContext: t.text("user_context"),
     notes: t.text(),
     status: t.integer().$type<Schemas.CompanyStatusIntEnum>().notNull(),
+    failedAt: t.text("failed_at"),
+    retryCount: t.integer("retry_count"),
     createdAt: t.text("created_at").notNull(),
     updatedAt: t.text("updated_at"),
   },

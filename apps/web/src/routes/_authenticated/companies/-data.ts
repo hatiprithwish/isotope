@@ -8,6 +8,7 @@ export class CompaniesQueries {
   static readonly keys = {
     all: () => ["companies"] as const,
     detail: (id: number) => ["companies", id] as const,
+    contacts: (id: number) => ["companies", id, "contacts"] as const,
   };
 
   static list(getToken: () => Promise<string | null>) {
@@ -23,6 +24,16 @@ export class CompaniesQueries {
       queryKey: CompaniesQueries.keys.detail(id),
       queryFn: ({ signal }) =>
         apiClient<Schemas.GetCompanyApiResponse>(`/companies/${id}`, getToken, { signal }),
+    });
+  }
+
+  static companyContacts(id: number, getToken: () => Promise<string | null>) {
+    return queryOptions({
+      queryKey: CompaniesQueries.keys.contacts(id),
+      queryFn: ({ signal }) =>
+        apiClient<Schemas.GetContactsApiResponse>(`/companies/${id}/contacts`, getToken, {
+          signal,
+        }),
     });
   }
 }
