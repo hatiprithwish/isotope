@@ -27,12 +27,15 @@ const checkAuth = createMiddleware<AppContext>(async (c, next) => {
   const email =
     typeof claims["email"] === "string"
       ? claims["email"]
-      : typeof claims["primary_email_address"] === "string"
-        ? claims["primary_email_address"]
-        : "";
+      : typeof claims["email_address"] === "string"
+        ? claims["email_address"]
+        : typeof claims["primary_email_address"] === "string"
+          ? claims["primary_email_address"]
+          : "";
 
   c.set("clerkUserId", auth.userId!);
   c.set("clerkEmail", email);
+  c.set("clerkSessionId", auth.sessionId!);
 
   AppLogger.info({
     category: Schemas.LogCategory.Middleware,

@@ -10,6 +10,7 @@ export enum LogAction {
   // Auth
   VerifyToken = "VerifyToken",
   SyncClerkUser = "SyncClerkUser",
+  SignOut = "SignOut",
 
   // User
   GetUserDetails = "GetUserDetails",
@@ -20,4 +21,18 @@ export enum LogAction {
   ListNotes = "ListNotes",
   UpdateNote = "UpdateNote",
   DeleteNote = "DeleteNote",
+
+  // Companies
+  CreateCompany = "CreateCompany",
+  GetCompanyDetails = "GetCompanyDetails",
+  ListCompanies = "ListCompanies",
+  UpdateCompany = "UpdateCompany",
+  DeleteCompany = "DeleteCompany",
+
+  // Contacts
+  CreateContact = "CreateContact",
+  GetContactDetails = "GetContactDetails",
+  ListContacts = "ListContacts",
+  UpdateContact = "UpdateContact",
+  DeleteContact = "DeleteContact",
 }

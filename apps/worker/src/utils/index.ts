@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 export default class Utility {
   static skipNulls<T extends object>(
     obj: T,
@@ -5,5 +7,9 @@ export default class Utility {
     return Object.fromEntries(
       Object.entries(obj).map(([key, value]) => [key, value === null ? undefined : value]),
     ) as any;
+  }
+
+  static getCurrentISOTimestamp() {
+    return dayjs().toISOString();
   }
 }

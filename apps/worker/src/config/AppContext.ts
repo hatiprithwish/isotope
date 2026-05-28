@@ -1,6 +1,7 @@
 interface AuthVariables {
   clerkUserId: string;
   clerkEmail: string;
+  clerkSessionId: string;
 }
 
 interface AppContext {

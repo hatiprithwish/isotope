@@ -3,10 +3,13 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { configureLogger, disposeLogger, withRequestContext } from "@/providers/logger";
-import UsersRoutes from "@/routes/UserRoutes";
-import NotesRoutes from "@/routes/NotesRoutes";
 import * as Schemas from "@app/schemas";
 import Constants from "@/config/Constants";
+import UsersRoutes from "@/routes/UserRoutes";
+import NotesRoutes from "@/routes/NotesRoutes";
+import CompaniesRoutes from "@/routes/CompaniesRoutes";
+import ContactsRoutes from "@/routes/ContactsRoutes";
+import AuthRoutes from "@/routes/AuthRoutes";
 
 // DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests
 await configureLogger();
@@ -39,8 +42,11 @@ app.use(
   }),
 );
 
+app.route("/auth", AuthRoutes);
 app.route("/users", UsersRoutes);
 app.route("/notes", NotesRoutes);
+app.route("/companies", CompaniesRoutes);
+app.route("/contacts", ContactsRoutes);
 
 export default {
   fetch(req: Request, env: Env, ctx: ExecutionContext) {

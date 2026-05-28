@@ -5,22 +5,22 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
   "vars": {
-    "VITE_API_URL": "http://localhost:8787",
+    "VITE_API_URL": "http://localhost:8787"
   },
   "env": {
     "staging": {
       "name": "scaffold-web-staging",
       "vars": {
         "VITE_API_URL": "https://scaffold-worker-staging.hatiprithwish.workers.dev",
-        "SENTRY_PROJECT": "scaffold",
-      },
+        "SENTRY_PROJECT": "scaffold"
+      }
     },
     "production": {
       "name": "scaffold-web",
       "vars": {
         "VITE_API_URL": "https://scaffold-worker.hatiprithwish.workers.dev",
-        "SENTRY_PROJECT": "scaffold",
-      },
-    },
-  },
+        "SENTRY_PROJECT": "scaffold"
+      }
+    }
+  }
 }
