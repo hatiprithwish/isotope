@@ -45,4 +45,13 @@ export enum LogAction {
   SaveFramework = "SaveFramework",
   GetLatestFramework = "GetLatestFramework",
   GetFrameworkVersions = "GetFrameworkVersions",
+
+  // Jobs
+  CreateJob = "CreateJob",
+  GetJobDetails = "GetJobDetails",
+  ListJobs = "ListJobs",
+  UpdateJob = "UpdateJob",
+  DeleteJob = "DeleteJob",
+  RunJobIngestion = "RunJobIngestion",
+  DuplicateJobBlocked = "DuplicateJobBlocked",
 }

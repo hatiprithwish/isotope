@@ -2,32 +2,38 @@ import z from "zod";
 
 // Integer enums — stored in DB, sent in API requests
 export enum JobStatusIntEnum {
-  Applied = 1,
-  Screening = 2,
-  Interview = 3,
-  Offer = 4,
-  Rejected = 5,
-  Withdrawn = 6,
+  NotStarted = 1,
+  WaitingForHuman = 2,
+  Accepted = 3,
+  Applied = 4,
+  CompanyAdded = 5,
+  Interviewing = 6,
+  Offer = 7,
+  Rejected = 8,
 }
 export const ZJobStatusIntEnum = z.enum(JobStatusIntEnum);
 
 export enum JobStatusLabelEnum {
+  NotStarted = "Not Started",
+  WaitingForHuman = "Waiting for Human",
+  Accepted = "Accepted",
   Applied = "Applied",
-  Screening = "Screening",
-  Interview = "Interview",
+  CompanyAdded = "Company Added",
+  Interviewing = "Interviewing",
   Offer = "Offer",
   Rejected = "Rejected",
-  Withdrawn = "Withdrawn",
 }
 export const ZJobStatusLabelEnum = z.enum(JobStatusLabelEnum);
 
-export const jobStatusIntToLabel = {
+export const jobStatusIntToLabel: Record<JobStatusIntEnum, JobStatusLabelEnum> = {
+  [JobStatusIntEnum.NotStarted]: JobStatusLabelEnum.NotStarted,
+  [JobStatusIntEnum.WaitingForHuman]: JobStatusLabelEnum.WaitingForHuman,
+  [JobStatusIntEnum.Accepted]: JobStatusLabelEnum.Accepted,
   [JobStatusIntEnum.Applied]: JobStatusLabelEnum.Applied,
-  [JobStatusIntEnum.Screening]: JobStatusLabelEnum.Screening,
-  [JobStatusIntEnum.Interview]: JobStatusLabelEnum.Interview,
+  [JobStatusIntEnum.CompanyAdded]: JobStatusLabelEnum.CompanyAdded,
+  [JobStatusIntEnum.Interviewing]: JobStatusLabelEnum.Interviewing,
   [JobStatusIntEnum.Offer]: JobStatusLabelEnum.Offer,
   [JobStatusIntEnum.Rejected]: JobStatusLabelEnum.Rejected,
-  [JobStatusIntEnum.Withdrawn]: JobStatusLabelEnum.Withdrawn,
 };
 
 // type: 1 = manual, 2 = LLM

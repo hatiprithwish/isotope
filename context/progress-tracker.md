@@ -18,8 +18,30 @@ change.
 - **Spec 003A — Jobs Database Schema**:
   - Schema: Added `jobs` table to `apps/worker/src/db/tables.ts`. 15 columns, 3 indexes (UNIQUE on `url`, IDX on `created_by`, IDX on `company_id`). `status` + `type` as IntEnum integers; `skills` as JSON text; `match_score` nullable real (v2.0 reserved).
   - Enums: Created `packages/schemas/src/jobs/JobsCommon.ts` — `JobStatusIntEnum` / `JobTypeLabelEnum` + label enums, int→label maps, `ZJobBase`, `ZJob`. Exported from `packages/schemas/src/index.ts`.
+
+- **Spec 003B — Jobs Zod Schemas & System Contracts**:
+  - `JobsApiRequest.ts`: `ZCreateJobApiRequest` (title + url required, url validated via `z.url()`; company_id, description, location, salary, source optional). `ZUpdateJobApiRequest` (all fields optional).
+  - `JobsApiResponse.ts`: `CreateJobApiResponse`, `GetJobApiResponse`, `GetJobsApiResponse`, `UpdateJobApiResponse` — all extend `ApiResponse`.
+  - `JobsDALRequest.ts`: `CreateJobDALRequest`, `FindJobDALRequest`, `GetJobsDALRequest`, `UpdateJobDALRequest`.
+  - `jobs/index.ts`: exports all four modules.
+  - `log.ts`: Added `CreateJob`, `GetJobDetails`, `ListJobs`, `UpdateJob`, `DeleteJob`, `RunJobIngestion`, `DuplicateJobBlocked` to `LogAction` enum.
+  - Verification: `tsc --noEmit` clean; `ZCreateJobApiRequest.safeParse` without url fails Zod as expected.
   - Migration: Generated `src/db/migrations/0005_isotope.sql`, applied to remote D1 (`isotope-db`).
   - TypeScript: No new errors. Pre-existing errors in ContactsRepo/NotesRepo/notes.test unchanged.
+
+- **Spec 003C — Jobs Backend Routes**:
+  - `JobsDAL.ts`: `createJob`, `getJobDetails`, `getJobsList` — all tenant-scoped (`WHERE created_by = ?`), try/catch on every method, AppLogger on error + not-found paths, skills JSON parsed on read.
+  - `JobsRepo.ts`: `createJob` (forces `type=Manual`, defaults `status=Applied`), `getJobDetails`, `getJobs` — AppLogger.info at start of each op; delegates to DAL.
+  - `JobsRoutes.ts`: `POST /`, `GET /`, `GET /:id` — checkAuth first, zValidator on body/param, 201/200/404/500 status codes.
+  - `index.ts`: Mounted at `/jobs` (linter normalised from `/v1/jobs`).
+  - TypeScript: No new errors (pre-existing ContactsRepo/NotesRepo/notes.test errors unchanged).
+
+- **Spec 003C — Jobs Status Enum Fix**:
+  - Replaced 6-value status enum (Applied/Screening/Interview/Offer/Rejected/Withdrawn) with correct 8-value set: 1=NotStarted, 2=WaitingForHuman, 3=Accepted, 4=Applied, 5=CompanyAdded, 6=Interviewing, 7=Offer, 8=Rejected.
+  - `NotStarted` is the default for Manual jobs (`type=1`); `WaitingForHuman` is the default for LLM jobs (`type=2`).
+  - `jobStatusIntToLabel` map updated with explicit `Record<JobStatusIntEnum, JobStatusLabelEnum>` type.
+  - `JobsRepo.createJob` default status changed from `Applied` → `NotStarted`.
+  - No DDL migration needed (column type unchanged; dev/staging DB had no real rows).
 
 - **spec 02 — Company Research Framework Form**:
   - DB: Added `frameworks` table to `apps/worker/src/db/tables.ts`. Generated migration `0004_isotope.sql` and applied to remote D1.
@@ -38,7 +60,7 @@ change.
 
 ## Next Up
 
-- Spec 003B — Shared Schemas & Backend Routes
+- Spec 003D (or next spec)
 
 ## Open Questions
 
