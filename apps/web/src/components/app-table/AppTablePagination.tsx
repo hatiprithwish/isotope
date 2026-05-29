@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  CaretDoubleLeft,
-  CaretDoubleRight,
-  CaretLeft,
-  CaretRight,
-  ArrowClockwise,
+  ArrowClockwiseIcon,
+  CaretDoubleLeftIcon,
+  CaretDoubleRightIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
 } from "@phosphor-icons/react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shadcn/ui/tooltip";
 import { cn } from "@/utils/tailwind";
-import { AppTablePaginationProps } from "./AppTable.types";
+import type { AppTablePaginationProps } from "./AppTable.types";
 import { PAGINATION_LABELS, PAGINATION_NAV_BTN_CLASS, computePaginationDisplay } from "./utils";
 
 // ─── Page Number Input ────────────────────────────────────────────────────────
@@ -22,10 +22,6 @@ interface PageInputProps {
 
 function PageInput({ currentPage, totalPages, onJumpToPage, isDisabled }: PageInputProps) {
   const [inputValue, setInputValue] = useState(String(currentPage));
-
-  useEffect(() => {
-    setInputValue(String(currentPage));
-  }, [currentPage]);
 
   return (
     <input
@@ -128,7 +124,7 @@ export function AppTablePagination({
             disabled={isRefreshing || isLoading}
             className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ArrowClockwise className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+            <ArrowClockwiseIcon className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
           </button>
         )}
       </div>
@@ -143,7 +139,7 @@ export function AppTablePagination({
                 disabled={isFirst || isLoading}
                 className={PAGINATION_NAV_BTN_CLASS}
               >
-                <CaretDoubleLeft className="h-4 w-4" />
+                <CaretDoubleLeftIcon className="h-4 w-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
@@ -159,7 +155,7 @@ export function AppTablePagination({
               disabled={isFirst || isLoading}
               className={PAGINATION_NAV_BTN_CLASS}
             >
-              <CaretLeft className="h-4 w-4" />
+              <CaretLeftIcon className="h-4 w-4" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
@@ -173,6 +169,7 @@ export function AppTablePagination({
               <TooltipTrigger asChild>
                 <span>
                   <PageInput
+                    key={currentPage}
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onJumpToPage={onJumpToPage}
@@ -185,7 +182,7 @@ export function AppTablePagination({
               </TooltipContent>
             </Tooltip>
           ) : (
-            <span className="flex h-8 min-w-[2rem] items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium">
+            <span className="flex h-8 min-w-8 items-center justify-center rounded-md border border-border bg-card px-2.5 text-xs font-medium">
               {currentPage}
             </span>
           )}
@@ -201,7 +198,7 @@ export function AppTablePagination({
               disabled={isLast || isLoading}
               className={PAGINATION_NAV_BTN_CLASS}
             >
-              <CaretRight className="h-4 w-4" />
+              <CaretRightIcon className="h-4 w-4" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="text-xs">
@@ -217,7 +214,7 @@ export function AppTablePagination({
                 disabled={isLast || isLoading}
                 className={PAGINATION_NAV_BTN_CLASS}
               >
-                <CaretDoubleRight className="h-4 w-4" />
+                <CaretDoubleRightIcon className="h-4 w-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">

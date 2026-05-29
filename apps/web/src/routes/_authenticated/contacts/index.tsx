@@ -171,9 +171,9 @@ function ContactsPage() {
       </div>
 
       {/* ── DESKTOP ────────────────────────────────────────────── */}
-      <div className="hidden md:flex h-full overflow-hidden">
+      <div className="hidden md:flex h-full overflow-hidden relative">
         {/* Left: table */}
-        <div className="flex flex-col overflow-hidden border-r border-border flex-1">
+        <div className="flex flex-col overflow-hidden flex-1">
           {/* Topbar */}
           <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
             <span className="text-base font-semibold text-foreground tracking-tight">Contacts</span>
@@ -264,9 +264,13 @@ function ContactsPage() {
           </div>
         </div>
 
-        {/* Right: panel */}
+        {/* Backdrop — closes panel on outside click */}
         {selectedContact && (
-          <div className="w-100 shrink-0">
+          <div className="absolute inset-0 z-10" onClick={closePanel} aria-hidden />
+        )}
+        {/* Right: panel — overlays the table */}
+        {selectedContact && (
+          <div className="absolute inset-y-0 right-0 w-1/3 border-l border-border shadow-xl z-20">
             <DesktopPanel contact={selectedContact} onClose={closePanel} />
           </div>
         )}

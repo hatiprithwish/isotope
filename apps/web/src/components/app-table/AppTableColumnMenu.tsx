@@ -1,10 +1,10 @@
 import { EyeSlash } from "@phosphor-icons/react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shadcn/ui/dropdown-menu";
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/shadcn/ui/context-menu";
 
 interface AppTableColumnMenuProps {
   children: React.ReactNode;
@@ -13,17 +13,17 @@ interface AppTableColumnMenuProps {
 
 export function AppTableColumnMenu({ children, onHide }: AppTableColumnMenuProps) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuItem
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem
           onSelect={onHide}
           className="gap-2 text-muted-foreground hover:text-foreground"
         >
           <EyeSlash className="h-4 w-4" />
           Hide
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }

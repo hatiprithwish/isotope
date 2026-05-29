@@ -7,5 +7,7 @@ export type FindJobDALRequest = Pick<Job, "id" | "createdBy">;
 
 export type GetJobsDALRequest = Pick<Job, "createdBy">;
 
+export type SearchJobsDALRequest = Pick<Job, "createdBy"> & { searchText?: string };
+
 export type UpdateJobDALRequest = FindJobDALRequest &
   NullableDALFields<Omit<Job, "id" | "createdBy" | "createdAt" | "statusLabel" | "typeLabel">>;

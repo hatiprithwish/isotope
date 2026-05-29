@@ -13,6 +13,10 @@ export interface GetJobsApiResponse extends ApiResponse {
   jobs?: Job[];
 }
 
+export interface GetJobsCountApiResponse extends ApiResponse {
+  count?: number;
+}
+
 export interface UpdateJobApiResponse extends ApiResponse {
   job?: Job;
 }

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export interface AppTableColumn<TRow> {
   /** Unique identifier for the column */
@@ -7,8 +7,10 @@ export interface AppTableColumn<TRow> {
   header: string;
   /** If set, clicking the header will call onSort with this key */
   sortKey?: string;
-  /** If true, column is excluded from rendering */
+  /** If true, column is excluded from rendering entirely */
   hidden?: boolean;
+  /** If true, column starts hidden but can be toggled visible via the visibility panel */
+  defaultHidden?: boolean;
   /** Tooltip shown on the column header (info icon) */
   headerTooltip?: string;
   /** Custom cell renderer — overrides default value display */
@@ -58,10 +60,16 @@ export interface AppTableProps<TRow> {
   // ─── Layout ───────────────────────────────────────────────────────────────
   /** Fixes the thead at the top when the table container scrolls */
   stickyHeader?: boolean;
+  /** Removes card wrapper (border/shadow/rounded) and fills parent height — use for full-bleed page tables */
+  flush?: boolean;
 
   // ─── Footer ───────────────────────────────────────────────────────────────
   /** Renders a <tfoot> row when true and at least one column has a footer fn */
   showFooter?: boolean;
+
+  // ─── Toolbar ──────────────────────────────────────────────────────────────
+  /** Content rendered on the left side of the toolbar row (e.g. search input) */
+  toolbarLeft?: ReactNode;
 }
 
 export interface AppTablePaginationProps {

@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/utils/tailwind";
 import { TableBody, TableCell, TableRow } from "@/shadcn/ui/table";
-import { AppTableColumn } from "./AppTable.types";
+import type { AppTableColumn } from "./AppTable.types";
 import { AppTableEmpty } from "./AppTableEmpty";
 import { DEFAULT_SKELETON_ROWS, SKELETON_CELL_CLASS, resolveVisibleColumns } from "./utils";
 
@@ -97,7 +97,7 @@ export function AppTableBody<TRow>({
                   {col.cell ? (
                     col.cell(row)
                   ) : (
-                    <span className="block max-w-[240px] truncate" title={displayValue}>
+                    <span className="block max-w-60 truncate" title={displayValue}>
                       {displayValue}
                     </span>
                   )}

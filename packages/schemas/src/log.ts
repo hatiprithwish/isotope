@@ -47,9 +47,11 @@ export enum LogAction {
   GetFrameworkVersions = "GetFrameworkVersions",
 
   // Jobs
+  SearchJobs = "SearchJobs",
   CreateJob = "CreateJob",
   GetJobDetails = "GetJobDetails",
   ListJobs = "ListJobs",
+  CountJobs = "CountJobs",
   UpdateJob = "UpdateJob",
   DeleteJob = "DeleteJob",
   RunJobIngestion = "RunJobIngestion",

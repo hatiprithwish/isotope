@@ -8,7 +8,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { ArrowsDownUp, CaretDown, CaretUp, DotsSixVertical, Info } from "@phosphor-icons/react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shadcn/ui/tooltip";
 import { TableHead, TableHeader, TableRow } from "@/shadcn/ui/table";
-import { AppTableColumn, AppTableSortDirection } from "./AppTable.types";
+import type { AppTableColumn, AppTableSortDirection } from "./AppTable.types";
 import { AppTableColumnMenu } from "./AppTableColumnMenu";
 import { cn } from "@/utils/tailwind";
 import {
@@ -19,6 +19,24 @@ import {
 } from "./utils";
 
 export { arrayMove };
+
+// ─── Sort Icon ────────────────────────────────────────────────────────────
+
+interface SortIconProps {
+  isSortable: boolean;
+  isActive: boolean;
+  sortOrder?: AppTableSortDirection;
+}
+
+function SortIcon({ isSortable, isActive, sortOrder }: SortIconProps) {
+  if (!isSortable) return null;
+  if (!isActive) return <ArrowsDownUp className={SORT_ICON_INACTIVE_CLASS} />;
+  return sortOrder === "asc" ? (
+    <CaretUp className={SORT_ICON_ACTIVE_CLASS} />
+  ) : (
+    <CaretDown className={SORT_ICON_ACTIVE_CLASS} />
+  );
+}
 
 // ─── Sortable Header Cell ──────────────────────────────────────────────────
 
@@ -59,16 +77,6 @@ function SortableHeaderCell<TRow>({
     }
   };
 
-  const SortIcon = () => {
-    if (!isSortable) return null;
-    if (!isActive) return <ArrowsDownUp className={SORT_ICON_INACTIVE_CLASS} />;
-    return sortOrder === "asc" ? (
-      <CaretUp className={SORT_ICON_ACTIVE_CLASS} />
-    ) : (
-      <CaretDown className={SORT_ICON_ACTIVE_CLASS} />
-    );
-  };
-
   return (
     <AppTableColumnMenu onHide={() => onHideColumn(column.key)}>
       <TableHead
@@ -94,7 +102,7 @@ function SortableHeaderCell<TRow>({
 
           {column.header}
 
-          <SortIcon />
+          <SortIcon isSortable={isSortable} isActive={isActive} sortOrder={sortOrder} />
 
           {column.headerTooltip && (
             <Tooltip>

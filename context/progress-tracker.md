@@ -54,13 +54,29 @@ change.
   - Onboarding route: `apps/web/src/routes/_authenticated/onboarding/step-1.tsx` — wizard step 1 with form→review→navigate state machine; wizard header with progress dots; sticky footer with contextual actions.
   - Settings route: `apps/web/src/routes/_authenticated/settings/index.tsx` — Company Research Framework section with view (current framework + version history), edit (form), and review (editable textarea + save) steps. Relative timestamp helper.
 
+- **Spec 003D — Jobs Frontend Data View**:
+  - `-data.ts`: `JobsQueries` class with `list`, `count`, `detail` static methods + `useJobs`, `useJobsCount` hooks. Count hits `GET /jobs/count` (new endpoint added this session).
+  - `GET /jobs/count` added to backend: `LogAction.CountJobs` in `log.ts`, `GetJobsCountApiResponse` in `JobsApiResponse.ts`, `getJobsCount` in `JobsDAL`, `countJobs` in `JobsRepo`, route in `JobsRoutes.ts`.
+  - `-JobStatusBadge.tsx`: `JobStatusBadge` (8-status map) + `JobTypeBadge` (Manual/LLM with AI tokens).
+  - `-JobsTable.tsx`: 8 columns (source/type defaultHidden), `AppTablePagination` rendered at bottom via `pagination` prop passed from parent. Custom hack footer removed.
+  - `-JobDetailDrawer.tsx`: `JobDetailPanel` (desktop inline sliding aside, `w-100`) + `JobDetailMobileDrawer` (vaul bottom sheet `h-[90vh]`). Both controlled by `jobId: number | null`.
+  - `AppTable`: Added `defaultHidden?: boolean` to `AppTableColumn` — columns participate in visibility toggling but start hidden. Added `toolbarLeft?: ReactNode` prop — renders left-side content in the toolbar row alongside the column-visibility (`…`) menu.
+  - `index.tsx`: Full route with `validateSearch` (`panel?: number`), client-side pagination (page size 20, sliced from server results), `openPanel`/`closePanel` navigate helpers, desktop flex-row layout (table + inline panel), mobile list + mobile drawer.
+  - **Pagination approach**: `totalRecords` from count API; list/search API returns results for current query; client slices by page. `AppTablePagination` renders standard prev/next/jump controls with refresh action.
+
+- **Spec 003D+ — Jobs Search**:
+  - Server-side search via `POST /jobs/list` with `{ searchText?: string }` body — replaces `GET /jobs`. SQLite `LIKE %term%` across `jobs.title`, `jobs.location`, `jobs.salary`, and `companies.name` (LEFT JOIN). Empty or absent `searchText` returns all jobs.
+  - Schemas: `ZSearchJobsApiRequest`, `SearchJobsDALRequest` added to `packages/schemas/src/jobs/`. `LogAction.SearchJobs` added to `log.ts`.
+  - Backend: `JobsDAL.searchJobs` (LEFT JOIN + conditional `or(like(...))` filter), `JobsRepo.searchJobs`, `POST /list` route with `zValidator`.
+  - Frontend: `useJobs(searchText)` accepts search term, POSTs to `/jobs/list`; TanStack Query key includes term so each search is cached independently. `useDeferredValue` on the raw input prevents query-per-keystroke. Search bar rendered via `AppTable`'s `toolbarLeft` prop on desktop; stacked below title in mobile header. Page resets to 1 on every query change.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Spec 003D (or next spec)
+- Spec 003E — Manual Entry Form (Add New Job)
 
 ## Open Questions
 

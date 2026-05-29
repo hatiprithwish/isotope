@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, like, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
-import { jobs } from "@/db/tables";
+import { jobs, companies } from "@/db/tables";
 import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/logger";
 import Utility from "@/utils";
@@ -112,7 +112,41 @@ export default class JobsDAL {
     return response;
   }
 
-  async getJobsList(params: Schemas.GetJobsDALRequest) {
+  async getJobsCount(params: Schemas.GetJobsDALRequest) {
+    const response: Schemas.GetJobsCountApiResponse = { isSuccess: false };
+
+    try {
+      AppLogger.info({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.CountJobs,
+        message: "Counting jobs",
+        metadata: params,
+      });
+
+      const [row] = await this.db
+        .select({ count: count() })
+        .from(jobs)
+        .where(eq(jobs.createdBy, params.createdBy));
+
+      response.isSuccess = true;
+      response.message = "Jobs counted successfully";
+      response.count = row?.count ?? 0;
+    } catch (error) {
+      const message = "Unknown error in counting jobs";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.CountJobs,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async getJobs(params: Schemas.GetJobsDALRequest) {
     const response: Schemas.GetJobsApiResponse = { isSuccess: false };
 
     try {
@@ -138,6 +172,77 @@ export default class JobsDAL {
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
         action: Schemas.LogAction.ListJobs,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async searchJobs(params: Schemas.SearchJobsDALRequest) {
+    const response: Schemas.GetJobsApiResponse = { isSuccess: false };
+
+    try {
+      AppLogger.info({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.SearchJobs,
+        message: "Searching jobs",
+        metadata: { userId: params.createdBy, searchText: params.searchText },
+      });
+
+      const term = params.searchText?.trim();
+      const pattern = term ? `%${term}%` : undefined;
+
+      const rows = await this.db
+        .select({
+          id: jobs.id,
+          createdBy: jobs.createdBy,
+          title: jobs.title,
+          status: jobs.status,
+          type: jobs.type,
+          companyId: jobs.companyId,
+          url: jobs.url,
+          location: jobs.location,
+          salary: jobs.salary,
+          source: jobs.source,
+          description: jobs.description,
+          skills: jobs.skills,
+          matchScore: jobs.matchScore,
+          createdAt: jobs.createdAt,
+          updatedAt: jobs.updatedAt,
+        })
+        .from(jobs)
+        .leftJoin(companies, eq(jobs.companyId, companies.id))
+        .where(
+          pattern
+            ? and(
+                eq(jobs.createdBy, params.createdBy),
+                or(
+                  like(jobs.title, pattern),
+                  like(jobs.location, pattern),
+                  like(jobs.salary, pattern),
+                  like(companies.name, pattern),
+                ),
+              )
+            : eq(jobs.createdBy, params.createdBy),
+        );
+
+      response.isSuccess = true;
+      response.message = "Jobs searched successfully";
+      response.jobs = rows.map((row) => ({
+        ...row,
+        skills: row.skills ? (JSON.parse(row.skills) as string[]) : null,
+        statusLabel: Schemas.jobStatusIntToLabel[row.status],
+        typeLabel: Schemas.jobTypeIntToLabel[row.type],
+      }));
+    } catch (error) {
+      const message = "Unknown error in searching jobs";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.SearchJobs,
         message,
         error,
         metadata: params,

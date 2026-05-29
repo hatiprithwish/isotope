@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { ZJobStatusIntEnum, ZJobTypeIntEnum } from "./JobsCommon";
 
+export const ZSearchJobsApiRequest = z.object({
+  searchText: z.string().optional(),
+});
+export type SearchJobsApiRequest = z.infer<typeof ZSearchJobsApiRequest>;
+
 export const ZCreateJobApiRequest = z.object({
   title: z.string().min(1),
   companyId: z.number().nullable().optional(),

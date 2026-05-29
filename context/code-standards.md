@@ -46,6 +46,11 @@
 - Never write arbitrary pixel values when a Tailwind v4 class can express it — v4 accepts decimals (`w-1.25`, `gap-0.75`); check docs before using `[]`
 - Flag any design value that cannot be expressed in Tailwind before writing anything — do not silently approximate
 
+## AppTable
+
+- Pass content into the toolbar row via the `toolbarLeft?: ReactNode` prop — do not add separate `<div>` rows between the page header and `<AppTable>` for toolbar-level controls (search inputs, filter chips, etc.)
+- The toolbar row always renders; it contains `toolbarLeft` on the left and the column-visibility (`…`) menu on the right
+
 ## API Routes
 
 - Parse and validate request body with `zValidator` before any logic runs

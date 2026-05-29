@@ -1,7 +1,7 @@
 import { useState } from "react";
+import type { DragEndEvent } from "@dnd-kit/core";
 import {
   DndContext,
-  DragEndEvent,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
@@ -10,7 +10,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { AppTableProps } from "./AppTable.types";
+import type { AppTableProps } from "./AppTable.types";
 import { AppTableHeader } from "./AppTableHeader";
 import { AppTableBody } from "./AppTableBody";
 import { AppTableFooter } from "./AppTableFooter";
@@ -34,14 +34,16 @@ export function AppTable<TRow>({
   getRowClassName,
   stickyHeader,
   showFooter,
+  flush,
+  toolbarLeft,
 }: AppTableProps<TRow>) {
   const allColumns = columns.filter((c) => !c.hidden);
 
   const [columnOrder, setColumnOrder] = useState<string[]>(() => allColumns.map((c) => c.key));
 
-  // true = visible, false = hidden
+  // true = visible, false = hidden; defaultHidden columns start hidden but are toggleable
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(allColumns.map((c) => [c.key, true])),
+    Object.fromEntries(allColumns.map((c) => [c.key, !c.defaultHidden])),
   );
 
   const visibleColumns = allColumns.filter((c) => columnVisibility[c.key]);
@@ -81,9 +83,10 @@ export function AppTable<TRow>({
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className={TABLE_WRAPPER_CLASS}>
+      <div className={flush ? "flex flex-col flex-1 min-h-0 w-full" : TABLE_WRAPPER_CLASS}>
         {/* ─── Toolbar ──────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-end border-b border-border px-3 py-1.5">
+        <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
+          <div className="flex-1">{toolbarLeft}</div>
           <AppTableVisibilityPanel
             columns={allColumns}
             columnVisibility={columnVisibility}
@@ -93,7 +96,13 @@ export function AppTable<TRow>({
           />
         </div>
 
-        <div className={cn("overflow-x-auto", stickyHeader && "overflow-y-auto max-h-[600px]")}>
+        <div
+          className={cn(
+            "w-full overflow-x-auto",
+            stickyHeader && !flush && "overflow-y-auto max-h-150",
+            flush && "flex-1 overflow-auto",
+          )}
+        >
           <Table>
             <AppTableHeader
               columns={visibleColumns}
