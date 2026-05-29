@@ -27,10 +27,19 @@
 - `apps/web/src/routes/_authenticated/` — All authenticated frontend pages and co-located private components. Route layout wrapper enforces Clerk session check.
 - `apps/web/src/routes/_authenticated/<feature>/-data.ts` — Frontend data layer per feature. `QueryOptions` classes with hierarchical keys, mutation hooks with explicit `onError` handlers, `apiClient` calls.
 
+## Query Route Convention
+
+Endpoints that are semantically GET (read-only, no side effects) but require a request body for filters, search, or pagination use `POST` under a `/query/<resource>` prefix. This mirrors the Netheright pattern and keeps resource mutation routes (`POST /jobs`, `PATCH /jobs/:id`) clearly separate from read queries.
+
+- `POST /query/jobs` — paginated list with optional filters
+- `POST /query/jobs/count` — total record count with the same filters
+
+Pagination fields (`pageNo`, `pageSize`, `sortColumn`, `sortDirection`) are part of `ZGetJobsApiRequest` and default to `pageNo=1`, `pageSize=20`, `sortColumn=createdAt`, `sortDirection=desc` in the Repo layer. The DAL applies `LIMIT`/`OFFSET` and `ORDER BY` at the SQL level.
+
 ## Storage Model
 
 - **Cloudflare D1 (primary database)**: All structured data — `users`, `companies`, `contacts`, `contact_history`, `notes`, `jobs`. Every table has a `created_by` column (Clerk user ID) as a scoping key. Multi-tenant by design.
-  - `jobs`: Tracks job applications. `status` and `type` stored as integers (IntEnum). `skills` stored as JSON-stringified text array — parsed at application layer. `url` has a UNIQUE INDEX for deduplication. `match_score` nullable (reserved for v2.0). FK to `companies.id` via `company_id` (nullable). `status` integer mapping: 1=NotStarted (Manual default), 2=WaitingForHuman (LLM default), 3=Accepted, 4=Applied, 5=CompanyAdded, 6=Interviewing, 7=Offer, 8=Rejected. `type` mapping: 1=Manual, 2=LLM. **List/search endpoint is `POST /jobs/list` with `{ searchText?: string }` body** — `GET /jobs` no longer exists. Search runs SQLite `LIKE` across title, location, salary, and company name (LEFT JOIN on `companies`).
+  - `jobs`: Tracks job applications. `status` and `type` stored as integers (IntEnum). `skills` stored as JSON-stringified text array — parsed at application layer. `url` has a UNIQUE INDEX for deduplication. `match_score` nullable (reserved for v2.0). FK to `companies.id` via `company_id` (nullable). `status` integer mapping: 1=NotStarted (Manual default), 2=WaitingForHuman (LLM default), 3=Accepted, 4=Applied, 5=CompanyAdded, 6=Interviewing, 7=Offer, 8=Rejected. `type` mapping: 1=Manual, 2=LLM. **List endpoint is `POST /query/jobs` with `{ searchText?, pageNo?, pageSize?, sortColumn?, sortDirection? }` body** — server-side pagination via `LIMIT`/`OFFSET`, server-side sort via `ORDER BY`. **Count endpoint is `POST /query/jobs/count` with `{ searchText? }` body** — both endpoints share identical filter logic so count and list stay in sync. `GET /jobs` does not exist. Search runs SQLite `LIKE` across title, location, salary, and company name (LEFT JOIN on `companies`).
 - **No blob / file storage**: All content (AI summaries, draft bodies, personalization notes, conversation history) stored as text in D1 directly.
 
 ## Auth and Access Model

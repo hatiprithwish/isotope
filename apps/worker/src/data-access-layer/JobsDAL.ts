@@ -1,4 +1,4 @@
-import { and, count, eq, like, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, like, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { jobs, companies } from "@/db/tables";
@@ -112,7 +112,7 @@ export default class JobsDAL {
     return response;
   }
 
-  async getJobsCount(params: Schemas.GetJobsDALRequest) {
+  async getJobsCount(params: Schemas.GetJobsCountDALRequest) {
     const response: Schemas.GetJobsCountApiResponse = { isSuccess: false };
 
     try {
@@ -168,13 +168,23 @@ export default class JobsDAL {
     try {
       AppLogger.info({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.SearchJobs,
+        action: Schemas.LogAction.ListJobs,
         message: "Fetching jobs",
-        metadata: { userId: params.createdBy, searchText: params.searchText },
+        metadata: { userId: params.createdBy, searchText: params.searchText, pageNo: params.pageNo, pageSize: params.pageSize },
       });
 
       const term = params.searchText?.trim();
       const pattern = term ? `%${term}%` : undefined;
+
+      const sortColumnMap = {
+        [Schemas.JobSortColumn.CreatedAt]: jobs.createdAt,
+        [Schemas.JobSortColumn.Title]: jobs.title,
+        [Schemas.JobSortColumn.Status]: jobs.status,
+      };
+      const sortCol = sortColumnMap[params.sortColumn] ?? jobs.createdAt;
+      const orderExpr =
+        params.sortDirection === Schemas.SortDirection.Asc ? asc(sortCol) : desc(sortCol);
+      const offset = (params.pageNo - 1) * params.pageSize;
 
       const rows = await this.db
         .select({
@@ -208,10 +218,13 @@ export default class JobsDAL {
                 ),
               )
             : eq(jobs.createdBy, params.createdBy),
-        );
+        )
+        .orderBy(orderExpr)
+        .limit(params.pageSize)
+        .offset(offset);
 
       response.isSuccess = true;
-      response.message = "Jobs searched successfully";
+      response.message = "Jobs fetched successfully";
       response.jobs = rows.map((row) => ({
         ...row,
         skills: row.skills ? (JSON.parse(row.skills) as string[]) : null,
@@ -219,10 +232,10 @@ export default class JobsDAL {
         typeLabel: Schemas.jobTypeIntToLabel[row.type],
       }));
     } catch (error) {
-      const message = "Unknown error in searching jobs";
+      const message = "Unknown error in fetching jobs";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.SearchJobs,
+        action: Schemas.LogAction.ListJobs,
         message,
         error,
         metadata: params,

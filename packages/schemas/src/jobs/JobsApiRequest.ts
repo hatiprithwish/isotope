@@ -1,8 +1,13 @@
 import { z } from "zod";
-import { ZJobStatusIntEnum, ZJobTypeIntEnum } from "./JobsCommon";
+import { ZJobStatusIntEnum, ZJobTypeIntEnum, ZJobSortColumn } from "./JobsCommon";
+import { ZSortDirection } from "../common";
 
 export const ZGetJobsApiRequest = z.object({
   searchText: z.string().nullable().optional(),
+  pageNo: z.number().int().positive().optional(),
+  pageSize: z.number().int().positive().max(100).optional(),
+  sortColumn: ZJobSortColumn.optional(),
+  sortDirection: ZSortDirection.optional(),
 });
 export type GetJobsApiRequest = z.infer<typeof ZGetJobsApiRequest>;
 

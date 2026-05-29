@@ -70,6 +70,20 @@ change.
   - Backend: `JobsDAL.searchJobs` (LEFT JOIN + conditional `or(like(...))` filter), `JobsRepo.searchJobs`, `POST /list` route with `zValidator`.
   - Frontend: `useJobs(searchText)` accepts search term, POSTs to `/jobs/list`; TanStack Query key includes term so each search is cached independently. `useDeferredValue` on the raw input prevents query-per-keystroke. Search bar rendered via `AppTable`'s `toolbarLeft` prop on desktop; stacked below title in mobile header. Page resets to 1 on every query change.
 
+- **Jobs Query Routes — Pagination + /query prefix**:
+  - `SortDirection` enum (`asc`/`desc`) added to `packages/schemas/src/common.ts`.
+  - `JobSortColumn` enum (`createdAt`, `title`, `status`) added to `JobsCommon.ts`.
+  - `ZGetJobsApiRequest` extended with `pageNo`, `pageSize`, `sortColumn`, `sortDirection` — all optional, defaults applied in Repo.
+  - `GetJobsDALRequest` updated with required pagination fields; `GetJobsCountDALRequest` split out (no pagination — filter only).
+  - `Constants.DEFAULT_PAGE_NO = 1`, `Constants.DEFAULT_PAGE_SIZE = 20` added.
+  - `JobsDAL.getJobs` now applies `ORDER BY` (sort column map + direction) and `LIMIT`/`OFFSET` at SQL level.
+  - `JobsRepo.getJobs` applies defaults before calling DAL: `pageNo ?? 1`, `pageSize ?? 20`, `sortColumn ?? JobSortColumn.CreatedAt`, `sortDirection ?? SortDirection.Desc`.
+  - New `JobsQueryRoutes.ts` — `POST /query/jobs` (list) and `POST /query/jobs/count` (count), both using `ZGetJobsApiRequest` for validation.
+  - `JobsRoutes.ts` trimmed to mutation-only: `POST /jobs` (create) and `GET /jobs/:id` (detail). `/list` and `/count` routes removed.
+  - `index.ts` mounts `JobsQueryRoutes` at `/query/jobs`.
+  - `context/architecture.md` updated: Query Route Convention section added; Jobs storage model description updated to reflect new endpoint paths.
+  - **Frontend `-data.ts` update required**: `useJobs` should call `POST /query/jobs` and `useJobsCount` should call `POST /query/jobs/count` — update `apiClient` URLs accordingly.
+
 ## In Progress
 
 - None.
@@ -77,6 +91,7 @@ change.
 ## Next Up
 
 - Spec 003E — Manual Entry Form (Add New Job)
+- Update frontend `-data.ts` to use new `/query/jobs` and `/query/jobs/count` endpoints
 
 ## Open Questions
 
@@ -92,6 +107,7 @@ change.
 - Onboarding step-1 navigates to `/today` on framework save (step-2 route does not exist yet — will be updated when spec 03 is implemented).
 - `--accent-bg` / `--accent-text` CSS tokens added to `styles.css` Block 4 — were referenced in ui-context.md but not yet defined.
 - `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/worker/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template so the LLM outputs a document that matches the canonical structure and formatting, substituting the user's configured values (salary, locations, ethics flags, criteria, bands).
+- **Query route convention** — read-only endpoints that need a request body (for filters/pagination) use `POST /query/<resource>` prefix. Keeps mutation routes (`POST /jobs`) clearly separate from query routes (`POST /query/jobs`). `Constants.DEFAULT_PAGE_NO` and `Constants.DEFAULT_PAGE_SIZE` applied in the Repo layer so routes and DAL stay decoupled from default business logic.
 
 ## Session Notes
 

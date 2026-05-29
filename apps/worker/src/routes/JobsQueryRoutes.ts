@@ -1,36 +1,35 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
 import JobsRepo from "@/repositories/JobsRepo";
 import checkAuth from "@/middlewares/AuthMiddleware";
 import type AppContext from "@/config/AppContext";
 import * as Schemas from "@app/schemas";
 
-const JobsRoutes = new Hono<AppContext>();
+const JobsQueryRoutes = new Hono<AppContext>();
 
-JobsRoutes.post("/", checkAuth, zValidator("json", Schemas.ZCreateJobApiRequest), async (c) => {
+JobsQueryRoutes.post("/", checkAuth, zValidator("json", Schemas.ZGetJobsApiRequest), async (c) => {
   const clerkUserId = c.get("clerkUserId");
   const body = c.req.valid("json");
 
   const repo = new JobsRepo(c.env);
-  const response = await repo.createJob({ ...body, userId: clerkUserId });
+  const response = await repo.getJobs({ ...body, userId: clerkUserId });
 
-  return c.json(response, response.isSuccess ? 201 : 500);
+  return c.json(response, response.isSuccess ? 200 : 500);
 });
 
-JobsRoutes.get(
-  "/:id",
+JobsQueryRoutes.post(
+  "/count",
   checkAuth,
-  zValidator("param", z.object({ id: z.string().regex(/^\d+$/) })),
+  zValidator("json", Schemas.ZGetJobsApiRequest),
   async (c) => {
     const clerkUserId = c.get("clerkUserId");
-    const { id } = c.req.valid("param");
+    const { searchText } = c.req.valid("json");
 
     const repo = new JobsRepo(c.env);
-    const response = await repo.getJobDetails({ id: Number(id), userId: clerkUserId });
+    const response = await repo.countJobs({ userId: clerkUserId, searchText });
 
     return c.json(response, response.isSuccess ? 200 : 500);
   },
 );
 
-export default JobsRoutes;
+export default JobsQueryRoutes;

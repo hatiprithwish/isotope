@@ -7,6 +7,9 @@ export default class Constants {
     llama: "@cf/meta/llama-4-scout-17b-16e-instruct" as const,
   } as const;
 
+  static readonly DEFAULT_PAGE_NO = 1 as const;
+  static readonly DEFAULT_PAGE_SIZE = 20 as const;
+
   static readonly DEFAULT_COMPANY_RESEARCH_FRAMEWORK = `# Company Research — Evaluation Framework
 
 _Value-Aligned Company Filter & Prioritised Scorecard_
@@ -53,7 +56,7 @@ Score each criterion 0–5. Multiply by Weight for weighted score. Criteria orde
 | P3   | Company Stability              | Unstable companies trigger sudden layoffs, pivots, and scope changes that destroy learning and WLB simultaneously.               | Profitable or well-funded (runway ≥ 18 months). Headcount trending stable or growing. No recent mass layoffs. B2B SaaS, established product, or logistics preferred.                    | 4   |
 | P4   | Learning & Mentorship          | Rapid skill growth maximises long-term career value. Companies that invest in learning compound your returns.                    | Dedicated learning budget or time (e.g. 20% time, L&D stipend). Senior engineers with mentorship history. Structured onboarding. Engineering blog or public talks signal learning culture. | 4   |
 | P5   | Clear Advancement Pathways     | Without a visible promotion ladder, you risk being stuck at the same level with no structured way to grow.                      | Levelling framework exists (IC2→IC3, SDE1→SDE2). Internal promotions visible on LinkedIn. Performance review cycle defined. HM can articulate what "great in 12 months" looks like.     | 3   |
-| P6   | Tech Health & Stack            | Modern, market-relevant stack keeps skills current and CV strong. Tech-debt-ridden systems drain energy and learning.           | Stack in JD aligns with target skills. Engineering blog/GitHub shows modern practices (CI/CD, observability, microservices). Low Glassdoor complaints about legacy code.                 | 3   |
+| P6   | Tech Health & Stack            | Modern, market-relevant stack keeps skills current and CV strong. Tech-debt-ridden legacy systems drain energy and learning.           | Stack in JD aligns with target skills. Engineering blog/GitHub shows modern practices (CI/CD, observability, microservices). Low Glassdoor complaints about legacy code.                 | 3   |
 | P7   | Team Integration & Culture     | A collaborative, psychologically safe team makes hard problems enjoyable. Siloed or political teams make easy problems painful.  | Team size proportional (not ≥ 30 engineers per manager). Cross-functional collaboration mentioned. Reviews mention good peer relationships. Low internal-transfer churn.                  | 2   |
 | P8   | Impactful Projects             | Nice-to-have. Impact matters for CV and motivation, but is rarely verifiable pre-joining.                                       | Product has real users / revenue. Engineering challenges non-trivial (scale, reliability, ML, data). Ask in interview: "What shipped last quarter and what was your team's contribution?" | 1   |
 

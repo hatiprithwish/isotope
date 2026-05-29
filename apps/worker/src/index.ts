@@ -11,6 +11,7 @@ import CompaniesRoutes from "@/routes/CompaniesRoutes";
 import ContactsRoutes from "@/routes/ContactsRoutes";
 import FrameworksRoutes from "@/routes/FrameworksRoutes";
 import JobsRoutes from "@/routes/JobsRoutes";
+import JobsQueryRoutes from "@/routes/JobsQueryRoutes";
 import AuthRoutes from "@/routes/AuthRoutes";
 
 // DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests
@@ -51,6 +52,7 @@ app.route("/companies", CompaniesRoutes);
 app.route("/contacts", ContactsRoutes);
 app.route("/frameworks", FrameworksRoutes);
 app.route("/jobs", JobsRoutes);
+app.route("/query/jobs", JobsQueryRoutes);
 
 export default {
   fetch(req: Request, env: Env, ctx: ExecutionContext) {
