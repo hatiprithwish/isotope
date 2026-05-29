@@ -33,6 +33,33 @@ export default class JobsRepo {
     });
   }
 
+  async updateJob(params: Schemas.UpdateJobApiRequest & { userId: string; id: number }) {
+    AppLogger.info({
+      category: Schemas.LogCategory.Repo,
+      action: Schemas.LogAction.UpdateJob,
+      message: "Updating job",
+      metadata: { userId: params.userId, id: params.id },
+    });
+
+    const dalParams: Schemas.UpdateJobDALRequest = {
+      id: params.id,
+      createdBy: params.userId,
+    };
+    if (params.title !== undefined) dalParams.title = params.title;
+    if (params.companyId !== undefined) dalParams.companyId = params.companyId ?? null;
+    if (params.url !== undefined) dalParams.url = params.url;
+    if (params.description !== undefined) dalParams.description = params.description ?? null;
+    if (params.location !== undefined) dalParams.location = params.location ?? null;
+    if (params.salary !== undefined) dalParams.salary = params.salary ?? null;
+    if (params.source !== undefined) dalParams.source = params.source ?? null;
+    if (params.status !== undefined) dalParams.status = params.status;
+    if (params.type !== undefined) dalParams.type = params.type;
+    if (params.skills !== undefined) dalParams.skills = params.skills ?? null;
+    if (params.matchScore !== undefined) dalParams.matchScore = params.matchScore ?? null;
+
+    return await this.dal.updateJob(dalParams);
+  }
+
   async getJobDetails(params: { userId: string; id: number }) {
     AppLogger.info({
       category: Schemas.LogCategory.Repo,

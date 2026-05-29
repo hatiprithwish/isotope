@@ -27,13 +27,13 @@ const COLUMNS: AppTableColumn<Schemas.Job>[] = [
     key: "companyId",
     header: "Company",
     cell: (row) =>
-      row.companyId ? (
+      row.companyId && row.companyName ? (
         <a
           href={`/companies?panel=${row.companyId}`}
           onClick={(e) => e.stopPropagation()}
           className="text-[13px] text-primary hover:underline"
         >
-          {row.companyId}
+          {row.companyName}
         </a>
       ) : (
         <span className="text-[13px] text-(--text-secondary)">—</span>

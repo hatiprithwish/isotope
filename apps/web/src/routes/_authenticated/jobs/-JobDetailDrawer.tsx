@@ -1,14 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowsOutSimpleIcon, XIcon, LinkIcon } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import {
+  ArrowsOutSimpleIcon,
+  XIcon,
+  LinkIcon,
+  PencilSimpleIcon,
+  CaretRightIcon,
+} from "@phosphor-icons/react";
 import { JobsQueries } from "./-data";
 import { JobStatusBadge, JobTypeBadge } from "./-JobStatusBadge";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
+import type * as Schemas from "@app/schemas";
 
 interface JobDetailDrawerProps {
   jobId: number | null;
   onClose: () => void;
+  onEdit?: (job: Schemas.Job) => void;
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -19,7 +28,15 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PanelContent({ jobId, onClose }: { jobId: number; onClose: () => void }) {
+function PanelContent({
+  jobId,
+  onClose,
+  onEdit,
+}: {
+  jobId: number;
+  onClose: () => void;
+  onEdit?: (job: Schemas.Job) => void;
+}) {
   const { getToken } = useAuth();
   const navigate = useNavigate();
   const { data, isPending, isError } = useQuery(JobsQueries.detail(jobId, getToken));
@@ -44,6 +61,16 @@ function PanelContent({ jobId, onClose }: { jobId: number; onClose: () => void }
             </div>
           </div>
           <div className="flex gap-0.5 shrink-0">
+            {onEdit && job && (
+              <button
+                type="button"
+                onClick={() => onEdit(job)}
+                className="w-7 h-7 rounded-md flex items-center justify-center text-(--text-secondary) hover:bg-(--surface-raised) hover:text-foreground transition-colors"
+                title="Edit job"
+              >
+                <PencilSimpleIcon size={14} />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => navigate({ to: "/jobs/$jobId", params: { jobId: String(jobId) } })}
@@ -101,12 +128,38 @@ function PanelContent({ jobId, onClose }: { jobId: number; onClose: () => void }
                 <SectionLabel>Linked company</SectionLabel>
                 <a
                   href={`/companies?panel=${job.companyId}`}
-                  className="flex items-center gap-3 px-3 py-2.5 bg-background rounded-lg border border-border hover:bg-(--surface-raised) transition-colors"
+                  className="flex items-center gap-3 px-3 py-3 bg-background rounded-lg border border-border hover:bg-(--surface-raised) transition-colors"
                 >
-                  <LinkIcon size={14} className="text-(--text-secondary) shrink-0" />
-                  <span className="text-[13px] font-medium text-primary flex-1 min-w-0 truncate">
-                    Company #{job.companyId}
-                  </span>
+                  <div className="w-9 h-9 rounded-full bg-(--surface-raised) flex items-center justify-center shrink-0 text-[13px] font-semibold text-(--text-secondary)">
+                    {(job.companyName ?? "?")[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold text-foreground truncate">
+                      {job.companyName ?? `Company #${job.companyId}`}
+                    </div>
+                    {(job.companyIndustry || job.companyStatusLabel) && (
+                      <div className="text-[11px] text-(--text-secondary) mt-0.5 truncate">
+                        {[job.companyIndustry, job.companyStatusLabel].filter(Boolean).join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                  {job.companyFitBandLabel && (
+                    <span
+                      className={[
+                        "shrink-0 inline-flex items-center h-5 px-1.75 rounded-md text-[11px] font-semibold",
+                        job.companyFitBand === 1
+                          ? "bg-(--success-bg) text-(--success-text)"
+                          : job.companyFitBand === 2
+                            ? "bg-(--warning-bg) text-(--warning-text)"
+                            : job.companyFitBand === 4
+                              ? "bg-(--danger-bg) text-(--danger-text)"
+                              : "bg-(--surface-raised) text-(--text-secondary)",
+                      ].join(" ")}
+                    >
+                      {job.companyFitBandLabel}
+                    </span>
+                  )}
+                  <CaretRightIcon size={12} className="text-(--text-secondary) shrink-0" />
                 </a>
               </div>
             )}
@@ -192,7 +245,7 @@ function PanelContent({ jobId, onClose }: { jobId: number; onClose: () => void }
 }
 
 /* ─── Desktop: inline sliding panel ──────────────────────────────────────── */
-export function JobDetailPanel({ jobId, onClose }: JobDetailDrawerProps) {
+export function JobDetailPanel({ jobId, onClose, onEdit }: JobDetailDrawerProps) {
   const isOpen = jobId != null;
 
   return (
@@ -204,14 +257,24 @@ export function JobDetailPanel({ jobId, onClose }: JobDetailDrawerProps) {
       ].join(" ")}
       aria-hidden={!isOpen}
     >
-      {isOpen && <PanelContent jobId={jobId} onClose={onClose} />}
+      {isOpen && <PanelContent jobId={jobId} onClose={onClose} onEdit={onEdit} />}
     </aside>
   );
 }
 
 /* ─── Mobile: vaul bottom Drawer ─────────────────────────────────────────── */
-export function JobDetailMobileDrawer({ jobId, onClose }: JobDetailDrawerProps) {
-  const isOpen = jobId != null;
+export function JobDetailMobileDrawer({ jobId, onClose, onEdit }: JobDetailDrawerProps) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const isOpen = jobId != null && isMobile;
 
   return (
     <Drawer
@@ -224,7 +287,7 @@ export function JobDetailMobileDrawer({ jobId, onClose }: JobDetailDrawerProps) 
       <DrawerPortal>
         <DrawerOverlay />
         <DrawerContent className="h-[90vh] w-full p-0 bg-card border-t border-border rounded-t-xl">
-          {isOpen && <PanelContent jobId={jobId} onClose={onClose} />}
+          {isOpen && <PanelContent jobId={jobId} onClose={onClose} onEdit={onEdit} />}
         </DrawerContent>
       </DrawerPortal>
     </Drawer>

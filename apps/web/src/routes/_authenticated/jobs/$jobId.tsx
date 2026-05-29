@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { ArrowLeftIcon, LinkIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, CaretRightIcon, LinkIcon } from "@phosphor-icons/react";
 import { JobsQueries } from "./-data";
 import { JobStatusBadge, JobTypeBadge } from "./-JobStatusBadge";
 
@@ -88,12 +88,38 @@ function JobDetailPage() {
                 <SectionLabel>Linked company</SectionLabel>
                 <a
                   href={`/companies?panel=${job.companyId}`}
-                  className="flex items-center gap-3 px-3 py-2.5 bg-card rounded-lg border border-border hover:bg-(--surface-raised) transition-colors"
+                  className="flex items-center gap-3 px-3 py-3 bg-card rounded-lg border border-border hover:bg-(--surface-raised) transition-colors"
                 >
-                  <LinkIcon size={14} className="text-(--text-secondary) shrink-0" />
-                  <span className="text-[13px] font-medium text-primary flex-1 min-w-0 truncate">
-                    Company #{job.companyId}
-                  </span>
+                  <div className="w-9 h-9 rounded-full bg-(--surface-raised) flex items-center justify-center shrink-0 text-[13px] font-semibold text-(--text-secondary)">
+                    {(job.companyName ?? "?")[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold text-foreground truncate">
+                      {job.companyName ?? `Company #${job.companyId}`}
+                    </div>
+                    {(job.companyIndustry || job.companyStatusLabel) && (
+                      <div className="text-[11px] text-(--text-secondary) mt-0.5 truncate">
+                        {[job.companyIndustry, job.companyStatusLabel].filter(Boolean).join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                  {job.companyFitBandLabel && (
+                    <span
+                      className={[
+                        "shrink-0 inline-flex items-center h-5 px-1.75 rounded-md text-[11px] font-semibold",
+                        job.companyFitBand === 1
+                          ? "bg-(--success-bg) text-(--success-text)"
+                          : job.companyFitBand === 2
+                            ? "bg-(--warning-bg) text-(--warning-text)"
+                            : job.companyFitBand === 4
+                              ? "bg-(--danger-bg) text-(--danger-text)"
+                              : "bg-(--surface-raised) text-(--text-secondary)",
+                      ].join(" ")}
+                    >
+                      {job.companyFitBandLabel}
+                    </span>
+                  )}
+                  <CaretRightIcon size={12} className="text-(--text-secondary) shrink-0" />
                 </a>
               </div>
             )}

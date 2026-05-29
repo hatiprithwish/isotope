@@ -38,6 +38,23 @@ JobsRoutes.post("/list", checkAuth, zValidator("json", Schemas.ZGetJobsApiReques
   return c.json(response, response.isSuccess ? 200 : 500);
 });
 
+JobsRoutes.patch(
+  "/:id",
+  checkAuth,
+  zValidator("param", z.object({ id: z.string().regex(/^\d+$/) })),
+  zValidator("json", Schemas.ZUpdateJobApiRequest),
+  async (c) => {
+    const clerkUserId = c.get("clerkUserId");
+    const { id } = c.req.valid("param");
+    const body = c.req.valid("json");
+
+    const repo = new JobsRepo(c.env);
+    const response = await repo.updateJob({ ...body, id: Number(id), userId: clerkUserId });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
 JobsRoutes.get(
   "/:id",
   checkAuth,

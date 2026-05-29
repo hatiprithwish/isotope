@@ -10,4 +10,6 @@ export type GetJobsDALRequest = Pick<Job, "createdBy"> & {
 };
 
 export type UpdateJobDALRequest = FindJobDetailsDALRequest &
-  NullableDALFields<Omit<Job, "id" | "createdBy" | "createdAt" | "statusLabel" | "typeLabel">>;
+  Partial<
+    NullableDALFields<Omit<Job, "id" | "createdBy" | "createdAt" | "statusLabel" | "typeLabel">>
+  >;

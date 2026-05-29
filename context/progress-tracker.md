@@ -70,13 +70,22 @@ change.
   - Backend: `JobsDAL.searchJobs` (LEFT JOIN + conditional `or(like(...))` filter), `JobsRepo.searchJobs`, `POST /list` route with `zValidator`.
   - Frontend: `useJobs(searchText)` accepts search term, POSTs to `/jobs/list`; TanStack Query key includes term so each search is cached independently. `useDeferredValue` on the raw input prevents query-per-keystroke. Search bar rendered via `AppTable`'s `toolbarLeft` prop on desktop; stacked below title in mobile header. Page resets to 1 on every query change.
 
+- **Spec 003E — Manual Entry & Edit Form**:
+  - Backend: `updateJob` added to `JobsDAL` (partial-field update via dynamic `setValues`, ownership check), `JobsRepo` (maps `UpdateJobApiRequest` → `UpdateJobDALRequest`), `PATCH /jobs/:id` route in `JobsRoutes.ts`.
+  - `UpdateJobDALRequest` in `packages/schemas` updated to `Partial<NullableDALFields<...>>` so only `id`+`createdBy` are required — all update fields optional.
+  - `-data.ts`: `useCreateJob` (`POST /jobs`) and `useUpdateJob` (`PATCH /jobs/:id`) mutation hooks with mandatory `onError` toast handlers. Sentry captured globally via `queryClient.ts` `mutations.onError`.
+  - `-CompanySelect.tsx`: autocomplete dropdown — fetches all companies, filters by search input, supports clear, keyboard-accessible.
+  - `-JobEntryForm.tsx`: TanStack Form dual-mode form. Create mode: all fields, required validation on `title` + `url`. Edit mode: pre-populated from `initialData`, same fields fully editable. Submits to correct mutation based on presence of `initialData.id`. Success: toast + `onSuccess()`. Required fields block submission with inline errors.
+  - `index.tsx`: `formMode` state (`null | "create" | Job`). "Add job" button in both mobile and desktop headers. Edit button (pencil icon) in `JobDetailPanel`/`JobDetailMobileDrawer` header — passes job to `setFormMode`. Form rendered in modal overlay.
+  - `-JobDetailDrawer.tsx`: `onEdit?: (job: Job) => void` prop added; pencil icon button shown when `onEdit` + loaded job both present.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Spec 003E — Manual Entry Form (Add New Job)
+- Spec 003F — Cloudflare Workflow LLM Pipeline
 
 ## Open Questions
 
