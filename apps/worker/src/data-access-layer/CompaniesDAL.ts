@@ -106,7 +106,7 @@ export default class CompaniesDAL {
           ELSE ${Schemas.CompanyStatusLabelEnum.WaitingHuman}
         END
           `,
-          createdBy: users.clerkId,
+          createdBy: companies.createdBy,
           createdAt: companies.createdAt,
           updatedAt: companies.updatedAt,
         })

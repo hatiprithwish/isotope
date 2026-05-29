@@ -7,6 +7,18 @@ import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/logger";
 import Utility from "@/utils";
 
+const contactStatusLabelExpr = sql<Schemas.ContactStatusLabelEnum>`CASE
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.NotStarted} THEN ${Schemas.ContactStatusLabelEnum.NotStarted}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.DraftReady} THEN ${Schemas.ContactStatusLabelEnum.DraftReady}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.InPipeline} THEN ${Schemas.ContactStatusLabelEnum.InPipeline}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Replied} THEN ${Schemas.ContactStatusLabelEnum.Replied}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Closed} THEN ${Schemas.ContactStatusLabelEnum.Closed}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Dead} THEN ${Schemas.ContactStatusLabelEnum.Dead}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.ReEngage} THEN ${Schemas.ContactStatusLabelEnum.ReEngage}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Failed} THEN ${Schemas.ContactStatusLabelEnum.Failed}
+  ELSE ${Schemas.ContactStatusLabelEnum.NotStarted}
+END`;
+
 export default class ContactsDAL {
   private db: DrizzleD1Database;
 
@@ -106,17 +118,7 @@ export default class ContactsDAL {
           abVariant: contacts.abVariant,
           abReplied: contacts.abReplied,
           status: contacts.status,
-          statusLabel: sql<Schemas.ContactStatusLabelEnum>`CASE
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.NotStarted} THEN ${Schemas.ContactStatusLabelEnum.NotStarted}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.DraftReady} THEN ${Schemas.ContactStatusLabelEnum.DraftReady}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.InPipeline} THEN ${Schemas.ContactStatusLabelEnum.InPipeline}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Replied} THEN ${Schemas.ContactStatusLabelEnum.Replied}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Closed} THEN ${Schemas.ContactStatusLabelEnum.Closed}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Dead} THEN ${Schemas.ContactStatusLabelEnum.Dead}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.ReEngage} THEN ${Schemas.ContactStatusLabelEnum.ReEngage}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Failed} THEN ${Schemas.ContactStatusLabelEnum.Failed}
-            ELSE ${Schemas.ContactStatusLabelEnum.NotStarted}
-          END`,
+          statusLabel: contactStatusLabelExpr,
           draftBody: contacts.draftBody,
           draftSubject: contacts.draftSubject,
           personalizationNotes: contacts.personalizationNotes,
@@ -190,17 +192,7 @@ export default class ContactsDAL {
           abVariant: contacts.abVariant,
           abReplied: contacts.abReplied,
           status: contacts.status,
-          statusLabel: sql<Schemas.ContactStatusLabelEnum>`CASE
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.NotStarted} THEN ${Schemas.ContactStatusLabelEnum.NotStarted}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.DraftReady} THEN ${Schemas.ContactStatusLabelEnum.DraftReady}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.InPipeline} THEN ${Schemas.ContactStatusLabelEnum.InPipeline}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Replied} THEN ${Schemas.ContactStatusLabelEnum.Replied}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Closed} THEN ${Schemas.ContactStatusLabelEnum.Closed}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Dead} THEN ${Schemas.ContactStatusLabelEnum.Dead}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.ReEngage} THEN ${Schemas.ContactStatusLabelEnum.ReEngage}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Failed} THEN ${Schemas.ContactStatusLabelEnum.Failed}
-            ELSE ${Schemas.ContactStatusLabelEnum.NotStarted}
-          END`,
+          statusLabel: contactStatusLabelExpr,
           draftBody: contacts.draftBody,
           draftSubject: contacts.draftSubject,
           personalizationNotes: contacts.personalizationNotes,
@@ -225,6 +217,69 @@ export default class ContactsDAL {
       response.contacts = contactsResponse;
     } catch (error) {
       const message = "Unknown error in listing contacts";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.ListContacts,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async getContactsByCompany(params: Schemas.GetContactsByCompanyDALRequest) {
+    const response: Schemas.GetContactsApiResponse = { isSuccess: false };
+
+    try {
+      const contactsResponse = await this.db
+        .select({
+          id: contacts.id,
+          name: contacts.name,
+          designation: contacts.designation,
+          email: contacts.email,
+          linkedinUrl: contacts.linkedinUrl,
+          linkedinConnected: contacts.linkedinConnected,
+          companyId: contacts.companyId,
+          jobId: contacts.jobId,
+          sequencePosition: contacts.sequencePosition,
+          lastTouchAt: contacts.lastTouchAt,
+          nextTouchDueAt: contacts.nextTouchDueAt,
+          deadAt: contacts.deadAt,
+          reEngageAt: contacts.reEngageAt,
+          abVariable: contacts.abVariable,
+          abVariant: contacts.abVariant,
+          abReplied: contacts.abReplied,
+          status: contacts.status,
+          statusLabel: contactStatusLabelExpr,
+          draftBody: contacts.draftBody,
+          draftSubject: contacts.draftSubject,
+          personalizationNotes: contacts.personalizationNotes,
+          manualPersonalizationNotes: contacts.manualPersonalizationNotes,
+          reengagementRecommendation: contacts.reengagementRecommendation,
+          source: contacts.source,
+          notes: contacts.notes,
+          failedAt: contacts.failedAt,
+          retryCount: contacts.retryCount,
+          createdBy: contacts.createdBy,
+          companyName: companies.name,
+          companyFitBand: companies.fitBand,
+          createdAt: contacts.createdAt,
+          updatedAt: contacts.updatedAt,
+        })
+        .from(contacts)
+        .leftJoin(companies, eq(contacts.companyId, companies.id))
+        .where(
+          and(eq(contacts.createdBy, params.createdBy), eq(contacts.companyId, params.companyId)),
+        );
+
+      response.isSuccess = true;
+      response.message = "Contacts fetched successfully";
+      response.contacts = contactsResponse;
+    } catch (error) {
+      const message = "Unknown error in listing contacts by company";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
         action: Schemas.LogAction.ListContacts,

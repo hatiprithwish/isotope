@@ -1,10 +1,19 @@
+import { useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { ArrowLeftIcon, DotsThreeIcon, WarningIcon, CheckCircleIcon } from "@phosphor-icons/react";
+import {
+  ArrowLeftIcon,
+  DotsThreeIcon,
+  WarningIcon,
+  CheckCircleIcon,
+  MinusIcon,
+  PlusIcon,
+} from "@phosphor-icons/react";
 import { CompaniesQueries, useUpdateCompany } from "../-data";
 import { StatusBadge } from "../-StatusBadge";
 import Utilities from "@/utils";
+import { DEFAULT_CRITERIA, MAX_SCORE, computeWeightedScore, deriveFitBand } from "../-criteria";
 
 export const Route = createFileRoute("/_authenticated/companies/$companyId/")({
   component: CompanyDetailPage,
@@ -54,13 +63,33 @@ function CompanyDetailPage() {
   );
   const company = data?.company;
 
+  const initialScores = Object.fromEntries(DEFAULT_CRITERIA.map((c) => [c.name, c.defaultScore]));
+  const [criteriaScores, setCriteriaScores] = useState<Record<string, number>>(initialScores);
+
   if (isPending) return <div className="p-6 text-(--text-secondary) text-sm">Loading...</div>;
   if (isError || !company)
     return <div className="p-6 text-(--text-secondary) text-sm">Company not found.</div>;
 
-  const score = company.weightedScore ?? 0;
-  const max = 135;
   const hasEthicsFlag = company.isEthicsCompliant === false;
+  const isWaitingHuman = company.status === 1;
+  const localWeighted = computeWeightedScore(criteriaScores);
+  const displayScore = isWaitingHuman ? localWeighted : (company.weightedScore ?? 0);
+
+  function adjustScore(name: string, delta: number) {
+    setCriteriaScores((prev) => ({
+      ...prev,
+      [name]: Math.max(1, Math.min(5, (prev[name] ?? 3) + delta)),
+    }));
+  }
+
+  function handleSaveScores() {
+    const weighted = computeWeightedScore(criteriaScores);
+    const fit = deriveFitBand(weighted);
+    updateCompany.mutate({
+      id: company!.id,
+      body: { company: { weightedScore: weighted, fitBand: fit } },
+    });
+  }
 
   function handleAccept() {
     updateCompany.mutate({ id: company!.id, body: { company: { status: 2 } } });
@@ -125,7 +154,7 @@ function CompanyDetailPage() {
         {/* Score card */}
         <div className="px-4 pb-4">
           <div className="bg-sidebar border border-border rounded-[10px] p-4">
-            <ScoreBar score={score} max={max} />
+            <ScoreBar score={displayScore} max={MAX_SCORE} />
           </div>
         </div>
 
@@ -212,6 +241,78 @@ function CompanyDetailPage() {
           </div>
         )}
 
+        {/* Stage 3 Scored criteria */}
+        <div className="px-4 pb-4">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
+              Stage 3 · Scored criteria
+            </div>
+            {isWaitingHuman && (
+              <span className="text-[11px] font-medium text-(--text-secondary)">Tap to edit</span>
+            )}
+          </div>
+          <div className="bg-sidebar border border-border rounded-[10px] overflow-hidden">
+            {DEFAULT_CRITERIA.map((c, i) => {
+              const s = criteriaScores[c.name] ?? c.defaultScore;
+              return (
+                <div
+                  key={c.name}
+                  className={[
+                    "flex items-center gap-3 px-4 py-3.5",
+                    i < DEFAULT_CRITERIA.length - 1 ? "border-b border-border" : "",
+                  ].join(" ")}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium text-foreground leading-snug">
+                      {c.name}
+                    </div>
+                    <div className="text-[11px] text-(--text-secondary) mt-0.5">
+                      Weight {c.weight}
+                    </div>
+                  </div>
+                  {isWaitingHuman ? (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => adjustScore(c.name, -1)}
+                        disabled={s <= 1}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-(--surface-raised) text-(--text-secondary) hover:bg-border hover:text-foreground transition-colors disabled:opacity-30"
+                      >
+                        <MinusIcon size={14} />
+                      </button>
+                      <span className="w-6 text-center text-[14px] font-semibold text-foreground">
+                        {s}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => adjustScore(c.name, 1)}
+                        disabled={s >= 5}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-(--surface-raised) text-(--text-secondary) hover:bg-border hover:text-foreground transition-colors disabled:opacity-30"
+                      >
+                        <PlusIcon size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[13px] font-semibold text-foreground shrink-0">
+                      {s * c.weight}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {isWaitingHuman && (
+            <button
+              type="button"
+              onClick={handleSaveScores}
+              disabled={updateCompany.isPending}
+              className="mt-3 w-full h-11 rounded-[10px] text-sm font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors disabled:opacity-50"
+            >
+              Save scores
+            </button>
+          )}
+        </div>
+
         {/* Notes */}
         {company.notes && (
           <div className="px-4 pb-4">
@@ -224,7 +325,6 @@ function CompanyDetailPage() {
           </div>
         )}
 
-        {/* Bottom spacer so content isn't behind action bar */}
         <div className="h-4" />
       </div>
 

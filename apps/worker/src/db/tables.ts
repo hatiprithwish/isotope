@@ -40,6 +40,8 @@ export const companies = table(
     userContext: t.text("user_context"),
     notes: t.text(),
     status: t.integer().$type<Schemas.CompanyStatusIntEnum>().notNull(),
+    failedAt: t.text("failed_at"),
+    retryCount: t.integer("retry_count"),
     createdAt: t.text("created_at").notNull(),
     updatedAt: t.text("updated_at"),
   },
@@ -104,6 +106,48 @@ export const contactHistory = table(
   (table) => [
     t.index("IDX_contact_history_contact_id").on(table.contactId),
     t.index("IDX_contact_history_created_by").on(table.createdBy),
+  ],
+);
+
+export const frameworks = table(
+  "frameworks",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    type: t.integer().notNull(),
+    content: t.text().notNull(),
+    formInputs: t.text("form_inputs"),
+    version: t.integer().notNull(),
+    isCustomized: t.integer("is_customized", { mode: "boolean" }).notNull().default(false),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [t.index("idx_frameworks_created_by").on(table.createdBy, table.type, table.version)],
+);
+
+export const jobs = table(
+  "jobs",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    status: t.integer().$type<Schemas.JobStatusIntEnum>().notNull(),
+    title: t.text().notNull(),
+    companyId: t.int("company_id"),
+    url: t.text(),
+    location: t.text(),
+    salary: t.text(),
+    source: t.text(),
+    type: t.integer().$type<Schemas.JobTypeIntEnum>().notNull(),
+    description: t.text(),
+    skills: t.text(),
+    createdBy: t.text("created_by").notNull(),
+    matchScore: t.real("match_score"),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [
+    t.uniqueIndex("UNQ_jobs_url").on(table.url),
+    t.index("IDX_jobs_created_by").on(table.createdBy),
+    t.index("IDX_jobs_company_id").on(table.companyId),
   ],
 );
 

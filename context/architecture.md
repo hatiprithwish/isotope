@@ -29,7 +29,8 @@
 
 ## Storage Model
 
-- **Cloudflare D1 (primary database)**: All structured data — `users`, `companies`, `contacts`, `contact_history`, `notes`. Every table has a `created_by` column (Clerk user ID) as a scoping key. Multi-tenant by design.
+- **Cloudflare D1 (primary database)**: All structured data — `users`, `companies`, `contacts`, `contact_history`, `notes`, `jobs`. Every table has a `created_by` column (Clerk user ID) as a scoping key. Multi-tenant by design.
+  - `jobs`: Tracks job applications. `status` and `type` stored as integers (IntEnum). `skills` stored as JSON-stringified text array — parsed at application layer. `url` has a UNIQUE INDEX for deduplication. `match_score` nullable (reserved for v2.0). FK to `companies.id` via `company_id` (nullable). `status` integer mapping: 1=NotStarted (Manual default), 2=WaitingForHuman (LLM default), 3=Accepted, 4=Applied, 5=CompanyAdded, 6=Interviewing, 7=Offer, 8=Rejected. `type` mapping: 1=Manual, 2=LLM. **List/search endpoint is `POST /jobs/list` with `{ searchText?: string }` body** — `GET /jobs` no longer exists. Search runs SQLite `LIKE` across title, location, salary, and company name (LEFT JOIN on `companies`).
 - **No blob / file storage**: All content (AI summaries, draft bodies, personalization notes, conversation history) stored as text in D1 directly.
 
 ## Auth and Access Model
@@ -45,6 +46,7 @@
 1. **Layer import order is strictly enforced: Routes → Repo → DAL → DB.** Routes never call DAL or Drizzle directly. Repos never call Drizzle directly.
 2. **All types and Zod schemas live exclusively in `packages/schemas`.** No type or schema may be defined inside `apps/web` or `apps/worker`.
 3. **Every DB query filters by `created_by`.** No query may return records belonging to a different user.
-4. **Enum values stored as integers in DB; API responses include both the integer and the human-readable label.** The Repo `withLabels()` pattern maps int → label before returning to routes.
+4. **Enum values stored as integers in DB; API responses include both the integer and the human-readable label.** The DAL maps int → label before returning to routes.
 5. **Every mutation hook must declare an explicit `onError` handler that surfaces the error via the shadcn toast utility.** Silent or absent `onError` is forbidden.
 6. **Every Drizzle schema change must be immediately followed by `pnpm db:generate` and `pnpm db:migrate`.** Migration files are committed in the same change as the schema modification.
+7. **Default / canonical framework documents are stored as static string constants in `apps/worker/src/config/Constants.ts`, not in the database.** They are injected into AI system prompts as reference templates. The DB only stores user-customised versions saved after generation.

@@ -4,6 +4,7 @@ export enum LogCategory {
   Repo = "Repo",
   Middleware = "Middleware",
   DB = "DB",
+  Provider = "Provider",
 }
 
 export enum LogAction {
@@ -29,10 +30,30 @@ export enum LogAction {
   UpdateCompany = "UpdateCompany",
   DeleteCompany = "DeleteCompany",
 
+  // AI
+  AiRun = "AiRun",
+
   // Contacts
   CreateContact = "CreateContact",
   GetContactDetails = "GetContactDetails",
   ListContacts = "ListContacts",
   UpdateContact = "UpdateContact",
   DeleteContact = "DeleteContact",
+
+  // Frameworks
+  GenerateFramework = "GenerateFramework",
+  SaveFramework = "SaveFramework",
+  GetLatestFramework = "GetLatestFramework",
+  GetFrameworkVersions = "GetFrameworkVersions",
+
+  // Jobs
+  SearchJobs = "SearchJobs",
+  CreateJob = "CreateJob",
+  GetJobDetails = "GetJobDetails",
+  ListJobs = "ListJobs",
+  CountJobs = "CountJobs",
+  UpdateJob = "UpdateJob",
+  DeleteJob = "DeleteJob",
+  RunJobIngestion = "RunJobIngestion",
+  DuplicateJobBlocked = "DuplicateJobBlocked",
 }

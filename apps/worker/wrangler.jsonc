@@ -10,6 +10,10 @@
     // DEV_NOTE: Placeholder so wrangler types generates CLERK_SECRET_KEY in Env. Real value comes from .dev.vars locally and wrangler secret in prod.
     "CLERK_SECRET_KEY": ""
   },
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
   "d1_databases": [
     {
       "binding": "DB",
@@ -25,6 +29,9 @@
       "vars": {
         "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://scaffold-web-staging.hatiprithwish.workers.dev"
       },
+      "ai": {
+        "binding": "AI"
+      },
       "d1_databases": [
         {
           "binding": "DB",
@@ -39,6 +46,9 @@
       "name": "scaffold-worker",
       "vars": {
         "ALLOWED_CORS_ORIGIN": "https://scaffold-web.hatiprithwish.workers.dev"
+      },
+      "ai": {
+        "binding": "AI"
       },
       "d1_databases": [
         {

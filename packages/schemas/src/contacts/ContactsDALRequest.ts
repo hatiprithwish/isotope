@@ -7,6 +7,8 @@ export type FindContactDALRequest = Pick<Contact, "id" | "createdBy">;
 
 export type GetContactsDALRequest = Pick<Contact, "createdBy">;
 
+export type GetContactsByCompanyDALRequest = Pick<Contact, "createdBy"> & { companyId: number };
+
 export type UpdateContactDALRequest = FindContactDALRequest &
   NullableDALFields<Omit<Contact, "id" | "createdBy" | "createdAt" | "statusLabel">>;
 

@@ -23,6 +23,13 @@ export default class ContactsRepo {
     return await this.dal.getContacts({ createdBy: params.userId });
   }
 
+  async getContactsByCompany(params: { userId: string; companyId: number }) {
+    return await this.dal.getContactsByCompany({
+      createdBy: params.userId,
+      companyId: params.companyId,
+    });
+  }
+
   async updateContact(params: Schemas.UpdateContactApiRequest & { userId: string; id: number }) {
     return this.dal.updateContact({
       id: params.id,

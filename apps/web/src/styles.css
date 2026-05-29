@@ -252,7 +252,16 @@
    Names in this block are NOT part of the scaffold contract.
    ============================================================ */
 
-/* none for Isotope — all required tokens are covered above */
+:root {
+  /* ── Accent badge tokens (Draft Ready, Touch labels, wordmark superscript) */
+  --accent-bg: oklch(0.962 0.038 131.6); /* light moss tint          */
+  --accent-text: oklch(0.413 0.115 131.6); /* dark moss                */
+}
+
+.dark {
+  --accent-bg: oklch(0.262 0.042 131.6); /* dark moss tint           */
+  --accent-text: oklch(0.849 0.207 128.9); /* lime                     */
+}
 
 /* ============================================================
    BASE LAYER

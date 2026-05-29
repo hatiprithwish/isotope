@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import CompaniesRepo from "@/repositories/CompaniesRepo";
+import ContactsRepo from "@/repositories/ContactsRepo";
 import checkAuth from "@/middlewares/AuthMiddleware";
 import type AppContext from "@/config/AppContext";
 import * as Schemas from "@app/schemas";
@@ -76,6 +77,24 @@ CompaniesRoutes.delete(
     const response = await repo.deleteCompany({ id: Number(id), userId });
 
     return c.json(response, response.isSuccess ? 200 : 404);
+  },
+);
+
+CompaniesRoutes.get(
+  "/:id/contacts",
+  checkAuth,
+  zValidator("param", z.object({ id: z.string() })),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { id } = c.req.valid("param");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.getContactsByCompany({
+      userId,
+      companyId: Number(id),
+    });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
   },
 );
 

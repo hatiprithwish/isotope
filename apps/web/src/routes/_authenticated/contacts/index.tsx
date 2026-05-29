@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
@@ -7,6 +8,7 @@ import { ContactsQueries } from "./-data";
 import MobileContactRow from "./-MobileContactRow";
 import DesktopContactRow from "./-DesktopContactRow";
 import DesktopPanel from "./-DesktopPanel";
+import AddContactModal from "./-AddContactModal";
 
 const searchSchema = z.object({
   panel: z.number().optional(),
@@ -21,6 +23,7 @@ function ContactsPage() {
   const { getToken } = useAuth();
   const { panel } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { data, isPending, isError } = useQuery(ContactsQueries.list(getToken));
   const contacts = data?.contacts ?? [];
@@ -168,9 +171,9 @@ function ContactsPage() {
       </div>
 
       {/* ── DESKTOP ────────────────────────────────────────────── */}
-      <div className="hidden md:flex h-full overflow-hidden">
+      <div className="hidden md:flex h-full overflow-hidden relative">
         {/* Left: table */}
-        <div className="flex flex-col overflow-hidden border-r border-border flex-1">
+        <div className="flex flex-col overflow-hidden flex-1">
           {/* Topbar */}
           <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
             <span className="text-base font-semibold text-foreground tracking-tight">Contacts</span>
@@ -183,6 +186,7 @@ function ContactsPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setShowAddModal(true)}
                 className="h-7.75 px-3 flex items-center gap-1.5 rounded-lg text-[13px] font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors"
               >
                 <PlusIcon size={13} />
@@ -260,13 +264,19 @@ function ContactsPage() {
           </div>
         </div>
 
-        {/* Right: panel */}
+        {/* Backdrop — closes panel on outside click */}
         {selectedContact && (
-          <div className="w-100 shrink-0">
+          <div className="absolute inset-0 z-10" onClick={closePanel} aria-hidden />
+        )}
+        {/* Right: panel — overlays the table */}
+        {selectedContact && (
+          <div className="absolute inset-y-0 right-0 w-1/3 border-l border-border shadow-xl z-20">
             <DesktopPanel contact={selectedContact} onClose={closePanel} />
           </div>
         )}
       </div>
+
+      {showAddModal && <AddContactModal onClose={() => setShowAddModal(false)} />}
     </>
   );
 }
