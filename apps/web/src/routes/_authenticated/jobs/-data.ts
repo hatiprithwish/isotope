@@ -8,28 +8,33 @@ export class JobsQueries {
   static readonly keys = {
     all: () => ["jobs"] as const,
     list: (searchText: string) => ["jobs", "list", searchText] as const,
-    count: () => ["jobs", "count"] as const,
+    count: (searchText: string) => ["jobs", "count", searchText] as const,
     detail: (id: number) => ["jobs", id] as const,
   };
 
-  static list(searchText: string, getToken: () => Promise<string | null>) {
+  static list(params: Schemas.GetJobsApiRequest, getToken: () => Promise<string | null>) {
     return queryOptions({
-      queryKey: JobsQueries.keys.list(searchText),
+      queryKey: JobsQueries.keys.list(params.searchText ?? ""),
       queryFn: ({ signal }) =>
         apiClient<Schemas.GetJobsApiResponse>("/jobs/list", getToken, {
           signal,
           method: "POST",
-          body: JSON.stringify({ searchText: searchText || undefined }),
+          body: JSON.stringify(params),
           headers: { "Content-Type": "application/json" },
         }),
     });
   }
 
-  static count(getToken: () => Promise<string | null>) {
+  static count(params: Schemas.GetJobsApiRequest, getToken: () => Promise<string | null>) {
     return queryOptions({
-      queryKey: JobsQueries.keys.count(),
+      queryKey: JobsQueries.keys.count(params.searchText ?? ""),
       queryFn: ({ signal }) =>
-        apiClient<Schemas.GetJobsCountApiResponse>("/jobs/count", getToken, { signal }),
+        apiClient<Schemas.GetJobsCountApiResponse>("/jobs/count", getToken, {
+          signal,
+          method: "POST",
+          body: JSON.stringify(params),
+          headers: { "Content-Type": "application/json" },
+        }),
     });
   }
 
@@ -42,12 +47,12 @@ export class JobsQueries {
   }
 }
 
-export function useJobs(searchText: string) {
+export function useJobs(params: Schemas.GetJobsApiRequest) {
   const { getToken } = useAuth();
-  return useQuery(JobsQueries.list(searchText, getToken));
+  return useQuery(JobsQueries.list(params, getToken));
 }
 
-export function useJobsCount() {
+export function useJobsCount(params: Schemas.GetJobsApiRequest) {
   const { getToken } = useAuth();
-  return useQuery(JobsQueries.count(getToken));
+  return useQuery(JobsQueries.count(params, getToken));
 }

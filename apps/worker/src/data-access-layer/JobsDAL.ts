@@ -67,7 +67,7 @@ export default class JobsDAL {
     return response;
   }
 
-  async getJobDetails(params: Schemas.FindJobDALRequest) {
+  async getJobDetails(params: Schemas.FindJobDetailsDALRequest) {
     const response: Schemas.GetJobApiResponse = { isSuccess: false };
 
     try {
@@ -123,10 +123,26 @@ export default class JobsDAL {
         metadata: params,
       });
 
+      const term = params.searchText?.trim();
+      const pattern = term ? `%${term}%` : undefined;
+
       const [row] = await this.db
         .select({ count: count() })
         .from(jobs)
-        .where(eq(jobs.createdBy, params.createdBy));
+        .leftJoin(companies, eq(jobs.companyId, companies.id))
+        .where(
+          pattern
+            ? and(
+                eq(jobs.createdBy, params.createdBy),
+                or(
+                  like(jobs.title, pattern),
+                  like(jobs.location, pattern),
+                  like(jobs.salary, pattern),
+                  like(companies.name, pattern),
+                ),
+              )
+            : eq(jobs.createdBy, params.createdBy),
+        );
 
       response.isSuccess = true;
       response.message = "Jobs counted successfully";
@@ -152,44 +168,8 @@ export default class JobsDAL {
     try {
       AppLogger.info({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.ListJobs,
-        message: "Querying jobs list",
-        metadata: params,
-      });
-
-      const rows = await this.db.select().from(jobs).where(eq(jobs.createdBy, params.createdBy));
-
-      response.isSuccess = true;
-      response.message = "Jobs fetched successfully";
-      response.jobs = rows.map((row) => ({
-        ...row,
-        skills: row.skills ? (JSON.parse(row.skills) as string[]) : null,
-        statusLabel: Schemas.jobStatusIntToLabel[row.status],
-        typeLabel: Schemas.jobTypeIntToLabel[row.type],
-      }));
-    } catch (error) {
-      const message = "Unknown error in listing jobs";
-      AppLogger.error({
-        category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.ListJobs,
-        message,
-        error,
-        metadata: params,
-      });
-      response.message = message;
-    }
-
-    return response;
-  }
-
-  async searchJobs(params: Schemas.SearchJobsDALRequest) {
-    const response: Schemas.GetJobsApiResponse = { isSuccess: false };
-
-    try {
-      AppLogger.info({
-        category: Schemas.LogCategory.DAL,
         action: Schemas.LogAction.SearchJobs,
-        message: "Searching jobs",
+        message: "Fetching jobs",
         metadata: { userId: params.createdBy, searchText: params.searchText },
       });
 

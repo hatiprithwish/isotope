@@ -3,11 +3,11 @@ import type { Job, JobBase } from "./JobsCommon";
 
 export type CreateJobDALRequest = JobBase & Pick<Job, "createdBy">;
 
-export type FindJobDALRequest = Pick<Job, "id" | "createdBy">;
+export type FindJobDetailsDALRequest = Pick<Job, "id" | "createdBy">;
 
-export type GetJobsDALRequest = Pick<Job, "createdBy">;
+export type GetJobsDALRequest = Pick<Job, "createdBy"> & {
+  searchText: string | null;
+};
 
-export type SearchJobsDALRequest = Pick<Job, "createdBy"> & { searchText?: string };
-
-export type UpdateJobDALRequest = FindJobDALRequest &
+export type UpdateJobDALRequest = FindJobDetailsDALRequest &
   NullableDALFields<Omit<Job, "id" | "createdBy" | "createdAt" | "statusLabel" | "typeLabel">>;

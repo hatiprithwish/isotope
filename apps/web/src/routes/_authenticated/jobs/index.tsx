@@ -28,11 +28,12 @@ function JobsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const deferredQuery = useDeferredValue(searchQuery);
 
-  const { data, isPending, isError } = useJobs(deferredQuery);
-  useJobsCount();
+  const searchParams: Schemas.GetJobsApiRequest = { searchText: deferredQuery || undefined };
+  const { data, isPending, isError } = useJobs(searchParams);
+  const { data: countData } = useJobsCount(searchParams);
 
   const allJobs: Schemas.Job[] = data?.jobs ?? [];
-  const totalRecords = allJobs.length;
+  const totalRecords = countData?.count ?? allJobs.length;
 
   const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
@@ -61,7 +62,7 @@ function JobsPage() {
 
   async function handleRefresh() {
     await queryClient.invalidateQueries({ queryKey: JobsQueries.keys.all() });
-    await queryClient.invalidateQueries({ queryKey: JobsQueries.keys.count() });
+    await queryClient.invalidateQueries({ queryKey: ["jobs", "count"] });
   }
 
   const pagination = {

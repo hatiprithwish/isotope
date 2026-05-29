@@ -44,7 +44,7 @@ export default class JobsRepo {
     return await this.dal.getJobDetails({ id: params.id, createdBy: params.userId });
   }
 
-  async countJobs(params: { userId: string }) {
+  async countJobs(params: { userId: string } & Schemas.GetJobsApiRequest) {
     AppLogger.info({
       category: Schemas.LogCategory.Repo,
       action: Schemas.LogAction.CountJobs,
@@ -52,10 +52,13 @@ export default class JobsRepo {
       metadata: params,
     });
 
-    return await this.dal.getJobsCount({ createdBy: params.userId });
+    return await this.dal.getJobsCount({
+      createdBy: params.userId,
+      searchText: params.searchText ?? null,
+    });
   }
 
-  async getJobs(params: { userId: string }) {
+  async getJobs(params: Schemas.GetJobsApiRequest & { userId: string }) {
     AppLogger.info({
       category: Schemas.LogCategory.Repo,
       action: Schemas.LogAction.ListJobs,
@@ -63,17 +66,9 @@ export default class JobsRepo {
       metadata: params,
     });
 
-    return await this.dal.getJobs({ createdBy: params.userId });
-  }
-
-  async searchJobs(params: { userId: string; searchText?: string }) {
-    AppLogger.info({
-      category: Schemas.LogCategory.Repo,
-      action: Schemas.LogAction.SearchJobs,
-      message: "Searching jobs",
-      metadata: { userId: params.userId, searchText: params.searchText },
+    return await this.dal.getJobs({
+      createdBy: params.userId,
+      searchText: params.searchText ?? null,
     });
-
-    return await this.dal.searchJobs({ createdBy: params.userId, searchText: params.searchText });
   }
 }
