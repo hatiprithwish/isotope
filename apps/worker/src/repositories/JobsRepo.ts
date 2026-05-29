@@ -1,6 +1,7 @@
 import JobsDAL from "@/data-access-layer/JobsDAL";
 import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/logger";
+import Constants from "@/config/Constants";
 
 export default class JobsRepo {
   private dal: JobsDAL;
@@ -71,7 +72,7 @@ export default class JobsRepo {
     return await this.dal.getJobDetails({ id: params.id, createdBy: params.userId });
   }
 
-  async countJobs(params: { userId: string } & Schemas.GetJobsApiRequest) {
+  async countJobs(params: Schemas.GetJobsApiRequest & { userId: string }) {
     AppLogger.info({
       category: Schemas.LogCategory.Repo,
       action: Schemas.LogAction.CountJobs,
@@ -96,6 +97,10 @@ export default class JobsRepo {
     return await this.dal.getJobs({
       createdBy: params.userId,
       searchText: params.searchText ?? null,
+      pageNo: params.pageNo ?? Constants.DEFAULT_PAGE_NO,
+      pageSize: params.pageSize ?? Constants.DEFAULT_PAGE_SIZE,
+      sortColumn: params.sortColumn ?? Schemas.JobSortColumn.CreatedAt,
+      sortDirection: params.sortDirection ?? Schemas.SortDirection.Desc,
     });
   }
 }
