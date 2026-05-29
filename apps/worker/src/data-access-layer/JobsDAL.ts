@@ -170,7 +170,7 @@ export default class JobsDAL {
         category: Schemas.LogCategory.DAL,
         action: Schemas.LogAction.ListJobs,
         message: "Fetching jobs",
-        metadata: { userId: params.createdBy, searchText: params.searchText, pageNo: params.pageNo, pageSize: params.pageSize },
+        metadata: params,
       });
 
       const term = params.searchText?.trim();

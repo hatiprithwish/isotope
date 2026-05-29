@@ -55,34 +55,28 @@ change.
   - Settings route: `apps/web/src/routes/_authenticated/settings/index.tsx` — Company Research Framework section with view (current framework + version history), edit (form), and review (editable textarea + save) steps. Relative timestamp helper.
 
 - **Spec 003D — Jobs Frontend Data View**:
-  - `-data.ts`: `JobsQueries` class with `list`, `count`, `detail` static methods + `useJobs`, `useJobsCount` hooks. Count hits `GET /jobs/count` (new endpoint added this session).
-  - `GET /jobs/count` added to backend: `LogAction.CountJobs` in `log.ts`, `GetJobsCountApiResponse` in `JobsApiResponse.ts`, `getJobsCount` in `JobsDAL`, `countJobs` in `JobsRepo`, route in `JobsRoutes.ts`.
+  - `-data.ts`: `JobsQueries` class with `list`, `count`, `detail` static methods + `useJobs`, `useJobsCount` hooks.
   - `-JobStatusBadge.tsx`: `JobStatusBadge` (8-status map) + `JobTypeBadge` (Manual/LLM with AI tokens).
-  - `-JobsTable.tsx`: 8 columns (source/type defaultHidden), `AppTablePagination` rendered at bottom via `pagination` prop passed from parent. Custom hack footer removed.
+  - `-JobsTable.tsx`: 8 columns (source/type defaultHidden), `AppTablePagination` rendered at bottom via `pagination` prop passed from parent.
   - `-JobDetailDrawer.tsx`: `JobDetailPanel` (desktop inline sliding aside, `w-100`) + `JobDetailMobileDrawer` (vaul bottom sheet `h-[90vh]`). Both controlled by `jobId: number | null`.
-  - `AppTable`: Added `defaultHidden?: boolean` to `AppTableColumn` — columns participate in visibility toggling but start hidden. Added `toolbarLeft?: ReactNode` prop — renders left-side content in the toolbar row alongside the column-visibility (`…`) menu.
-  - `index.tsx`: Full route with `validateSearch` (`panel?: number`), client-side pagination (page size 20, sliced from server results), `openPanel`/`closePanel` navigate helpers, desktop flex-row layout (table + inline panel), mobile list + mobile drawer.
-  - **Pagination approach**: `totalRecords` from count API; list/search API returns results for current query; client slices by page. `AppTablePagination` renders standard prev/next/jump controls with refresh action.
+  - `AppTable`: Added `defaultHidden?: boolean` to `AppTableColumn`. Added `toolbarLeft?: ReactNode` prop.
+  - `index.tsx`: Full route with `validateSearch` (`panel?: number`), client-side pagination (page size 20, sliced from server results), desktop flex-row layout, mobile list + mobile drawer.
 
 - **Spec 003D+ — Jobs Search**:
-  - Server-side search via `POST /jobs/list` with `{ searchText?: string }` body — replaces `GET /jobs`. SQLite `LIKE %term%` across `jobs.title`, `jobs.location`, `jobs.salary`, and `companies.name` (LEFT JOIN). Empty or absent `searchText` returns all jobs.
-  - Schemas: `ZSearchJobsApiRequest`, `SearchJobsDALRequest` added to `packages/schemas/src/jobs/`. `LogAction.SearchJobs` added to `log.ts`.
-  - Backend: `JobsDAL.searchJobs` (LEFT JOIN + conditional `or(like(...))` filter), `JobsRepo.searchJobs`, `POST /list` route with `zValidator`.
-  - Frontend: `useJobs(searchText)` accepts search term, POSTs to `/jobs/list`; TanStack Query key includes term so each search is cached independently. `useDeferredValue` on the raw input prevents query-per-keystroke. Search bar rendered via `AppTable`'s `toolbarLeft` prop on desktop; stacked below title in mobile header. Page resets to 1 on every query change.
+  - Server-side search via SQLite `LIKE %term%` across `jobs.title`, `jobs.location`, `jobs.salary`, and `companies.name` (LEFT JOIN). Empty or absent `searchText` returns all jobs.
+  - `LogAction.SearchJobs` added to `log.ts`.
 
-- **Jobs Query Routes — Pagination + /query prefix**:
+- **Jobs Query Routes — Pagination, sort, and `/query` sub-path**:
   - `SortDirection` enum (`asc`/`desc`) added to `packages/schemas/src/common.ts`.
   - `JobSortColumn` enum (`createdAt`, `title`, `status`) added to `JobsCommon.ts`.
   - `ZGetJobsApiRequest` extended with `pageNo`, `pageSize`, `sortColumn`, `sortDirection` — all optional, defaults applied in Repo.
-  - `GetJobsDALRequest` updated with required pagination fields; `GetJobsCountDALRequest` split out (no pagination — filter only).
+  - `GetJobsDALRequest` updated with required pagination fields; `GetJobsCountDALRequest` split out (filter only, no pagination).
   - `Constants.DEFAULT_PAGE_NO = 1`, `Constants.DEFAULT_PAGE_SIZE = 20` added.
-  - `JobsDAL.getJobs` now applies `ORDER BY` (sort column map + direction) and `LIMIT`/`OFFSET` at SQL level.
-  - `JobsRepo.getJobs` applies defaults before calling DAL: `pageNo ?? 1`, `pageSize ?? 20`, `sortColumn ?? JobSortColumn.CreatedAt`, `sortDirection ?? SortDirection.Desc`.
-  - New `JobsQueryRoutes.ts` — `POST /query/jobs` (list) and `POST /query/jobs/count` (count), both using `ZGetJobsApiRequest` for validation.
-  - `JobsRoutes.ts` trimmed to mutation-only: `POST /jobs` (create) and `GET /jobs/:id` (detail). `/list` and `/count` routes removed.
-  - `index.ts` mounts `JobsQueryRoutes` at `/query/jobs`.
-  - `context/architecture.md` updated: Query Route Convention section added; Jobs storage model description updated to reflect new endpoint paths.
-  - **Frontend `-data.ts` update required**: `useJobs` should call `POST /query/jobs` and `useJobsCount` should call `POST /query/jobs/count` — update `apiClient` URLs accordingly.
+  - `JobsDAL.getJobs` applies `ORDER BY` (sort column map + direction) and `LIMIT`/`OFFSET` at SQL level. All log calls use `metadata: params`.
+  - `JobsRepo.getJobs` applies defaults before calling DAL. `JobsRepo.countJobs` accepts full `GetJobsApiRequest` type.
+  - Query routes (`POST /jobs/query`, `POST /jobs/query/count`) merged into `JobsRoutes.ts` alongside mutation routes — no separate query routes file.
+  - `context/architecture.md`: Query Route Convention section added; Jobs storage model description updated.
+  - **Frontend `-data.ts` update required**: update `apiClient` URLs to `POST /jobs/query` and `POST /jobs/query/count`.
 
 ## In Progress
 
@@ -91,7 +85,7 @@ change.
 ## Next Up
 
 - Spec 003E — Manual Entry Form (Add New Job)
-- Update frontend `-data.ts` to use new `/query/jobs` and `/query/jobs/count` endpoints
+- Update frontend `-data.ts` to use `/jobs/query` and `/jobs/query/count`
 
 ## Open Questions
 
@@ -106,8 +100,8 @@ change.
 - `frameworks` table uses integer `type` column (`FrameworkTypeIntEnum`) and auto-incremented `version` per user per type — latest is always `ORDER BY version DESC LIMIT 1`.
 - Onboarding step-1 navigates to `/today` on framework save (step-2 route does not exist yet — will be updated when spec 03 is implemented).
 - `--accent-bg` / `--accent-text` CSS tokens added to `styles.css` Block 4 — were referenced in ui-context.md but not yet defined.
-- `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/worker/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template so the LLM outputs a document that matches the canonical structure and formatting, substituting the user's configured values (salary, locations, ethics flags, criteria, bands).
-- **Query route convention** — read-only endpoints that need a request body (for filters/pagination) use `POST /query/<resource>` prefix. Keeps mutation routes (`POST /jobs`) clearly separate from query routes (`POST /query/jobs`). `Constants.DEFAULT_PAGE_NO` and `Constants.DEFAULT_PAGE_SIZE` applied in the Repo layer so routes and DAL stay decoupled from default business logic.
+- `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/worker/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template.
+- **Query route convention** — read-only endpoints that need a request body use `POST /jobs/query` sub-paths within the same resource router. All routes for a resource stay in one `<Feature>Routes.ts` file. `Constants.DEFAULT_PAGE_NO` and `Constants.DEFAULT_PAGE_SIZE` applied in Repo so routes and DAL stay decoupled from default business logic.
 
 ## Session Notes
 

@@ -45,7 +45,7 @@ export default class JobsRepo {
     return await this.dal.getJobDetails({ id: params.id, createdBy: params.userId });
   }
 
-  async countJobs(params: { userId: string } & Pick<Schemas.GetJobsApiRequest, "searchText">) {
+  async countJobs(params: Schemas.GetJobsApiRequest & { userId: string }) {
     AppLogger.info({
       category: Schemas.LogCategory.Repo,
       action: Schemas.LogAction.CountJobs,
