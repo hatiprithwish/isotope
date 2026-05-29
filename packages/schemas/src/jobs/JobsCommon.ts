@@ -54,6 +54,13 @@ export const jobTypeIntToLabel = {
   [JobTypeIntEnum.LLM]: JobTypeLabelEnum.LLM,
 };
 
+export enum JobSortColumn {
+  CreatedAt = "createdAt",
+  Title = "title",
+  Status = "status",
+}
+export const ZJobSortColumn = z.enum(JobSortColumn);
+
 export const ZJobBase = z.object({
   status: ZJobStatusIntEnum,
   title: z.string(),
