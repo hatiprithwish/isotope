@@ -109,6 +109,22 @@ export const contactHistory = table(
   ],
 );
 
+export const frameworks = table(
+  "frameworks",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    type: t.integer().notNull(),
+    content: t.text().notNull(),
+    formInputs: t.text("form_inputs"),
+    version: t.integer().notNull(),
+    isCustomized: t.integer("is_customized", { mode: "boolean" }).notNull().default(false),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [t.index("idx_frameworks_created_by").on(table.createdBy, table.type, table.version)],
+);
+
 export const notes = table(
   "notes",
   {

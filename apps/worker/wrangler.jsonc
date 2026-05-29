@@ -11,7 +11,8 @@
     "CLERK_SECRET_KEY": ""
   },
   "ai": {
-    "binding": "AI"
+    "binding": "AI",
+    "remote": true
   },
   "d1_databases": [
     {

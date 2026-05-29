@@ -39,4 +39,10 @@ export enum LogAction {
   ListContacts = "ListContacts",
   UpdateContact = "UpdateContact",
   DeleteContact = "DeleteContact",
+
+  // Frameworks
+  GenerateFramework = "GenerateFramework",
+  SaveFramework = "SaveFramework",
+  GetLatestFramework = "GetLatestFramework",
+  GetFrameworkVersions = "GetFrameworkVersions",
 }

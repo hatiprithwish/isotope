@@ -1,14 +1,8 @@
+import type Constants from "@/config/Constants";
 import AppLogger from "@/providers/logger";
 import * as Schemas from "@app/schemas";
 
-export const AI_MODELS = {
-  // Use for all AI work except personalisation research
-  sonnet: "@cf/anthropic/claude-sonnet-4" as const,
-  // Use exclusively for contact personalisation research (Step 5 of Contact Finder)
-  haiku: "@cf/anthropic/claude-haiku-4" as const,
-} as const;
-
-export type AiModel = (typeof AI_MODELS)[keyof typeof AI_MODELS];
+export type AiModel = (typeof Constants.AI_MODELS)[keyof typeof Constants.AI_MODELS];
 
 export interface AiMessage {
   role: "system" | "user" | "assistant";

@@ -48,3 +48,4 @@
 4. **Enum values stored as integers in DB; API responses include both the integer and the human-readable label.** The Repo `withLabels()` pattern maps int → label before returning to routes.
 5. **Every mutation hook must declare an explicit `onError` handler that surfaces the error via the shadcn toast utility.** Silent or absent `onError` is forbidden.
 6. **Every Drizzle schema change must be immediately followed by `pnpm db:generate` and `pnpm db:migrate`.** Migration files are committed in the same change as the schema modification.
+7. **Default / canonical framework documents are stored as static string constants in `apps/worker/src/config/Constants.ts`, not in the database.** They are injected into AI system prompts as reference templates. The DB only stores user-customised versions saved after generation.
