@@ -41,7 +41,7 @@ FrameworksRoutes.put(
       isCustomized: body.isCustomized,
     });
 
-    return c.json(response, response.isSuccess ? 201 : 500);
+    return c.json(response, response.isSuccess ? 200 : 500);
   },
 );
 

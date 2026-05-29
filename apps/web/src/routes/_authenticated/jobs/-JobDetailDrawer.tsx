@@ -211,7 +211,7 @@ export function JobDetailPanel({ jobId, onClose }: JobDetailDrawerProps) {
 
 /* ─── Mobile: vaul bottom Drawer ─────────────────────────────────────────── */
 export function JobDetailMobileDrawer({ jobId, onClose }: JobDetailDrawerProps) {
-  const isOpen = jobId != null && window.innerWidth < 768;
+  const isOpen = jobId != null;
 
   return (
     <Drawer

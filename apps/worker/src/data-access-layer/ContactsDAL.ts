@@ -7,6 +7,18 @@ import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/logger";
 import Utility from "@/utils";
 
+const contactStatusLabelExpr = sql<Schemas.ContactStatusLabelEnum>`CASE
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.NotStarted} THEN ${Schemas.ContactStatusLabelEnum.NotStarted}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.DraftReady} THEN ${Schemas.ContactStatusLabelEnum.DraftReady}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.InPipeline} THEN ${Schemas.ContactStatusLabelEnum.InPipeline}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Replied} THEN ${Schemas.ContactStatusLabelEnum.Replied}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Closed} THEN ${Schemas.ContactStatusLabelEnum.Closed}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Dead} THEN ${Schemas.ContactStatusLabelEnum.Dead}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.ReEngage} THEN ${Schemas.ContactStatusLabelEnum.ReEngage}
+  WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Failed} THEN ${Schemas.ContactStatusLabelEnum.Failed}
+  ELSE ${Schemas.ContactStatusLabelEnum.NotStarted}
+END`;
+
 export default class ContactsDAL {
   private db: DrizzleD1Database;
 
@@ -106,17 +118,7 @@ export default class ContactsDAL {
           abVariant: contacts.abVariant,
           abReplied: contacts.abReplied,
           status: contacts.status,
-          statusLabel: sql<Schemas.ContactStatusLabelEnum>`CASE
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.NotStarted} THEN ${Schemas.ContactStatusLabelEnum.NotStarted}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.DraftReady} THEN ${Schemas.ContactStatusLabelEnum.DraftReady}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.InPipeline} THEN ${Schemas.ContactStatusLabelEnum.InPipeline}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Replied} THEN ${Schemas.ContactStatusLabelEnum.Replied}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Closed} THEN ${Schemas.ContactStatusLabelEnum.Closed}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Dead} THEN ${Schemas.ContactStatusLabelEnum.Dead}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.ReEngage} THEN ${Schemas.ContactStatusLabelEnum.ReEngage}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Failed} THEN ${Schemas.ContactStatusLabelEnum.Failed}
-            ELSE ${Schemas.ContactStatusLabelEnum.NotStarted}
-          END`,
+          statusLabel: contactStatusLabelExpr,
           draftBody: contacts.draftBody,
           draftSubject: contacts.draftSubject,
           personalizationNotes: contacts.personalizationNotes,
@@ -190,17 +192,7 @@ export default class ContactsDAL {
           abVariant: contacts.abVariant,
           abReplied: contacts.abReplied,
           status: contacts.status,
-          statusLabel: sql<Schemas.ContactStatusLabelEnum>`CASE
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.NotStarted} THEN ${Schemas.ContactStatusLabelEnum.NotStarted}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.DraftReady} THEN ${Schemas.ContactStatusLabelEnum.DraftReady}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.InPipeline} THEN ${Schemas.ContactStatusLabelEnum.InPipeline}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Replied} THEN ${Schemas.ContactStatusLabelEnum.Replied}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Closed} THEN ${Schemas.ContactStatusLabelEnum.Closed}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Dead} THEN ${Schemas.ContactStatusLabelEnum.Dead}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.ReEngage} THEN ${Schemas.ContactStatusLabelEnum.ReEngage}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Failed} THEN ${Schemas.ContactStatusLabelEnum.Failed}
-            ELSE ${Schemas.ContactStatusLabelEnum.NotStarted}
-          END`,
+          statusLabel: contactStatusLabelExpr,
           draftBody: contacts.draftBody,
           draftSubject: contacts.draftSubject,
           personalizationNotes: contacts.personalizationNotes,
@@ -261,17 +253,7 @@ export default class ContactsDAL {
           abVariant: contacts.abVariant,
           abReplied: contacts.abReplied,
           status: contacts.status,
-          statusLabel: sql<Schemas.ContactStatusLabelEnum>`CASE
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.NotStarted} THEN ${Schemas.ContactStatusLabelEnum.NotStarted}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.DraftReady} THEN ${Schemas.ContactStatusLabelEnum.DraftReady}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.InPipeline} THEN ${Schemas.ContactStatusLabelEnum.InPipeline}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Replied} THEN ${Schemas.ContactStatusLabelEnum.Replied}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Closed} THEN ${Schemas.ContactStatusLabelEnum.Closed}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Dead} THEN ${Schemas.ContactStatusLabelEnum.Dead}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.ReEngage} THEN ${Schemas.ContactStatusLabelEnum.ReEngage}
-            WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.Failed} THEN ${Schemas.ContactStatusLabelEnum.Failed}
-            ELSE ${Schemas.ContactStatusLabelEnum.NotStarted}
-          END`,
+          statusLabel: contactStatusLabelExpr,
           draftBody: contacts.draftBody,
           draftSubject: contacts.draftSubject,
           personalizationNotes: contacts.personalizationNotes,

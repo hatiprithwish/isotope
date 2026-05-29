@@ -62,7 +62,6 @@ function JobsPage() {
 
   async function handleRefresh() {
     await queryClient.invalidateQueries({ queryKey: JobsQueries.keys.all() });
-    await queryClient.invalidateQueries({ queryKey: ["jobs", "count"] });
   }
 
   const pagination = {
@@ -148,9 +147,6 @@ function JobsPage() {
           />
         </div>
 
-        {panel != null && (
-          <div className="absolute inset-0 z-10" onClick={closePanel} aria-hidden />
-        )}
         <JobDetailPanel jobId={panel ?? null} onClose={closePanel} />
       </div>
     </>
