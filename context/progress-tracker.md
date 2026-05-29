@@ -9,11 +9,17 @@ change.
 
 ## Current Goal
 
-- spec 02 — Company Research Framework Form
+- spec 03 — Jobs Feature
 
 ## Completed
 
 - **spec 01 — Workers AI setup**: Added `"ai": { "binding": "AI" }` to `wrangler.jsonc` (base + staging + production envs). Ran `wrangler types` to regenerate `worker-configuration.d.ts` — `AI: Ai` now present in all env interfaces. Removed stale `@cloudflare/workers-types` entry from `tsconfig.json` (package not installed; superseded by generated runtime types). Created `apps/worker/src/providers/ai.ts` — `AiProvider` class with `run()` and `runWithRetry()` methods; `AI_MODELS` constants for Sonnet (general) and Haiku (personalisation research only).
+
+- **Spec 003A — Jobs Database Schema**:
+  - Schema: Added `jobs` table to `apps/worker/src/db/tables.ts`. 15 columns, 3 indexes (UNIQUE on `url`, IDX on `created_by`, IDX on `company_id`). `status` + `type` as IntEnum integers; `skills` as JSON text; `match_score` nullable real (v2.0 reserved).
+  - Enums: Created `packages/schemas/src/jobs/JobsCommon.ts` — `JobStatusIntEnum` / `JobTypeLabelEnum` + label enums, int→label maps, `ZJobBase`, `ZJob`. Exported from `packages/schemas/src/index.ts`.
+  - Migration: Generated `src/db/migrations/0005_isotope.sql`, applied to remote D1 (`isotope-db`).
+  - TypeScript: No new errors. Pre-existing errors in ContactsRepo/NotesRepo/notes.test unchanged.
 
 - **spec 02 — Company Research Framework Form**:
   - DB: Added `frameworks` table to `apps/worker/src/db/tables.ts`. Generated migration `0004_isotope.sql` and applied to remote D1.
@@ -32,7 +38,7 @@ change.
 
 ## Next Up
 
-- Next spec unit (spec 03)
+- Spec 003B — Shared Schemas & Backend Routes
 
 ## Open Questions
 

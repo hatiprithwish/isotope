@@ -125,6 +125,32 @@ export const frameworks = table(
   (table) => [t.index("idx_frameworks_created_by").on(table.createdBy, table.type, table.version)],
 );
 
+export const jobs = table(
+  "jobs",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    status: t.integer().$type<Schemas.JobStatusIntEnum>().notNull(),
+    title: t.text().notNull(),
+    companyId: t.int("company_id"),
+    url: t.text(),
+    location: t.text(),
+    salary: t.text(),
+    source: t.text(),
+    type: t.integer().$type<Schemas.JobTypeIntEnum>().notNull(),
+    description: t.text(),
+    skills: t.text(),
+    createdBy: t.text("created_by").notNull(),
+    matchScore: t.real("match_score"),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [
+    t.uniqueIndex("UNQ_jobs_url").on(table.url),
+    t.index("IDX_jobs_created_by").on(table.createdBy),
+    t.index("IDX_jobs_company_id").on(table.companyId),
+  ],
+);
+
 export const notes = table(
   "notes",
   {

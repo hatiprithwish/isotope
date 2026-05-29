@@ -29,7 +29,8 @@
 
 ## Storage Model
 
-- **Cloudflare D1 (primary database)**: All structured data — `users`, `companies`, `contacts`, `contact_history`, `notes`. Every table has a `created_by` column (Clerk user ID) as a scoping key. Multi-tenant by design.
+- **Cloudflare D1 (primary database)**: All structured data — `users`, `companies`, `contacts`, `contact_history`, `notes`, `jobs`. Every table has a `created_by` column (Clerk user ID) as a scoping key. Multi-tenant by design.
+  - `jobs`: Tracks job applications. `status` and `type` stored as integers (IntEnum). `skills` stored as JSON-stringified text array — parsed at application layer. `url` has a UNIQUE INDEX for deduplication. `match_score` nullable (reserved for v2.0). FK to `companies.id` via `company_id` (nullable).
 - **No blob / file storage**: All content (AI summaries, draft bodies, personalization notes, conversation history) stored as text in D1 directly.
 
 ## Auth and Access Model
