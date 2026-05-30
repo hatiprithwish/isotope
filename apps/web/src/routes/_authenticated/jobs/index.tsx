@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState, useDeferredValue } from "react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/tanstack-react-start";
+import { useState, useDeferredValue, useEffect } from "react";
+import { toast } from "sonner";
 import { z } from "zod";
 import { JobsQueries, useJobs, useJobsCount } from "./-data";
+import { FrameworkQueries } from "../../_without_nav/onboarding/job-search-framework/-data";
 import { JobsTable } from "./-JobsTable";
 import { JobDetailPanel } from "./-JobDetailDrawer";
 import JobEntryForm from "./-JobEntryForm";
@@ -40,6 +43,7 @@ const MOBILE_GROUPS: { label: string; statuses: JobStatusIntEnum[] }[] = [
 
 const searchSchema = z.object({
   panel: z.number().optional(),
+  framework_saved: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/jobs/")({
@@ -49,8 +53,26 @@ export const Route = createFileRoute("/_authenticated/jobs/")({
 
 function JobsPage() {
   const queryClient = useQueryClient();
-  const { panel } = Route.useSearch();
+  const { getToken } = useAuth();
+  const { panel, framework_saved } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+
+  const frameworkQuery = useQuery(FrameworkQueries.latest(getToken));
+  const hasFramework = Boolean(frameworkQuery.data?.framework?.isCustomized);
+
+  useEffect(() => {
+    if (framework_saved === "1") {
+      toast.success("Job search criteria saved. You're ready to find jobs.", { duration: 4000 });
+      void navigate({ search: (prev) => ({ ...prev, framework_saved: undefined }), replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleDiscoverClick() {
+    if (!hasFramework) {
+      void navigate({ to: "/onboarding/job-search-framework" as string });
+    }
+  }
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -256,6 +278,7 @@ function JobsPage() {
           </span>
           <button
             type="button"
+            onClick={handleDiscoverClick}
             className="shrink-0 h-6 px-2.5 rounded-md bg-background border border-border text-[11px] font-medium text-foreground"
           >
             Discover
@@ -338,6 +361,7 @@ function JobsPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={handleDiscoverClick}
                 className="h-7.75 px-3 rounded-lg text-[13px] font-medium bg-(--ai-bg) border border-(--ai-border) text-(--ai-text) hover:opacity-90 transition-opacity flex items-center gap-1.5"
               >
                 <SparkleIcon size={13} className="text-(--ai)" weight="fill" />

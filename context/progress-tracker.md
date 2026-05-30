@@ -75,6 +75,19 @@ change.
   - `index.tsx`: `formMode` state (`null | "create" | Job`). "Add job" button in both mobile and desktop headers. Edit button (pencil icon) in `JobDetailPanel`/`JobDetailMobileDrawer` header — passes job to `setFormMode`. Form rendered in modal overlay.
   - `-JobDetailDrawer.tsx`: `onEdit?: (job: Job) => void` prop added; pencil icon button shown when `onEdit` + loaded job both present.
 
+- **Spec 003F — Job Search Framework**:
+  - DB: Added `job_search_frameworks` table to `tables.ts` (15 columns, `idx_job_fw_user` index). Migration `0007_isotope.sql` generated and applied to remote D1.
+  - Schemas: `packages/schemas/src/frameworks/` — `FrameworksCommon.ts` (`ZPrioritisedSkill`, `ZFramework`, `ZFrameworkInput`), `FrameworksApiRequest.ts`, `FrameworksApiResponse.ts`, `FrameworksDALRequest.ts` (`GetFrameworkDALRequest`, `CreateFrameworkDALRequest`, `SaveFrameworkDALRequest`), `index.ts`. Exported from `packages/schemas/src/index.ts` as `export * from "./frameworks"`. Old `job-search-frameworks/` directory deleted.
+  - LogAction: `SaveFramework`, `GetFramework` in `packages/schemas/src/log.ts`.
+  - Constants: `JOB_SEARCH_FRAMEWORK_DEFAULTS` in `apps/worker/src/config/Constants.ts` — single backend source of truth for default values.
+  - Backend: `FrameworksDAL.ts` — `getFrameworkDetails`, `saveFramework` (fetches version, JSON-stringifies arrays, calls `createFramework`, sets `isCustomized: true`), `createFramework` (raw insert + prunes to 5 versions), `createDefaultIfAbsent` (idempotent seed from Constants). `FrameworksRepo.ts` — `seedDefault`, `getFrameworkDetails`, `saveFramework` (pure delegation to DAL — no DB logic). Routes: `GET /frameworks/job-search`, `POST /frameworks/job-search` in `FrameworksRoutes.ts`.
+  - User seeding: `UsersRepo.syncClerkUser` calls `fwRepo.seedDefault(clerkId)` after successful upsert — every new user gets a default framework row with `isCustomized: false`.
+  - Frontend data: `FrameworkQueries` (key: `["frameworks","job-search","latest"]`), `useSaveFramework` in `apps/web/src/routes/_without_nav/onboarding/job-search-framework/-data.ts`.
+  - Frontend forms: `apps/web/src/shared/forms/JobSearchFrameworkForm.tsx` — reusable form using `FrameworkInput` type. Location section in right column (below Search Settings). No hardcoded defaults — always hydrated from DB row.
+  - Onboarding route: `apps/web/src/routes/_without_nav/onboarding/job-search-framework/index.tsx` — skeleton while `isPending || !framework`; redirects to `/jobs` only when `framework.isCustomized === true`; passes DB row as `initialValues`.
+  - Settings route: `apps/web/src/routes/_authenticated/settings/frameworks.tsx` — no `max-w` constraint; `showNotice = !noticeDismissed && framework != null && !framework.isCustomized`; skeleton while `isPending || !framework`; no hardcoded defaults.
+  - Jobs page: `hasFramework` checks `frameworkQuery.data?.framework?.isCustomized` (not mere row presence); Discover button navigates to onboarding if `!hasFramework`.
+
 ## In Progress
 
 - None.

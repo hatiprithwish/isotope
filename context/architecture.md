@@ -37,6 +37,7 @@ Pagination fields (`pageNo`, `pageSize`, `sortColumn`, `sortDirection`) are part
 
 - **Cloudflare D1 (primary database)**: All structured data — `users`, `companies`, `contacts`, `contact_history`, `notes`, `jobs`. Every table has a `created_by` column (Clerk user ID) as a scoping key. Multi-tenant by design.
   - `jobs`: Tracks job applications. `status` and `type` stored as integers (IntEnum). `skills` stored as JSON-stringified text array — parsed at application layer. `url` has a composite UNIQUE INDEX on `(url, created_by)` — URLs are deduplicated per user, not globally. `match_score` nullable (reserved for v2.0). FK to `companies.id` via `company_id` (nullable). `status` integer mapping: 1=NotStarted (Manual default), 2=WaitingForHuman (LLM default), 3=Accepted, 4=Applied, 5=CompanyAdded, 6=Interviewing, 7=Offer, 8=Rejected. `type` mapping: 1=Manual, 2=LLM. **List endpoint is `POST /jobs` with `{ searchText?, pageNo?, pageSize?, sortColumn?, sortDirection? }` body** — server-side pagination via `LIMIT`/`OFFSET`, server-side sort via `ORDER BY`. **Count endpoint is `POST /jobs/count` with the same body** — both share identical filter logic so count and list stay in sync. `GET /jobs` does not exist. Search runs SQLite `LIKE` across title, location, salary, and company name (LEFT JOIN on `companies`).
+- `job_search_frameworks`: Stores versioned job search criteria per user. `isCustomized` boolean — `false` for the default seed row, `true` once the user saves their own values. Latest version always fetched via `ORDER BY version DESC LIMIT 1`. Old versions pruned to max 5. Array columns (`targetRoles`, `requiredSkills`, `skills`, `preferredLocations`) stored as JSON-stringified text — parsed at DAL layer. Default row seeded via `FrameworksDAL.createDefaultIfAbsent` called from `UsersRepo.syncClerkUser` on every Clerk webhook upsert (idempotent).
 - **No blob / file storage**: All content (AI summaries, draft bodies, personalization notes, conversation history) stored as text in D1 directly.
 
 ## Auth and Access Model
@@ -49,10 +50,11 @@ Pagination fields (`pageNo`, `pageSize`, `sortColumn`, `sortDirection`) are part
 
 ## Invariants
 
-1. **Layer import order is strictly enforced: Routes → Repo → DAL → DB.** Routes never call DAL or Drizzle directly. Repos never call Drizzle directly.
+1. **Layer import order is strictly enforced: Routes → Repo → DAL → DB.** Routes never call DAL or Drizzle directly. Repos never call Drizzle directly. All data serialization (e.g. `JSON.stringify` for array columns) and DB-level concerns (version calculation, pruning) belong in the DAL, not the Repo.
 2. **All types and Zod schemas live exclusively in `packages/schemas`.** No type or schema may be defined inside `apps/web` or `apps/worker`.
 3. **Every DB query filters by `created_by`.** No query may return records belonging to a different user.
 4. **Enum values stored as integers in DB; API responses include both the integer and the human-readable label.** The DAL maps int → label before returning to routes.
 5. **Every mutation hook must declare an explicit `onError` handler that surfaces the error via the shadcn toast utility.** Silent or absent `onError` is forbidden.
 6. **Every Drizzle schema change must be immediately followed by `pnpm db:generate` and `pnpm db:migrate`.** Migration files are committed in the same change as the schema modification.
 7. **Default / canonical framework documents are stored as static string constants in `apps/worker/src/config/Constants.ts`, not in the database.** They are injected into AI system prompts as reference templates. The DB only stores user-customised versions saved after generation.
+8. **`isCustomized` is the single source of truth for framework onboarding state.** Every user always has a `job_search_frameworks` row (seeded on sign-up). Row presence alone does not mean the user has set up their criteria — only `isCustomized === true` does. The onboarding redirect gate and the settings warning banner both read this flag, never row presence.
