@@ -72,31 +72,4 @@ JobsRoutes.get(
   },
 );
 
-// Queries
-
-JobsRoutes.post("/query", checkAuth, zValidator("json", Schemas.ZGetJobsApiRequest), async (c) => {
-  const clerkUserId = c.get("clerkUserId");
-  const body = c.req.valid("json");
-
-  const repo = new JobsRepo(c.env);
-  const response = await repo.getJobs({ ...body, userId: clerkUserId });
-
-  return c.json(response, response.isSuccess ? 200 : 500);
-});
-
-JobsRoutes.post(
-  "/query/count",
-  checkAuth,
-  zValidator("json", Schemas.ZGetJobsApiRequest),
-  async (c) => {
-    const clerkUserId = c.get("clerkUserId");
-    const body = c.req.valid("json");
-
-    const repo = new JobsRepo(c.env);
-    const response = await repo.countJobs({ ...body, userId: clerkUserId });
-
-    return c.json(response, response.isSuccess ? 200 : 500);
-  },
-);
-
 export default JobsRoutes;

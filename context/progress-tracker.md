@@ -66,18 +66,6 @@ change.
   - Server-side search via SQLite `LIKE %term%` across `jobs.title`, `jobs.location`, `jobs.salary`, and `companies.name` (LEFT JOIN). Empty or absent `searchText` returns all jobs.
   - `LogAction.SearchJobs` added to `log.ts`.
 
-- **Jobs Query Routes — Pagination, sort, and `/query` sub-path**:
-  - `SortDirection` enum (`asc`/`desc`) added to `packages/schemas/src/common.ts`.
-  - `JobSortColumn` enum (`createdAt`, `title`, `status`) added to `JobsCommon.ts`.
-  - `ZGetJobsApiRequest` extended with `pageNo`, `pageSize`, `sortColumn`, `sortDirection` — all optional, defaults applied in Repo.
-  - `GetJobsDALRequest` updated with required pagination fields; `GetJobsCountDALRequest` split out (filter only, no pagination).
-  - `Constants.DEFAULT_PAGE_NO = 1`, `Constants.DEFAULT_PAGE_SIZE = 20` added.
-  - `JobsDAL.getJobs` applies `ORDER BY` (sort column map + direction) and `LIMIT`/`OFFSET` at SQL level. All log calls use `metadata: params`.
-  - `JobsRepo.getJobs` applies defaults before calling DAL. `JobsRepo.countJobs` accepts full `GetJobsApiRequest` type.
-  - Query routes (`POST /jobs/query`, `POST /jobs/query/count`) merged into `JobsRoutes.ts` alongside mutation routes — no separate query routes file.
-  - `context/architecture.md`: Query Route Convention section added; Jobs storage model description updated.
-  - **Frontend `-data.ts` update required**: update `apiClient` URLs to `POST /jobs/query` and `POST /jobs/query/count`.
-
 - **Spec 003E — Manual Entry & Edit Form**:
   - Backend: `updateJob` added to `JobsDAL` (partial-field update via dynamic `setValues`, ownership check), `JobsRepo` (maps `UpdateJobApiRequest` → `UpdateJobDALRequest`), `PATCH /jobs/:id` route in `JobsRoutes.ts`.
   - `UpdateJobDALRequest` in `packages/schemas` updated to `Partial<NullableDALFields<...>>` so only `id`+`createdBy` are required — all update fields optional.

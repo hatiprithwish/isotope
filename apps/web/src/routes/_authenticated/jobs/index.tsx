@@ -335,14 +335,23 @@ function JobsPage() {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="h-13 px-6 flex items-center justify-between border-b border-border bg-sidebar shrink-0">
             <span className="text-base font-semibold text-foreground tracking-tight">Jobs</span>
-            <button
-              type="button"
-              onClick={() => setFormMode("create")}
-              className="h-7.75 px-3 rounded-lg text-[13px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center gap-1.5"
-            >
-              <PlusIcon size={13} />
-              Add job
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="h-7.75 px-3 rounded-lg text-[13px] font-medium bg-(--ai-bg) border border-(--ai-border) text-(--ai-text) hover:opacity-90 transition-opacity flex items-center gap-1.5"
+              >
+                <SparkleIcon size={13} className="text-(--ai)" weight="fill" />
+                Discover
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormMode("create")}
+                className="h-7.75 px-3 rounded-lg text-[13px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center gap-1.5"
+              >
+                <PlusIcon size={13} />
+                Add
+              </button>
+            </div>
           </header>
           <JobsTable
             jobs={pageJobs}

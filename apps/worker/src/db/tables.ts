@@ -145,7 +145,7 @@ export const jobs = table(
     updatedAt: t.text("updated_at"),
   },
   (table) => [
-    t.uniqueIndex("UNQ_jobs_url").on(table.url),
+    t.uniqueIndex("UNQ_jobs_url_created_by").on(table.url, table.createdBy),
     t.index("IDX_jobs_created_by").on(table.createdBy),
     t.index("IDX_jobs_company_id").on(table.companyId),
   ],
