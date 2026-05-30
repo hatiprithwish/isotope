@@ -7,26 +7,17 @@ import FrameworksRepo from "@/repositories/FrameworksRepo";
 
 const FrameworksRoutes = new Hono<AppContext>();
 
+FrameworksRoutes.get("/job-search", checkAuth, async (c) => {
+  const userId = c.get("clerkUserId");
+
+  const repo = new FrameworksRepo(c.env);
+  const response = await repo.getFrameworkDetails({ userId });
+
+  return c.json(response, response.isSuccess ? 200 : 500);
+});
+
 FrameworksRoutes.post(
-  "/generate",
-  checkAuth,
-  zValidator("json", Schemas.ZGenerateFrameworkApiRequest),
-  async (c) => {
-    const userId = c.get("clerkUserId");
-    const body = c.req.valid("json");
-
-    const repo = new FrameworksRepo(c.env);
-    const response = await repo.generateCompanyFramework({
-      userId,
-      formInputs: body.formInputs,
-    });
-
-    return c.json(response, response.isSuccess ? 200 : 500);
-  },
-);
-
-FrameworksRoutes.put(
-  "/company",
+  "/job-search",
   checkAuth,
   zValidator("json", Schemas.ZSaveFrameworkApiRequest),
   async (c) => {
@@ -34,33 +25,10 @@ FrameworksRoutes.put(
     const body = c.req.valid("json");
 
     const repo = new FrameworksRepo(c.env);
-    const response = await repo.saveCompanyFramework({
-      userId,
-      content: body.content,
-      formInputs: body.formInputs,
-      isCustomized: body.isCustomized,
-    });
+    const response = await repo.saveFramework({ userId, input: body });
 
-    return c.json(response, response.isSuccess ? 200 : 500);
+    return c.json(response, response.isSuccess ? 201 : 500);
   },
 );
-
-FrameworksRoutes.get("/company", checkAuth, async (c) => {
-  const userId = c.get("clerkUserId");
-
-  const repo = new FrameworksRepo(c.env);
-  const response = await repo.getLatestCompanyFramework({ userId });
-
-  return c.json(response, response.isSuccess ? 200 : 500);
-});
-
-FrameworksRoutes.get("/company/versions", checkAuth, async (c) => {
-  const userId = c.get("clerkUserId");
-
-  const repo = new FrameworksRepo(c.env);
-  const response = await repo.getCompanyFrameworkVersions({ userId });
-
-  return c.json(response, response.isSuccess ? 200 : 500);
-});
 
 export default FrameworksRoutes;

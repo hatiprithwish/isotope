@@ -55,20 +55,38 @@ change.
   - Settings route: `apps/web/src/routes/_authenticated/settings/index.tsx` — Company Research Framework section with view (current framework + version history), edit (form), and review (editable textarea + save) steps. Relative timestamp helper.
 
 - **Spec 003D — Jobs Frontend Data View**:
-  - `-data.ts`: `JobsQueries` class with `list`, `count`, `detail` static methods + `useJobs`, `useJobsCount` hooks. Count hits `GET /jobs/count` (new endpoint added this session).
-  - `GET /jobs/count` added to backend: `LogAction.CountJobs` in `log.ts`, `GetJobsCountApiResponse` in `JobsApiResponse.ts`, `getJobsCount` in `JobsDAL`, `countJobs` in `JobsRepo`, route in `JobsRoutes.ts`.
+  - `-data.ts`: `JobsQueries` class with `list`, `count`, `detail` static methods + `useJobs`, `useJobsCount` hooks.
   - `-JobStatusBadge.tsx`: `JobStatusBadge` (8-status map) + `JobTypeBadge` (Manual/LLM with AI tokens).
-  - `-JobsTable.tsx`: 8 columns (source/type defaultHidden), `AppTablePagination` rendered at bottom via `pagination` prop passed from parent. Custom hack footer removed.
+  - `-JobsTable.tsx`: 8 columns (source/type defaultHidden), `AppTablePagination` rendered at bottom via `pagination` prop passed from parent.
   - `-JobDetailDrawer.tsx`: `JobDetailPanel` (desktop inline sliding aside, `w-100`) + `JobDetailMobileDrawer` (vaul bottom sheet `h-[90vh]`). Both controlled by `jobId: number | null`.
-  - `AppTable`: Added `defaultHidden?: boolean` to `AppTableColumn` — columns participate in visibility toggling but start hidden. Added `toolbarLeft?: ReactNode` prop — renders left-side content in the toolbar row alongside the column-visibility (`…`) menu.
-  - `index.tsx`: Full route with `validateSearch` (`panel?: number`), client-side pagination (page size 20, sliced from server results), `openPanel`/`closePanel` navigate helpers, desktop flex-row layout (table + inline panel), mobile list + mobile drawer.
-  - **Pagination approach**: `totalRecords` from count API; list/search API returns results for current query; client slices by page. `AppTablePagination` renders standard prev/next/jump controls with refresh action.
+  - `AppTable`: Added `defaultHidden?: boolean` to `AppTableColumn`. Added `toolbarLeft?: ReactNode` prop.
+  - `index.tsx`: Full route with `validateSearch` (`panel?: number`), client-side pagination (page size 20, sliced from server results), desktop flex-row layout, mobile list + mobile drawer.
 
 - **Spec 003D+ — Jobs Search**:
-  - Server-side search via `POST /jobs/list` with `{ searchText?: string }` body — replaces `GET /jobs`. SQLite `LIKE %term%` across `jobs.title`, `jobs.location`, `jobs.salary`, and `companies.name` (LEFT JOIN). Empty or absent `searchText` returns all jobs.
-  - Schemas: `ZSearchJobsApiRequest`, `SearchJobsDALRequest` added to `packages/schemas/src/jobs/`. `LogAction.SearchJobs` added to `log.ts`.
-  - Backend: `JobsDAL.searchJobs` (LEFT JOIN + conditional `or(like(...))` filter), `JobsRepo.searchJobs`, `POST /list` route with `zValidator`.
-  - Frontend: `useJobs(searchText)` accepts search term, POSTs to `/jobs/list`; TanStack Query key includes term so each search is cached independently. `useDeferredValue` on the raw input prevents query-per-keystroke. Search bar rendered via `AppTable`'s `toolbarLeft` prop on desktop; stacked below title in mobile header. Page resets to 1 on every query change.
+  - Server-side search via SQLite `LIKE %term%` across `jobs.title`, `jobs.location`, `jobs.salary`, and `companies.name` (LEFT JOIN). Empty or absent `searchText` returns all jobs.
+  - `LogAction.SearchJobs` added to `log.ts`.
+
+- **Spec 003E — Manual Entry & Edit Form**:
+  - Backend: `updateJob` added to `JobsDAL` (partial-field update via dynamic `setValues`, ownership check), `JobsRepo` (maps `UpdateJobApiRequest` → `UpdateJobDALRequest`), `PATCH /jobs/:id` route in `JobsRoutes.ts`.
+  - `UpdateJobDALRequest` in `packages/schemas` updated to `Partial<NullableDALFields<...>>` so only `id`+`createdBy` are required — all update fields optional.
+  - `-data.ts`: `useCreateJob` (`POST /jobs`) and `useUpdateJob` (`PATCH /jobs/:id`) mutation hooks with mandatory `onError` toast handlers. Sentry captured globally via `queryClient.ts` `mutations.onError`.
+  - `-CompanySelect.tsx`: autocomplete dropdown — fetches all companies, filters by search input, supports clear, keyboard-accessible.
+  - `-JobEntryForm.tsx`: TanStack Form dual-mode form. Create mode: all fields, required validation on `title` + `url`. Edit mode: pre-populated from `initialData`, same fields fully editable. Submits to correct mutation based on presence of `initialData.id`. Success: toast + `onSuccess()`. Required fields block submission with inline errors.
+  - `index.tsx`: `formMode` state (`null | "create" | Job`). "Add job" button in both mobile and desktop headers. Edit button (pencil icon) in `JobDetailPanel`/`JobDetailMobileDrawer` header — passes job to `setFormMode`. Form rendered in modal overlay.
+  - `-JobDetailDrawer.tsx`: `onEdit?: (job: Job) => void` prop added; pencil icon button shown when `onEdit` + loaded job both present.
+
+- **Spec 003F — Job Search Framework**:
+  - DB: Added `job_search_frameworks` table to `tables.ts` (15 columns, `idx_job_fw_user` index). Migration `0007_isotope.sql` generated and applied to remote D1.
+  - Schemas: `packages/schemas/src/frameworks/` — `FrameworksCommon.ts` (`ZPrioritisedSkill`, `ZFramework`, `ZFrameworkInput`), `FrameworksApiRequest.ts`, `FrameworksApiResponse.ts`, `FrameworksDALRequest.ts` (`GetFrameworkDALRequest`, `CreateFrameworkDALRequest`, `SaveFrameworkDALRequest`), `index.ts`. Exported from `packages/schemas/src/index.ts` as `export * from "./frameworks"`. Old `job-search-frameworks/` directory deleted.
+  - LogAction: `SaveFramework`, `GetFramework` in `packages/schemas/src/log.ts`.
+  - Constants: `JOB_SEARCH_FRAMEWORK_DEFAULTS` in `apps/worker/src/config/Constants.ts` — single backend source of truth for default values.
+  - Backend: `FrameworksDAL.ts` — `getFrameworkDetails`, `saveFramework` (fetches version, JSON-stringifies arrays, calls `createFramework`, sets `isCustomized: true`), `createFramework` (raw insert + prunes to 5 versions), `createDefaultIfAbsent` (idempotent seed from Constants). `FrameworksRepo.ts` — `seedDefault`, `getFrameworkDetails`, `saveFramework` (pure delegation to DAL — no DB logic). Routes: `GET /frameworks/job-search`, `POST /frameworks/job-search` in `FrameworksRoutes.ts`.
+  - User seeding: `UsersRepo.syncClerkUser` calls `fwRepo.seedDefault(clerkId)` after successful upsert — every new user gets a default framework row with `isCustomized: false`.
+  - Frontend data: `FrameworkQueries` (key: `["frameworks","job-search","latest"]`), `useSaveFramework` in `apps/web/src/routes/_without_nav/onboarding/job-search-framework/-data.ts`.
+  - Frontend forms: `apps/web/src/shared/forms/JobSearchFrameworkForm.tsx` — reusable form using `FrameworkInput` type. Location section in right column (below Search Settings). No hardcoded defaults — always hydrated from DB row.
+  - Onboarding route: `apps/web/src/routes/_without_nav/onboarding/job-search-framework/index.tsx` — skeleton while `isPending || !framework`; redirects to `/jobs` only when `framework.isCustomized === true`; passes DB row as `initialValues`.
+  - Settings route: `apps/web/src/routes/_authenticated/settings/frameworks.tsx` — no `max-w` constraint; `showNotice = !noticeDismissed && framework != null && !framework.isCustomized`; skeleton while `isPending || !framework`; no hardcoded defaults.
+  - Jobs page: `hasFramework` checks `frameworkQuery.data?.framework?.isCustomized` (not mere row presence); Discover button navigates to onboarding if `!hasFramework`.
 
 ## In Progress
 
@@ -77,6 +95,7 @@ change.
 ## Next Up
 
 - Spec 003E — Manual Entry Form (Add New Job)
+- Update frontend `-data.ts` to use `/jobs/query` and `/jobs/query/count`
 
 ## Open Questions
 
@@ -91,7 +110,8 @@ change.
 - `frameworks` table uses integer `type` column (`FrameworkTypeIntEnum`) and auto-incremented `version` per user per type — latest is always `ORDER BY version DESC LIMIT 1`.
 - Onboarding step-1 navigates to `/today` on framework save (step-2 route does not exist yet — will be updated when spec 03 is implemented).
 - `--accent-bg` / `--accent-text` CSS tokens added to `styles.css` Block 4 — were referenced in ui-context.md but not yet defined.
-- `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/worker/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template so the LLM outputs a document that matches the canonical structure and formatting, substituting the user's configured values (salary, locations, ethics flags, criteria, bands).
+- `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/worker/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template.
+- **Query route convention** — read-only endpoints that need a request body use `POST /jobs/query` sub-paths within the same resource router. All routes for a resource stay in one `<Feature>Routes.ts` file. `Constants.DEFAULT_PAGE_NO` and `Constants.DEFAULT_PAGE_SIZE` applied in Repo so routes and DAL stay decoupled from default business logic.
 
 ## Session Notes
 

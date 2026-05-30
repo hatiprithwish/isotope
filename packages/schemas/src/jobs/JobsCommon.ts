@@ -54,10 +54,22 @@ export const jobTypeIntToLabel = {
   [JobTypeIntEnum.LLM]: JobTypeLabelEnum.LLM,
 };
 
+export enum JobSortColumn {
+  CreatedAt = "createdAt",
+  Title = "title",
+  Status = "status",
+}
+export const ZJobSortColumn = z.enum(JobSortColumn);
+
 export const ZJobBase = z.object({
   status: ZJobStatusIntEnum,
   title: z.string(),
   companyId: z.number().nullable().optional(),
+  companyName: z.string().nullable().optional(),
+  companyIndustry: z.string().nullable().optional(),
+  companyStatusLabel: z.string().nullable().optional(),
+  companyFitBand: z.number().nullable().optional(),
+  companyFitBandLabel: z.string().nullable().optional(),
   url: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   salary: z.string().nullable().optional(),

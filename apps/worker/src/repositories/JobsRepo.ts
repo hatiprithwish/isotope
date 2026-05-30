@@ -1,6 +1,7 @@
 import JobsDAL from "@/data-access-layer/JobsDAL";
 import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/logger";
+import Constants from "@/config/Constants";
 
 export default class JobsRepo {
   private dal: JobsDAL;
@@ -33,6 +34,33 @@ export default class JobsRepo {
     });
   }
 
+  async updateJob(params: Schemas.UpdateJobApiRequest & { userId: string; id: number }) {
+    AppLogger.info({
+      category: Schemas.LogCategory.Repo,
+      action: Schemas.LogAction.UpdateJob,
+      message: "Updating job",
+      metadata: { userId: params.userId, id: params.id },
+    });
+
+    const dalParams: Schemas.UpdateJobDALRequest = {
+      id: params.id,
+      createdBy: params.userId,
+    };
+    if (params.title !== undefined) dalParams.title = params.title;
+    if (params.companyId !== undefined) dalParams.companyId = params.companyId ?? null;
+    if (params.url !== undefined) dalParams.url = params.url;
+    if (params.description !== undefined) dalParams.description = params.description ?? null;
+    if (params.location !== undefined) dalParams.location = params.location ?? null;
+    if (params.salary !== undefined) dalParams.salary = params.salary ?? null;
+    if (params.source !== undefined) dalParams.source = params.source ?? null;
+    if (params.status !== undefined) dalParams.status = params.status;
+    if (params.type !== undefined) dalParams.type = params.type;
+    if (params.skills !== undefined) dalParams.skills = params.skills ?? null;
+    if (params.matchScore !== undefined) dalParams.matchScore = params.matchScore ?? null;
+
+    return await this.dal.updateJob(dalParams);
+  }
+
   async getJobDetails(params: { userId: string; id: number }) {
     AppLogger.info({
       category: Schemas.LogCategory.Repo,
@@ -44,7 +72,7 @@ export default class JobsRepo {
     return await this.dal.getJobDetails({ id: params.id, createdBy: params.userId });
   }
 
-  async countJobs(params: { userId: string } & Schemas.GetJobsApiRequest) {
+  async countJobs(params: Schemas.GetJobsApiRequest & { userId: string }) {
     AppLogger.info({
       category: Schemas.LogCategory.Repo,
       action: Schemas.LogAction.CountJobs,
@@ -69,6 +97,10 @@ export default class JobsRepo {
     return await this.dal.getJobs({
       createdBy: params.userId,
       searchText: params.searchText ?? null,
+      pageNo: params.pageNo ?? Constants.DEFAULT_PAGE_NO,
+      pageSize: params.pageSize ?? Constants.DEFAULT_PAGE_SIZE,
+      sortColumn: params.sortColumn ?? Schemas.JobSortColumn.CreatedAt,
+      sortDirection: params.sortDirection ?? Schemas.SortDirection.Desc,
     });
   }
 }

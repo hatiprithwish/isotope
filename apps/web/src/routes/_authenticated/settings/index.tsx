@@ -2,295 +2,138 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useState } from "react";
-import { ArrowLeftIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import type { CompanyFrameworkFormInputs, Framework } from "@app/schemas";
-import { CompanyResearchFrameworkForm } from "@/shared/forms/CompanyResearchFrameworkForm";
-import { FrameworksQueries, useGenerateFramework, useSaveFramework } from "../onboarding/-data";
+import type { FrameworkInput } from "@app/schemas";
+import JobSearchFrameworkForm from "@/shared/forms/JobSearchFrameworkForm";
+import {
+  FrameworkQueries,
+  useSaveFramework,
+} from "../../_without_nav/onboarding/job-search-framework/-data";
+import Utilities from "@/utils";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
-  component: SettingsPage,
+  component: SettingsFrameworksPage,
 });
 
-type FrameworkStep = "view" | "form" | "review";
+type Tab = "job-search" | "company-research" | "ab-testing";
 
-function SettingsPage() {
+function SettingsFrameworksPage() {
   const { getToken } = useAuth();
-  const generateMutation = useGenerateFramework();
+  const [activeTab, setActiveTab] = useState<Tab>("job-search");
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
+  const [submitError, setSubmitError] = useState<string | undefined>();
+
+  const frameworkQuery = useQuery(FrameworkQueries.latest(getToken));
   const saveMutation = useSaveFramework();
 
-  const latestQuery = useQuery(FrameworksQueries.companyLatest(getToken));
-  const versionsQuery = useQuery(FrameworksQueries.companyVersions(getToken));
+  const framework = frameworkQuery.data?.framework;
 
-  const [step, setStep] = useState<FrameworkStep>("view");
-  const [savedFormInputs, setSavedFormInputs] = useState<CompanyFrameworkFormInputs | null>(null);
-  const [generatedText, setGeneratedText] = useState("");
-  const [editedText, setEditedText] = useState("");
-  const [generateError, setGenerateError] = useState<string | undefined>();
-  const [saveError, setSaveError] = useState<string | undefined>();
-
-  const latestFramework = latestQuery.data?.framework;
-  const versions = versionsQuery.data?.frameworks ?? [];
-
-  function handleEditClick() {
-    if (latestFramework?.formInputs) {
-      try {
-        const parsed = JSON.parse(latestFramework.formInputs) as CompanyFrameworkFormInputs;
-        setSavedFormInputs(parsed);
-      } catch {
-        setSavedFormInputs(null);
-      }
-    }
-    setStep("form");
-  }
-
-  function handleRestoreVersion(f: Framework) {
-    setEditedText(f.content);
-    setGeneratedText(f.content);
-    setStep("review");
-  }
-
-  async function handleGenerate(inputs: CompanyFrameworkFormInputs) {
-    setGenerateError(undefined);
+  async function handleSubmit(values: FrameworkInput) {
+    setSubmitError(undefined);
     try {
-      const result = await generateMutation.mutateAsync({ formInputs: inputs });
-      if (result.frameworkText) {
-        setSavedFormInputs(inputs);
-        setGeneratedText(result.frameworkText);
-        setEditedText(result.frameworkText);
-        setStep("review");
-      } else {
-        setGenerateError("Generation returned no text. Please try again.");
-      }
+      await saveMutation.mutateAsync(values);
+      toast.success("Job search criteria updated", { duration: 3000 });
     } catch {
-      setGenerateError("Failed to generate framework. Please try again.");
+      setSubmitError("Failed to save. Please try again.");
     }
   }
 
-  async function handleSave() {
-    setSaveError(undefined);
-    try {
-      await saveMutation.mutateAsync({
-        content: editedText,
-        formInputs: savedFormInputs ?? undefined,
-        isCustomized: editedText !== generatedText,
-      });
-      toast.success("Framework saved");
-      setStep("view");
-    } catch {
-      setSaveError("Failed to save framework. Please try again.");
-    }
-  }
+  const showNotice = !noticeDismissed && framework != null && !framework.isCustomized;
+
+  const TABS: { key: Tab; label: string }[] = [
+    { key: "job-search", label: "Job Search" },
+    { key: "company-research", label: "Company Research" },
+    { key: "ab-testing", label: "A/B Testing" },
+  ];
 
   return (
-    <div className="max-w-[860px] mx-auto px-8 py-8 flex flex-col gap-8">
-      <div>
-        <h1 className="text-[16px] font-semibold text-foreground">Settings</h1>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* topbar */}
+      <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
+        <span className="text-base font-semibold text-foreground tracking-tight">Frameworks</span>
+      </header>
+
+      {/* tabs */}
+      <div className="px-6 pt-0 flex gap-1 border-b border-border bg-background shrink-0">
+        {TABS.map((tab) => {
+          const active = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={[
+                "h-9 px-4 text-[12px] font-medium border-b-2 -mb-px transition-colors",
+                active
+                  ? "border-primary text-primary"
+                  : "border-transparent text-(--text-secondary) hover:text-foreground",
+              ].join(" ")}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Frameworks section */}
-      <section className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[13px] font-semibold text-foreground">Company Research Framework</h2>
-          {step === "view" && latestFramework && (
-            <button
-              type="button"
-              onClick={handleEditClick}
-              className="h-[31px] px-[13px] rounded-lg border border-border text-[13px] font-medium text-(--text-secondary) hover:text-foreground hover:bg-(--surface-raised) transition-colors"
-            >
-              Edit framework
-            </button>
-          )}
-          {(step === "form" || step === "review") && (
-            <button
-              type="button"
-              onClick={() => setStep("view")}
-              className="flex items-center gap-1.5 h-[31px] px-[13px] rounded-lg border border-border text-[13px] font-medium text-(--text-secondary) hover:text-foreground hover:bg-(--surface-raised) transition-colors"
-            >
-              <ArrowLeftIcon size={13} />
-              Cancel
-            </button>
-          )}
-        </div>
-
-        {/* View: current framework */}
-        {step === "view" && (
-          <>
-            {latestQuery.isPending && (
-              <div className="rounded-xl bg-(--surface-raised) h-32 animate-pulse" />
-            )}
-            {latestQuery.isError && (
-              <p className="text-[13px] text-destructive">Failed to load framework.</p>
-            )}
-            {latestQuery.isSuccess && !latestFramework && (
-              <div className="rounded-xl border border-border bg-card p-6 flex flex-col items-center gap-4">
-                <p className="text-[13px] text-(--text-secondary)">
-                  No framework saved yet. Create one to start AI company research.
+      {/* content */}
+      <div className="flex-1 overflow-y-auto bg-background">
+        {activeTab === "job-search" && (
+          <div className="px-6 py-6">
+            {showNotice && (
+              <div className="mb-6 flex items-start gap-3 px-4 py-3 rounded-lg bg-(--warning-bg) border border-(--warning)">
+                <p className="flex-1 text-[13px] text-(--warning-text)">
+                  You're using default criteria. Update these to match your actual preferences — AI
+                  will use them for every future job search.
                 </p>
                 <button
                   type="button"
-                  onClick={() => setStep("form")}
-                  className="h-[31px] px-[13px] rounded-lg bg-primary text-primary-foreground text-[13px] font-medium hover:opacity-90 transition-opacity"
+                  onClick={() => setNoticeDismissed(true)}
+                  className="shrink-0 text-(--warning-text) hover:opacity-70 transition-opacity mt-0.5"
+                  aria-label="Dismiss"
                 >
-                  Create framework
+                  ×
                 </button>
               </div>
             )}
-            {latestFramework && (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-semibold text-(--text-secondary)">
-                    Version {latestFramework.version}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    Last saved: {formatRelativeTime(latestFramework.createdAt)}
-                  </span>
-                </div>
 
-                {/* Framework text read-only */}
-                <div className="rounded-r-lg border border-border border-l-[3px] border-l-(--ai-border) bg-(--ai-bg) p-4">
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <span className="text-[11px] text-(--ai)">✦</span>
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-(--ai-text)">
-                      Active framework
-                    </span>
-                  </div>
-                  <pre className="text-[13px] leading-[1.75] text-foreground whitespace-pre-wrap font-sans">
-                    {latestFramework.content}
-                  </pre>
-                </div>
-
-                {/* Version history */}
-                {versions.length > 1 && (
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      Version history
-                    </h3>
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
-                      {versions.map((v, i) => (
-                        <div
-                          key={v.id}
-                          className={`flex items-center gap-3 px-4 py-3 ${
-                            i < versions.length - 1 ? "border-b border-border" : ""
-                          } ${v.id === latestFramework.id ? "bg-(--surface-raised)" : ""}`}
-                        >
-                          <span className="text-[12px] font-medium text-foreground w-12">
-                            v{v.version}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground flex-1">
-                            {formatRelativeTime(v.createdAt)}
-                          </span>
-                          {v.isCustomized && (
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.05em] text-(--text-secondary)">
-                              Edited
-                            </span>
-                          )}
-                          {v.id !== latestFramework.id && (
-                            <button
-                              type="button"
-                              onClick={() => handleRestoreVersion(v)}
-                              className="h-[25px] px-3 rounded-lg border border-border text-[12px] font-medium text-(--text-secondary) hover:text-foreground hover:bg-(--surface-raised) transition-colors"
-                            >
-                              Restore
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Form step */}
-        {step === "form" && (
-          <CompanyResearchFrameworkForm
-            initialValues={savedFormInputs ?? undefined}
-            onGenerate={handleGenerate}
-            isGenerating={generateMutation.isPending}
-            generateError={generateError}
-            context="settings"
-          />
-        )}
-
-        {/* Review step */}
-        {step === "review" && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <h3 className="text-[14px] font-semibold text-foreground">Review generated text</h3>
-              <p className="text-[12px] leading-[1.55] text-(--text-secondary) mt-1">
-                Edit inline or go back to adjust the form.
+            {framework && (
+              <p className="text-[12px] text-(--text-secondary) mb-6">
+                Last updated: {Utilities.relativeTime(framework.createdAt)} · Version{" "}
+                {framework.version}
               </p>
-            </div>
-
-            <div className="rounded-r-lg border border-border border-l-[3px] border-l-(--ai-border) bg-(--ai-bg) p-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <span className="text-[11px] text-(--ai)">✦</span>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-(--ai-text)">
-                  Generated framework · {editedText.length} chars
-                </span>
-              </div>
-              <textarea
-                value={editedText}
-                onChange={(e) => setEditedText(e.target.value)}
-                className="w-full min-h-[360px] bg-transparent text-[13px] leading-[1.75] text-foreground resize-none focus:outline-none"
-                spellCheck={false}
-              />
-            </div>
-
-            {saveError && (
-              <div className="rounded-lg bg-(--danger-bg) border border-destructive px-4 py-3 text-[13px] text-(--danger-text)">
-                {saveError}
-              </div>
             )}
 
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setStep("form")}
-                className="flex items-center gap-1.5 h-[31px] px-[13px] rounded-lg border border-border text-[13px] font-medium text-(--text-secondary) hover:text-foreground hover:bg-(--surface-raised) transition-colors"
-              >
-                <ArrowLeftIcon size={13} />
-                Back to form
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saveMutation.isPending}
-                className="flex items-center gap-2 h-[31px] px-[13px] rounded-lg bg-primary text-primary-foreground text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {saveMutation.isPending ? (
-                  <>
-                    <span className="inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  "Save framework"
-                )}
-              </button>
-            </div>
+            {frameworkQuery.isPending || !framework ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-9 rounded-lg bg-(--surface-raised) animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <JobSearchFrameworkForm
+                key={framework.version}
+                initialValues={framework}
+                onSubmit={handleSubmit}
+                submitLabel="Save criteria"
+                isSubmitting={saveMutation.isPending}
+                submitError={submitError}
+              />
+            )}
           </div>
         )}
-      </section>
+
+        {activeTab === "company-research" && (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-[13px] text-(--text-secondary)">Coming soon</p>
+          </div>
+        )}
+
+        {activeTab === "ab-testing" && (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-[13px] text-(--text-secondary)">Coming soon</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
-
-function formatRelativeTime(isoString: string): string {
-  const then = new Date(isoString).getTime();
-  const now = Date.now();
-  const diff = Math.round((now - then) / 1000);
-
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`;
-
-  return new Date(isoString).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }

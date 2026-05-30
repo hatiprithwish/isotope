@@ -23,12 +23,20 @@ export enum CompanyStatusLabelEnum {
 export const ZCompanyStatusLabelEnum = z.enum(CompanyStatusLabelEnum);
 
 // Maps — int → label (used in Repo layer)
-export const companyStatusIntToLabel = {
+export const companyStatusIntToLabel: Record<CompanyStatusIntEnum, CompanyStatusLabelEnum> = {
   [CompanyStatusIntEnum.WaitingHuman]: CompanyStatusLabelEnum.WaitingHuman,
   [CompanyStatusIntEnum.Accepted]: CompanyStatusLabelEnum.Accepted,
   [CompanyStatusIntEnum.ContactsAdded]: CompanyStatusLabelEnum.ContactsAdded,
   [CompanyStatusIntEnum.RejectedHuman]: CompanyStatusLabelEnum.RejectedHuman,
   [CompanyStatusIntEnum.Interviewed]: CompanyStatusLabelEnum.Interviewed,
+  [CompanyStatusIntEnum.Offer]: CompanyStatusLabelEnum.Offer,
+};
+
+export const companyFitBandIntToLabel: Record<CompanyFitBandIntEnum, CompanyFitBandLabelEnum> = {
+  [CompanyFitBandIntEnum.StrongFit]: CompanyFitBandLabelEnum.StrongFit,
+  [CompanyFitBandIntEnum.ConditionalFit]: CompanyFitBandLabelEnum.ConditionalFit,
+  [CompanyFitBandIntEnum.WeakFit]: CompanyFitBandLabelEnum.WeakFit,
+  [CompanyFitBandIntEnum.Disqualified]: CompanyFitBandLabelEnum.Disqualified,
 };
 
 export enum CompanyFitBandIntEnum {

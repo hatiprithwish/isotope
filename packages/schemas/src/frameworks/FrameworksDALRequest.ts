@@ -1,18 +1,25 @@
-import type { Framework } from "./FrameworksCommon";
+import type { FrameworkInput } from "./FrameworksCommon";
 
-export type CreateFrameworkDALRequest = Pick<Framework, "createdBy" | "type" | "content"> & {
-  formInputs?: string | null;
-  isCustomized?: boolean;
+export type SaveFrameworkDALRequest = {
+  createdBy: string;
+  input: FrameworkInput;
+};
+
+export type CreateFrameworkDALRequest = {
+  createdBy: string;
+  targetRoles: string;
+  isRemote: boolean;
+  requiredSkills: string;
+  skills: string;
+  minSalaryLpa: number;
+  minExp: number;
+  maxExp: number;
+  preferredLocations: string;
+  recencyWindow: number;
+  isCustomized: boolean;
   version: number;
 };
 
-export type GetLatestFrameworkDALRequest = {
+export type GetFrameworkDALRequest = {
   createdBy: string;
-  type: number;
-};
-
-export type GetFrameworkVersionsDALRequest = {
-  createdBy: string;
-  type: number;
-  limit?: number;
 };

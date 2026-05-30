@@ -1,10 +1,11 @@
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
-import { frameworks } from "@/db/tables";
+import { jobSearchFrameworks } from "@/db/tables";
 import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/logger";
 import Utility from "@/utils";
+import Constants from "@/config/Constants";
 
 export default class FrameworksDAL {
   private db: DrizzleD1Database;
@@ -13,31 +14,34 @@ export default class FrameworksDAL {
     this.db = getDbClient(env);
   }
 
-  async getLatestFramework(params: Schemas.GetLatestFrameworkDALRequest) {
-    const response: Schemas.GetLatestFrameworkApiResponse = { isSuccess: false };
+  async getFrameworkDetails(
+    params: Schemas.GetFrameworkDALRequest,
+  ): Promise<Schemas.GetFrameworkDetailsApiResponse> {
+    const response: Schemas.GetFrameworkDetailsApiResponse = { isSuccess: false };
 
     try {
-      const [framework] = await this.db
+      const [row] = await this.db
         .select()
-        .from(frameworks)
-        .where(and(eq(frameworks.createdBy, params.createdBy), eq(frameworks.type, params.type)))
-        .orderBy(desc(frameworks.version))
+        .from(jobSearchFrameworks)
+        .where(eq(jobSearchFrameworks.createdBy, params.createdBy))
+        .orderBy(desc(jobSearchFrameworks.version))
         .limit(1);
 
-      if (!framework) {
-        response.isSuccess = true;
+      response.isSuccess = true;
+
+      if (!row) {
+        response.framework = null;
         response.message = "No framework found";
         return response;
       }
 
-      response.isSuccess = true;
+      response.framework = this.deserialise(row);
       response.message = "Framework fetched successfully";
-      response.framework = framework;
     } catch (error) {
-      const message = "Unknown error fetching latest framework";
+      const message = "Unknown error fetching framework";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.GetLatestFramework,
+        action: Schemas.LogAction.GetFramework,
         message,
         error,
         metadata: params,
@@ -48,48 +52,90 @@ export default class FrameworksDAL {
     return response;
   }
 
-  async getFrameworkVersions(params: Schemas.GetFrameworkVersionsDALRequest) {
-    const response: Schemas.GetFrameworkVersionsApiResponse = { isSuccess: false };
+  async saveFramework(
+    params: Schemas.SaveFrameworkDALRequest,
+  ): Promise<Schemas.SaveFrameworkApiResponse> {
+    const latest = await this.getFrameworkDetails({ createdBy: params.createdBy });
+    if (!latest.isSuccess) {
+      return { isSuccess: false, message: "Failed to determine next version" };
+    }
+    const nextVersion = latest.framework ? latest.framework.version + 1 : 1;
+    const { input } = params;
+    return this.createFramework({
+      createdBy: params.createdBy,
+      targetRoles: JSON.stringify(input.targetRoles),
+      isRemote: input.isRemote,
+      requiredSkills: JSON.stringify(input.requiredSkills),
+      skills: JSON.stringify(input.skills),
+      minSalaryLpa: input.minSalaryLpa,
+      minExp: input.minExp,
+      maxExp: input.maxExp,
+      preferredLocations: JSON.stringify(input.preferredLocations),
+      recencyWindow: input.recencyWindow,
+      isCustomized: true,
+      version: nextVersion,
+    });
+  }
 
+  async createDefaultIfAbsent(createdBy: string): Promise<void> {
     try {
-      const rows = await this.db
-        .select()
-        .from(frameworks)
-        .where(and(eq(frameworks.createdBy, params.createdBy), eq(frameworks.type, params.type)))
-        .orderBy(desc(frameworks.version))
-        .limit(params.limit ?? 5);
+      const existing = await this.db
+        .select({ id: jobSearchFrameworks.id })
+        .from(jobSearchFrameworks)
+        .where(eq(jobSearchFrameworks.createdBy, createdBy))
+        .limit(1);
 
-      response.isSuccess = true;
-      response.message = "Framework versions fetched successfully";
-      response.frameworks = rows;
+      if (existing.length > 0) return;
+
+      const d = Constants.JOB_SEARCH_FRAMEWORK_DEFAULTS;
+      await this.db.insert(jobSearchFrameworks).values({
+        createdBy,
+        targetRoles: JSON.stringify(d.targetRoles),
+        isRemote: d.isRemote,
+        requiredSkills: JSON.stringify(d.requiredSkills),
+        skills: JSON.stringify(d.skills),
+        minSalaryLpa: d.minSalaryLpa,
+        minExp: d.minExp,
+        maxExp: d.maxExp,
+        preferredLocations: JSON.stringify(d.preferredLocations),
+        recencyWindow: d.recencyWindow,
+        isCustomized: false,
+        version: 1,
+        createdAt: Utility.getCurrentISOTimestamp(),
+        updatedAt: null,
+      });
     } catch (error) {
-      const message = "Unknown error fetching framework versions";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.GetFrameworkVersions,
-        message,
+        action: Schemas.LogAction.SaveFramework,
+        message: "Failed to seed default framework",
         error,
-        metadata: params,
+        metadata: { createdBy },
       });
-      response.message = message;
     }
-
-    return response;
   }
 
-  async createFramework(params: Schemas.CreateFrameworkDALRequest) {
+  async createFramework(
+    params: Schemas.CreateFrameworkDALRequest,
+  ): Promise<Schemas.SaveFrameworkApiResponse> {
     const response: Schemas.SaveFrameworkApiResponse = { isSuccess: false };
 
     try {
-      const framework = await this.db
-        .insert(frameworks)
+      const row = await this.db
+        .insert(jobSearchFrameworks)
         .values({
           createdBy: params.createdBy,
-          type: params.type,
-          content: params.content,
-          formInputs: params.formInputs ?? null,
+          targetRoles: params.targetRoles,
+          isRemote: params.isRemote,
+          requiredSkills: params.requiredSkills,
+          skills: params.skills,
+          minSalaryLpa: params.minSalaryLpa,
+          minExp: params.minExp,
+          maxExp: params.maxExp,
+          preferredLocations: params.preferredLocations,
+          recencyWindow: params.recencyWindow,
+          isCustomized: params.isCustomized,
           version: params.version,
-          isCustomized: params.isCustomized ?? false,
           createdAt: Utility.getCurrentISOTimestamp(),
           updatedAt: null,
         })
@@ -98,7 +144,7 @@ export default class FrameworksDAL {
 
       response.isSuccess = true;
       response.message = "Framework saved successfully";
-      response.framework = framework;
+      response.framework = this.deserialise(row);
     } catch (error) {
       const message = "Unknown error saving framework";
       AppLogger.error({
@@ -112,5 +158,33 @@ export default class FrameworksDAL {
     }
 
     return response;
+  }
+
+  private deserialise(row: typeof jobSearchFrameworks.$inferSelect): Schemas.Framework {
+    return {
+      id: row.id,
+      createdBy: row.createdBy,
+      targetRoles: this.parseJsonArray<string>(row.targetRoles),
+      isRemote: Boolean(row.isRemote),
+      requiredSkills: this.parseJsonArray<string>(row.requiredSkills),
+      skills: this.parseJsonArray<Schemas.PrioritisedSkill>(row.skills),
+      minSalaryLpa: row.minSalaryLpa,
+      minExp: row.minExp,
+      maxExp: row.maxExp,
+      preferredLocations: this.parseJsonArray<string>(row.preferredLocations),
+      recencyWindow: row.recencyWindow,
+      version: row.version,
+      isCustomized: Boolean(row.isCustomized),
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt ?? null,
+    };
+  }
+
+  private parseJsonArray<T>(value: string): T[] {
+    try {
+      return JSON.parse(value) as T[];
+    } catch {
+      return [];
+    }
   }
 }

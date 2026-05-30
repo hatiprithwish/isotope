@@ -5,7 +5,6 @@
 - Keep modules small and single-purpose — a file that does more than one thing is a candidate to split
 - Fix root causes — do not layer workarounds or conditional patches over broken behaviour
 - Do not mix unrelated concerns in one component or route — UI, DB access, and business logic belong in separate layers
-- Every feature must be end-to-end functional — no stubs, no TODOs, no placeholder functions
 - All status transitions must be explicit — never infer status from field values, update `status` columns directly
 
 ## TypeScript
@@ -23,8 +22,6 @@
 - Route files are thin — import from `-data.ts` and co-located components, never write business logic inline
 - Use `?panel=[id]` URL param pattern for detail panel state — panel open state must be derivable from the URL
 - Always call `useAuth()` at page level and pass `getToken` into query and mutation hooks
-- Loading state: `if (isPending) return <div>Loading...</div>`
-- Error state: `if (isError) return <div>Failed to load.</div>`
 - All API calls go through `apiClient` — never raw `fetch` in a component
 - Co-located private components use `-` prefix (e.g. `-NoteCard.tsx`) — they are not routes
 
@@ -41,15 +38,10 @@
 
 - Tailwind utility classes only — no inline `style={{}}` except for dynamic values impossible in Tailwind
 - No CSS modules, no styled-components — shadcn components extended via `className` only, never modify files in `src/shadcn/ui/`
-- Pixel-perfect and responsive — every component matches the design spec exactly using Tailwind tokens from `styles.css`; never approximate; use responsive prefixes (`md:`, `lg:`) for breakpoint differences
+- Pixel-perfect and responsive — every component matches the design spec exactly using Tailwind tokens from `styles.css`; use responsive prefixes (`md:`, `lg:`) for breakpoint differences
 - Check `styles.css` for exact token names before writing color classes — e.g. `--surface-raised` → `bg-[var(--surface-raised)]`, `--border` → `border-border`
-- Never write arbitrary pixel values when a Tailwind v4 class can express it — v4 accepts decimals (`w-1.25`, `gap-0.75`); check docs before using `[]`
+- Never use arbitrary `[]` values when a Tailwind class can express it — v4 accepts decimals (`w-1.25`, `gap-0.75`); check docs before reaching for `[]`
 - Flag any design value that cannot be expressed in Tailwind before writing anything — do not silently approximate
-
-## AppTable
-
-- Pass content into the toolbar row via the `toolbarLeft?: ReactNode` prop — do not add separate `<div>` rows between the page header and `<AppTable>` for toolbar-level controls (search inputs, filter chips, etc.)
-- The toolbar row always renders; it contains `toolbarLeft` on the left and the column-visibility (`…`) menu on the right
 
 ## API Routes
 
@@ -60,10 +52,9 @@
 
 ## AI / LLM Calls
 
-- All LLM calls go through `ContextBuilder` to assemble the input bundle: fresh framework fetch + company record + job record (or null) + conversation history.
-- Never pass a cached or module-level stored framework to an LLM call. Always fetch from D1 at call time.
-- Wrap all LLM calls in try/catch. On failure: set `failed_at = now`, increment `retry_count`. After `retry_count >= 3`, set `status = Failed`.
-- Claude Haiku is used exclusively for personalisation research (Step 5 of Contact Finder). All other AI work uses Claude Sonnet or higher.
+- All LLM calls go through `ContextBuilder` to assemble the input bundle: fresh framework fetch + company record + job record (or null) + conversation history
+- Wrap all LLM calls in try/catch. On failure: set `failed_at = now`, increment `retry_count`. After `retry_count >= 3`, set `status = Failed`
+- Claude Haiku is used exclusively for personalisation research (Step 5 of Contact Finder). All other AI work uses Claude Sonnet or higher
 
 ## Logging
 
@@ -71,17 +62,15 @@ Logging is mandatory throughout the backend. Silent failures are forbidden.
 
 **Backend (`AppLogger` in `apps/worker/src/providers/logger.ts`)**
 
-- Every DAL method must log on every error path — both caught exceptions and "not found" branches — using `AppLogger.error()`.
-- Every Repo / AI method must log at the start of meaningful operations (`AppLogger.info()`) and on all error paths (`AppLogger.error()`).
-- Always pass `category` (`LogCategory`), `action` (`LogAction`), `message`, and `metadata` (the input params, redacted of secrets automatically by the sink). Pass `error` on exception paths.
-- `LogCategory` and `LogAction` enums live in `packages/schemas/src/log.ts`. Add a new `LogAction` entry for every new feature operation before writing any log call — never use a string literal.
-- Reference pattern: `NotesDAL` — logs every error branch; `AiProvider` — logs inference start, completion, and every retry/failure.
+- Every DAL method must log on every error path — both caught exceptions and "not found" branches — using `AppLogger.error()`
+- Every Repo and AI method must log at the start of meaningful operations (`AppLogger.info()`) and on all error paths (`AppLogger.error()`)
+- Always pass `category` (`LogCategory`), `action` (`LogAction`), `message`, and `metadata` (input params, redacted of secrets automatically by the sink). Pass `error` on exception paths
+- `LogCategory` and `LogAction` enums live in `packages/schemas/src/log.ts` — add a new `LogAction` entry for every new feature operation before writing any log call; never use a string literal
 
 **Frontend (`-data.ts` mutation hooks)**
 
-- Every `useMutation` must declare an `onError` handler that surfaces the failure via `toast.error(...)` from `sonner`.
-- `onError` is the frontend's logging boundary — it is the only place a mutation failure becomes visible. Silent or absent `onError` is forbidden (see also architecture invariant #5).
-- Reference pattern: `apps/web/src/routes/_authenticated/notes/-data.ts` — every mutation has an explicit `onError` toast.
+- Every `useMutation` must declare an `onError` handler that surfaces the failure via `toast.error(...)` from `sonner`
+- Silent or absent `onError` is forbidden — it is the only place a mutation failure becomes visible to the user
 
 ## Data and Storage
 
