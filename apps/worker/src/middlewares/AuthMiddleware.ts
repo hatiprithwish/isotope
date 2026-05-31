@@ -1,7 +1,7 @@
 import { createMiddleware } from "hono/factory";
-import AppLogger from "@/providers/logger";
+import AppLogger from "@/providers/AppLogger";
 import * as Schemas from "@app/schemas";
-import ClerkProvider from "@/providers/clerk";
+import ClerkProvider from "@/providers/ClerkProvider";
 import type AppContext from "@/config/AppContext";
 
 const checkAuth = createMiddleware<AppContext>(async (c, next) => {

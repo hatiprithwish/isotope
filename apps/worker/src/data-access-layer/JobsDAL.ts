@@ -3,7 +3,7 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { jobs, companies } from "@/db/tables";
 import * as Schemas from "@app/schemas";
-import AppLogger from "@/providers/logger";
+import AppLogger from "@/providers/AppLogger";
 import Utility from "@/utils";
 
 export default class JobsDAL {

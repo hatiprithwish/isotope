@@ -1,6 +1,6 @@
 import JobsDAL from "@/data-access-layer/JobsDAL";
 import * as Schemas from "@app/schemas";
-import AppLogger from "@/providers/logger";
+import AppLogger from "@/providers/AppLogger";
 import Constants from "@/config/Constants";
 
 export default class JobsRepo {

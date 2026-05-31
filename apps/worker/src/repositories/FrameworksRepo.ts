@@ -1,6 +1,6 @@
 import FrameworksDAL from "@/data-access-layer/FrameworksDAL";
 import * as Schemas from "@app/schemas";
-import AppLogger from "@/providers/logger";
+import AppLogger from "@/providers/AppLogger";
 
 export default class FrameworksRepo {
   private dal: FrameworksDAL;
