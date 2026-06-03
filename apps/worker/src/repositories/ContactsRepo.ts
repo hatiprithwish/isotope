@@ -85,4 +85,38 @@ export default class ContactsRepo {
       ...params.history,
     });
   }
+
+  async logContactHistory(
+    params: Schemas.LogContactHistoryApiRequest & { userId: string; contactId: number },
+  ) {
+    const type = `${params.channel}_${params.direction === "me" ? "sent" : "received"}`;
+    return await this.dal.createContactHistory({
+      createdBy: params.userId,
+      contactId: params.contactId,
+      type,
+      channel: params.channel,
+      body: params.body,
+      sentAt: params.sentAt,
+      subject: params.subject ?? null,
+    });
+  }
+
+  async updateContactHistory(
+    params: Schemas.UpdateContactHistoryApiRequest & { userId: string; historyId: number },
+  ) {
+    return await this.dal.updateContactHistory({
+      id: params.historyId,
+      createdBy: params.userId,
+      body: params.body,
+      sentAt: params.sentAt,
+      subject: params.subject,
+    });
+  }
+
+  async deleteContactHistory(params: { userId: string; historyId: number }) {
+    return await this.dal.deleteContactHistory({
+      id: params.historyId,
+      createdBy: params.userId,
+    });
+  }
 }

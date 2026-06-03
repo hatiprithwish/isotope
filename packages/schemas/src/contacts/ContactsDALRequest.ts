@@ -15,3 +15,11 @@ export type UpdateContactDALRequest = FindContactDALRequest &
 export type CreateContactHistoryDALRequest = ContactHistoryBase & Pick<ContactHistory, "createdBy">;
 
 export type GetContactHistoryDALRequest = { contactId: number; createdBy: string };
+
+export type FindContactHistoryDALRequest = { id: number; createdBy: string };
+
+export type UpdateContactHistoryDALRequest = FindContactHistoryDALRequest & {
+  body?: string;
+  sentAt?: string;
+  subject?: string | null;
+};

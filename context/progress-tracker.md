@@ -99,6 +99,15 @@ change.
   - `wrangler types` re-run — `JOB_DISCOVERY_WORKFLOW: Workflow<...>` and `TAVILY_API_KEY: string` now in generated `Env`.
   - Frontend: `useDiscoverJobs` mutation in `-data.ts`. Both Discover buttons (desktop header + mobile banner) wired — disabled + "Searching…" while pending, success toast on 202, redirect to onboarding on 400, error toast on other failures.
 
+- **Spec 04 — Contact History (CRUD)**:
+  - LogAction: Added `GetContactHistory`, `CreateContactHistory`, `UpdateContactHistory`, `DeleteContactHistory` to `packages/schemas/src/log.ts`.
+  - Schemas: Added `ContactHistoryDirectionEnum` (me/contact) and `ContactHistoryChannelEnum` (email/linkedin) to `ContactsCommon.ts`. Added `ZLogContactHistoryApiRequest` (direction+channel+body+sentAt), `ZUpdateContactHistoryApiRequest` to `ContactsApiRequest.ts`. Added `UpdateContactHistoryApiResponse`, `DeleteContactHistoryApiResponse` to `ContactsApiResponse.ts`. Added `FindContactHistoryDALRequest`, `UpdateContactHistoryDALRequest` to `ContactsDALRequest.ts`.
+  - DAL: Updated `getContactHistory` (orderBy sentAt, correct LogAction). Updated `createContactHistory` (auto-increment sequencePosition for sent messages from prior max). Added `updateContactHistory` (body/sentAt/subject patch, ownership check). Added `deleteContactHistory` (ownership-scoped delete).
+  - Repo: Added `logContactHistory` (derives `type` from direction+channel, e.g. `email_sent`). Added `updateContactHistory`, `deleteContactHistory`.
+  - Routes: Changed `POST /:id/history` to use `ZLogContactHistoryApiRequest` via `logContactHistory`. Added `PATCH /:id/history/:historyId` and `DELETE /:id/history/:historyId`.
+  - Frontend data: Updated `useCreateContactHistory` to use `LogContactHistoryApiRequest`. Added `useUpdateContactHistory`, `useDeleteContactHistory` mutation hooks.
+  - Frontend UI: Replaced read-only `HistoryTab` with interactive version — `ComposeForm` (direction toggle, channel toggle, date picker, textarea), `EditHistoryForm` (inline edit per message), per-message edit/delete icon buttons, Touch N label on outgoing messages, reply count in header.
+
 ## In Progress
 
 - None.

@@ -3,9 +3,16 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type * as Schemas from "@app/schemas";
-import { ArrowsOutSimpleIcon, XIcon } from "@phosphor-icons/react";
+import { ContactHistoryChannelEnum, ContactHistoryDirectionEnum } from "@app/schemas";
+import { ArrowsOutSimpleIcon, PencilSimpleIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { StatusBadge } from "./-StatusBadge";
-import { ContactsQueries, useUpdateContact } from "./-data";
+import {
+  ContactsQueries,
+  useCreateContactHistory,
+  useDeleteContactHistory,
+  useUpdateContactHistory,
+  useUpdateContact,
+} from "./-data";
 import Utilities from "@/utils";
 
 type Tab = "draft" | "history" | "about";
@@ -86,6 +93,155 @@ function DraftTab({ contact }: { contact: Schemas.Contact }) {
   );
 }
 
+function ComposeForm({ contactId, onSaved }: { contactId: number; onSaved: () => void }) {
+  const createHistory = useCreateContactHistory();
+  const [direction, setDirection] = useState<ContactHistoryDirectionEnum>(
+    ContactHistoryDirectionEnum.Me,
+  );
+  const [channel, setChannel] = useState<ContactHistoryChannelEnum>(
+    ContactHistoryChannelEnum.Email,
+  );
+  const [body, setBody] = useState("");
+  const [sentAt, setSentAt] = useState(() => new Date().toISOString().slice(0, 10));
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!body.trim()) return;
+    createHistory.mutate(
+      { contactId, body: { direction, channel, body: body.trim(), sentAt } },
+      {
+        onSuccess: () => {
+          setBody("");
+          setSentAt(new Date().toISOString().slice(0, 10));
+          onSaved();
+        },
+      },
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 pt-3 border-t border-border">
+      <div className="flex gap-2">
+        <div className="flex rounded-lg border border-border overflow-hidden text-[12px] font-medium">
+          {[
+            { value: ContactHistoryDirectionEnum.Me, label: "Me" },
+            { value: ContactHistoryDirectionEnum.Contact, label: "Contact" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setDirection(opt.value)}
+              className={[
+                "h-7 px-3 transition-colors",
+                direction === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-(--text-secondary) hover:bg-(--surface-raised)",
+              ].join(" ")}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex rounded-lg border border-border overflow-hidden text-[12px] font-medium">
+          {[
+            { value: ContactHistoryChannelEnum.Email, label: "Email" },
+            { value: ContactHistoryChannelEnum.LinkedIn, label: "LinkedIn" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setChannel(opt.value)}
+              className={[
+                "h-7 px-3 transition-colors",
+                channel === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-(--text-secondary) hover:bg-(--surface-raised)",
+              ].join(" ")}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <input
+          type="date"
+          value={sentAt}
+          onChange={(e) => setSentAt(e.target.value)}
+          className="h-7 px-2 rounded-lg border border-border bg-background text-[12px] text-foreground outline-none focus:border-primary transition-colors ml-auto scheme-light dark:scheme-dark"
+        />
+      </div>
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Type the message body…"
+        rows={3}
+        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-[13px] text-foreground leading-[1.65] resize-none outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
+      />
+      <button
+        type="submit"
+        disabled={!body.trim() || createHistory.isPending}
+        className="h-7.75 px-3.5 rounded-lg text-[13px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 self-end"
+      >
+        {createHistory.isPending ? "Saving…" : "Log message"}
+      </button>
+    </form>
+  );
+}
+
+function EditHistoryForm({
+  contactId,
+  entry,
+  onDone,
+}: {
+  contactId: number;
+  entry: Schemas.ContactHistory;
+  onDone: () => void;
+}) {
+  const updateHistory = useUpdateContactHistory();
+  const [body, setBody] = useState(entry.body);
+  const [sentAt, setSentAt] = useState(entry.sentAt.slice(0, 10));
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    updateHistory.mutate(
+      { contactId, historyId: entry.id, body: { body, sentAt } },
+      { onSuccess: onDone },
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 w-full">
+      <input
+        type="date"
+        value={sentAt}
+        onChange={(e) => setSentAt(e.target.value)}
+        className="h-7 px-2 rounded-lg border border-border bg-background text-[12px] text-foreground outline-none focus:border-primary transition-colors self-start scheme-light dark:scheme-dark"
+      />
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={3}
+        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-[13px] text-foreground leading-[1.65] resize-none outline-none focus:border-primary transition-colors"
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onDone}
+          className="h-7 px-3 rounded-lg text-[12px] font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={!body.trim() || updateHistory.isPending}
+          className="h-7 px-3 rounded-lg text-[12px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {updateHistory.isPending ? "Saving…" : "Save"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function HistoryTab({
   contact,
   getToken,
@@ -94,66 +250,101 @@ function HistoryTab({
   getToken: () => Promise<string | null>;
 }) {
   const { data, isPending } = useQuery(ContactsQueries.history(contact.id, getToken));
+  const deleteHistory = useDeleteContactHistory();
+  const [editingId, setEditingId] = useState<number | null>(null);
   const history = data?.history ?? [];
+
+  const replyCount = history.filter(
+    (h) => h.type === "email_received" || h.type === "linkedin_received",
+  ).length;
 
   if (isPending)
     return <div className="px-5 py-6 text-(--text-secondary) text-sm">Loading history…</div>;
 
-  if (history.length === 0) {
-    return (
-      <div className="px-5 py-8 text-center text-(--text-secondary) text-sm">
-        No messages sent yet.
-      </div>
-    );
-  }
-
   return (
     <div className="px-5 py-4 flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-[12px] text-(--text-secondary) border-b border-border pb-3">
-        <span className="font-medium">{history.length} messages</span>
-        <span className="w-1 h-1 rounded-full bg-(--border-strong)" />
-        <span className="font-medium">
-          {
-            history.filter((h) => h.type === "email_received" || h.type === "linkedin_received")
-              .length
-          }{" "}
-          repl
-          {history.filter((h) => h.type === "email_received" || h.type === "linkedin_received")
-            .length === 1
-            ? "y"
-            : "ies"}
-        </span>
-      </div>
+      {history.length > 0 && (
+        <div className="flex items-center gap-2 text-[12px] text-(--text-secondary) border-b border-border pb-3">
+          <span className="font-medium">{history.length} messages</span>
+          <span className="w-1 h-1 rounded-full bg-(--border-strong)" />
+          <span className="font-medium">
+            {replyCount} repl{replyCount === 1 ? "y" : "ies"}
+          </span>
+        </div>
+      )}
+
+      {history.length === 0 && (
+        <div className="py-4 text-center text-(--text-secondary) text-[13px]">
+          No messages logged yet.
+        </div>
+      )}
+
       {history.map((h) => {
         const isSent = h.type === "email_sent" || h.type === "linkedin_sent";
+        const channelLabel = h.channel.charAt(0).toUpperCase() + h.channel.slice(1);
+        const touchLabel =
+          isSent && h.sequencePosition != null ? `Touch ${h.sequencePosition}` : null;
+
         return (
-          <div
-            key={h.id}
-            className={`flex flex-col gap-1.5 ${isSent ? "items-end" : "items-start"}`}
-          >
+          <div key={h.id} className={`flex flex-col gap-1 ${isSent ? "items-end" : "items-start"}`}>
             <div className="flex items-center gap-1.5">
+              {touchLabel && (
+                <span className="text-[11px] font-semibold text-primary">{touchLabel} ·</span>
+              )}
               <span className="text-[11px] text-(--text-secondary)">
-                {h.type.replace("_", " ")} · {new Date(h.sentAt).toLocaleDateString()}
+                {channelLabel} · {new Date(h.sentAt).toLocaleDateString()}
               </span>
-            </div>
-            <div
-              className={[
-                "max-w-[82%] px-3.5 py-2.5 text-[13px] leading-[1.7] text-foreground whitespace-pre-wrap break-words",
-                isSent
-                  ? "bg-(--accent-bg) border border-(--accent)/25 rounded-[16px_16px_4px_16px]"
-                  : "bg-sidebar border border-border rounded-[16px_16px_16px_4px]",
-              ].join(" ")}
-            >
-              {h.subject && (
-                <div className="font-semibold text-[12px] mb-1 text-(--text-secondary)">
-                  {h.subject}
+              {editingId !== h.id && (
+                <div className="flex gap-0.5 ml-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(h.id)}
+                    className="w-5 h-5 flex items-center justify-center rounded text-(--text-secondary) hover:text-foreground hover:bg-(--surface-raised) transition-colors"
+                  >
+                    <PencilSimpleIcon size={11} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteHistory.mutate({ contactId: contact.id, historyId: h.id })}
+                    disabled={deleteHistory.isPending}
+                    className="w-5 h-5 flex items-center justify-center rounded text-(--text-secondary) hover:text-destructive hover:bg-(--danger-bg) transition-colors disabled:opacity-40"
+                  >
+                    <TrashIcon size={11} />
+                  </button>
                 </div>
               )}
-              {h.body}
             </div>
+
+            {editingId === h.id ? (
+              <div className="w-full">
+                <EditHistoryForm
+                  contactId={contact.id}
+                  entry={h}
+                  onDone={() => setEditingId(null)}
+                />
+              </div>
+            ) : (
+              <div
+                className={[
+                  "max-w-[82%] px-3.5 py-2.5 text-[13px] leading-[1.7] text-foreground whitespace-pre-wrap wrap-break-word",
+                  isSent
+                    ? "bg-(--accent-bg) border border-(--accent)/25 rounded-[16px_16px_4px_16px]"
+                    : "bg-sidebar border border-border rounded-[16px_16px_16px_4px]",
+                ].join(" ")}
+              >
+                {h.subject && (
+                  <div className="font-semibold text-[12px] mb-1 text-(--text-secondary)">
+                    {h.subject}
+                  </div>
+                )}
+                {h.body}
+              </div>
+            )}
           </div>
         );
       })}
+
+      <ComposeForm contactId={contact.id} onSaved={() => {}} />
     </div>
   );
 }
@@ -307,13 +498,6 @@ function DesktopPanel({ contact, onClose }: { contact: Schemas.Contact; onClose:
     updateContact.mutate({ id: contact.id, body: { contact: { status: 3 } } });
   }
 
-  function handleMarkReplied() {
-    updateContact.mutate({
-      id: contact.id,
-      body: { contact: { status: 4, abReplied: true } },
-    });
-  }
-
   function handleMarkDead() {
     updateContact.mutate({
       id: contact.id,
@@ -412,14 +596,6 @@ function DesktopPanel({ contact, onClose }: { contact: Schemas.Contact; onClose:
 
       {/* Footer */}
       <div className="px-5 py-3.5 border-t border-border bg-sidebar flex gap-2 shrink-0">
-        <button
-          type="button"
-          onClick={handleMarkReplied}
-          disabled={updateContact.isPending}
-          className="h-7.75 px-3.5 rounded-lg text-[13px] font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors disabled:opacity-50"
-        >
-          Mark as replied
-        </button>
         <div className="flex-1" />
         <button
           type="button"

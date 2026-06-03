@@ -24,6 +24,11 @@
 - Always call `useAuth()` at page level and pass `getToken` into query and mutation hooks
 - All API calls go through `apiClient` — never raw `fetch` in a component
 - Co-located private components use `-` prefix (e.g. `-NoteCard.tsx`) — they are not routes
+- **Keep Components Small:** Limit each component to a single responsibility; split them up if they exceed ~150 lines.
+- **Extract Logic into utils.ts** Separate presentation from business logic. For private functions, write them in private `-utils.ts` file, co-located with components inside the folder. For reusable functions, add them to `utils/index.ts` file.
+- Avoid Prop Drilling.
+- Memoize Strategically: Use `useCallback` and `useMemo` to prevent expensive re-renders, but avoid overusing them as they carry their own performance overhead.
+- Enforce Strict Typing: Define clear prop structures and default values using TypeScript to catch bugs early.
 
 ## Hono / Cloudflare Workers
 

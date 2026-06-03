@@ -105,7 +105,7 @@ export function useCreateContactHistory() {
       body,
     }: {
       contactId: number;
-      body: Schemas.CreateContactHistoryApiRequest;
+      body: Schemas.LogContactHistoryApiRequest;
     }) =>
       apiClient<Schemas.CreateContactHistoryApiResponse>(
         `/contacts/${contactId}/history`,
@@ -119,6 +119,58 @@ export function useCreateContactHistory() {
     },
     onError: () => {
       toast.error("Failed to save history entry. Please try again.");
+    },
+  });
+}
+
+export function useUpdateContactHistory() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      contactId,
+      historyId,
+      body,
+    }: {
+      contactId: number;
+      historyId: number;
+      body: Schemas.UpdateContactHistoryApiRequest;
+    }) =>
+      apiClient<Schemas.UpdateContactHistoryApiResponse>(
+        `/contacts/${contactId}/history/${historyId}`,
+        getToken,
+        { method: "PATCH", body: JSON.stringify(body) },
+      ),
+    onSuccess: async (_data, { contactId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ContactsQueries.keys.history(contactId),
+      });
+    },
+    onError: () => {
+      toast.error("Failed to update history entry. Please try again.");
+    },
+  });
+}
+
+export function useDeleteContactHistory() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ contactId, historyId }: { contactId: number; historyId: number }) =>
+      apiClient<Schemas.DeleteContactHistoryApiResponse>(
+        `/contacts/${contactId}/history/${historyId}`,
+        getToken,
+        { method: "DELETE" },
+      ),
+    onSuccess: async (_data, { contactId }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ContactsQueries.keys.history(contactId),
+      });
+    },
+    onError: () => {
+      toast.error("Failed to delete history entry. Please try again.");
     },
   });
 }
