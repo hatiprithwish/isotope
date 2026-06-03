@@ -10,6 +10,19 @@ const JobsRoutes = new Hono<AppContext>();
 
 // Mutations
 
+JobsRoutes.post("/discover", checkAuth, async (c) => {
+  const clerkUserId = c.get("clerkUserId");
+
+  const repo = new JobsRepo(c.env);
+  const response = await repo.discoverJobs({ userId: clerkUserId });
+
+  if (!response.isSuccess && response.message?.includes("No job search framework")) {
+    return c.json(response, 400);
+  }
+
+  return c.json(response, response.isSuccess ? 202 : 500);
+});
+
 JobsRoutes.post("/", checkAuth, zValidator("json", Schemas.ZCreateJobApiRequest), async (c) => {
   const clerkUserId = c.get("clerkUserId");
   const body = c.req.valid("json");

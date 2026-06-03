@@ -12,6 +12,7 @@ import ContactsRoutes from "@/routes/ContactsRoutes";
 import FrameworksRoutes from "@/routes/FrameworksRoutes";
 import JobsRoutes from "@/routes/JobsRoutes";
 import AuthRoutes from "@/routes/AuthRoutes";
+export { JobDiscoveryWorkflow } from "@/workflows/JobDiscoveryWorkflow";
 
 // DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests
 await configureLogger();

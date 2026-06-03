@@ -54,4 +54,8 @@ export enum LogAction {
   DeleteJob = "DeleteJob",
   RunJobIngestion = "RunJobIngestion",
   DuplicateJobBlocked = "DuplicateJobBlocked",
+  DiscoverJobs = "DiscoverJobs",
+  WebSearch = "WebSearch",
+  ExtractJobs = "ExtractJobs",
+  BulkInsertJobs = "BulkInsertJobs",
 }

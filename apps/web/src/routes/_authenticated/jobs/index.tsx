@@ -4,8 +4,9 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useState, useDeferredValue, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { JobsQueries, useJobs, useJobsCount } from "./-data";
+import { JobsQueries, useJobs, useJobsCount, useDiscoverJobs } from "./-data";
 import { FrameworkQueries } from "../../_without_nav/onboarding/job-search-framework/-data";
+import { ApiError } from "@/providers/apiClient";
 import { JobsTable } from "./-JobsTable";
 import { JobDetailPanel } from "./-JobDetailDrawer";
 import JobEntryForm from "./-JobEntryForm";
@@ -59,6 +60,7 @@ function JobsPage() {
 
   const frameworkQuery = useQuery(FrameworkQueries.latest(getToken));
   const hasFramework = Boolean(frameworkQuery.data?.framework?.isCustomized);
+  const discoverMutation = useDiscoverJobs();
 
   useEffect(() => {
     if (framework_saved === "1") {
@@ -68,9 +70,19 @@ function JobsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleDiscoverClick() {
+  async function handleDiscoverClick() {
     if (!hasFramework) {
       void navigate({ to: "/onboarding/job-search-framework" as string });
+      return;
+    }
+    try {
+      await discoverMutation.mutateAsync();
+      toast.success("Searching for jobs — new listings will appear shortly.", { duration: 5000 });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        void navigate({ to: "/onboarding/job-search-framework" as string });
+      }
+      // non-400 errors: onError in mutation handles toast
     }
   }
 
@@ -278,10 +290,11 @@ function JobsPage() {
           </span>
           <button
             type="button"
-            onClick={handleDiscoverClick}
-            className="shrink-0 h-6 px-2.5 rounded-md bg-background border border-border text-[11px] font-medium text-foreground"
+            onClick={() => void handleDiscoverClick()}
+            disabled={discoverMutation.isPending}
+            className="shrink-0 h-6 px-2.5 rounded-md bg-background border border-border text-[11px] font-medium text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Discover
+            {discoverMutation.isPending ? "Searching…" : "Discover"}
           </button>
         </div>
 
@@ -361,11 +374,12 @@ function JobsPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleDiscoverClick}
-                className="h-7.75 px-3 rounded-lg text-[13px] font-medium bg-(--ai-bg) border border-(--ai-border) text-(--ai-text) hover:opacity-90 transition-opacity flex items-center gap-1.5"
+                onClick={() => void handleDiscoverClick()}
+                disabled={discoverMutation.isPending}
+                className="h-7.75 px-3 rounded-lg text-[13px] font-medium bg-(--ai-bg) border border-(--ai-border) text-(--ai-text) hover:opacity-90 transition-opacity flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <SparkleIcon size={13} className="text-(--ai)" weight="fill" />
-                Discover
+                {discoverMutation.isPending ? "Searching…" : "Discover"}
               </button>
               <button
                 type="button"

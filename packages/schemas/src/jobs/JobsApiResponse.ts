@@ -20,3 +20,7 @@ export interface GetJobsCountApiResponse extends ApiResponse {
 export interface UpdateJobApiResponse extends ApiResponse {
   job?: Job;
 }
+
+export interface DiscoverJobsApiResponse extends ApiResponse {
+  workflowInstanceId?: string;
+}

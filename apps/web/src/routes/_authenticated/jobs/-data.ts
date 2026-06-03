@@ -78,6 +78,21 @@ export function useCreateJob() {
   });
 }
 
+export function useDiscoverJobs() {
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: () =>
+      apiClient<Schemas.DiscoverJobsApiResponse>("/jobs/discover", getToken, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }),
+    onError: () => {
+      toast.error("Failed to start job discovery. Please try again.");
+    },
+  });
+}
+
 export function useUpdateJob() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();

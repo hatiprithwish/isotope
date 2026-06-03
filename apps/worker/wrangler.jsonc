@@ -8,8 +8,17 @@
   "vars": {
     "ALLOWED_CORS_ORIGIN": "http://localhost:3000",
     // DEV_NOTE: Placeholder so wrangler types generates CLERK_SECRET_KEY in Env. Real value comes from .dev.vars locally and wrangler secret in prod.
-    "CLERK_SECRET_KEY": ""
+    "CLERK_SECRET_KEY": "",
+    // DEV_NOTE: Placeholder so wrangler types generates TAVILY_API_KEY in Env. Real value comes from .dev.vars locally and wrangler secret in prod.
+    "TAVILY_API_KEY": ""
   },
+  "workflows": [
+    {
+      "name": "job-discovery",
+      "binding": "JOB_DISCOVERY_WORKFLOW",
+      "class_name": "JobDiscoveryWorkflow"
+    }
+  ],
   "ai": {
     "binding": "AI",
     "remote": true
@@ -32,6 +41,13 @@
       "ai": {
         "binding": "AI"
       },
+      "workflows": [
+        {
+          "name": "job-discovery",
+          "binding": "JOB_DISCOVERY_WORKFLOW",
+          "class_name": "JobDiscoveryWorkflow"
+        }
+      ],
       "d1_databases": [
         {
           "binding": "DB",
@@ -50,6 +66,13 @@
       "ai": {
         "binding": "AI"
       },
+      "workflows": [
+        {
+          "name": "job-discovery",
+          "binding": "JOB_DISCOVERY_WORKFLOW",
+          "class_name": "JobDiscoveryWorkflow"
+        }
+      ],
       "d1_databases": [
         {
           "binding": "DB",
