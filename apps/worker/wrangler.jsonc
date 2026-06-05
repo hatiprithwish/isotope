@@ -5,33 +5,6 @@
   "compatibility_date": "2026-05-22",
   // DEV_NOTE: nodejs_compat flag is needed for using AsyncLocalStorage.
   "compatibility_flags": ["nodejs_compat"],
-  "vars": {
-    "ALLOWED_CORS_ORIGIN": "http://localhost:3000",
-    // DEV_NOTE: Placeholder so wrangler types generates CLERK_SECRET_KEY in Env. Real value comes from .dev.vars locally and wrangler secret in prod.
-    "CLERK_SECRET_KEY": "",
-    // DEV_NOTE: Placeholder so wrangler types generates TAVILY_API_KEY in Env. Real value comes from .dev.vars locally and wrangler secret in prod.
-    "TAVILY_API_KEY": ""
-  },
-  "workflows": [
-    {
-      "name": "job-discovery",
-      "binding": "JOB_DISCOVERY_WORKFLOW",
-      "class_name": "JobDiscoveryWorkflow"
-    }
-  ],
-  "ai": {
-    "binding": "AI",
-    "remote": true
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "isotope-db",
-      "database_id": "ade49f6b-b66a-4f50-9cf0-2f32f8974a6f",
-      "migrations_dir": "src/db/migrations",
-      "remote": true
-    }
-  ],
   "env": {
     "staging": {
       "name": "isotope-worker-staging",
@@ -39,7 +12,8 @@
         "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://isotope-web-staging.hatiprithwish.workers.dev"
       },
       "ai": {
-        "binding": "AI"
+        "binding": "AI",
+        "remote": true
       },
       "workflows": [
         {
@@ -64,7 +38,8 @@
         "ALLOWED_CORS_ORIGIN": "https://isotope-web.hatiprithwish.workers.dev"
       },
       "ai": {
-        "binding": "AI"
+        "binding": "AI",
+        "remote": true
       },
       "workflows": [
         {
