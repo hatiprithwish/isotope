@@ -13,6 +13,12 @@
       "vars": {
         "VITE_API_URL": "https://isotope-worker-staging.hatiprithwish.workers.dev",
         "SENTRY_PROJECT": "isotope"
+      },
+      "observability": {
+        "logs": {
+          "enabled": true,
+          "invocation_logs": true
+        }
       }
     },
     "production": {
@@ -20,6 +26,12 @@
       "vars": {
         "VITE_API_URL": "https://isotope-worker.hatiprithwish.workers.dev",
         "SENTRY_PROJECT": "isotope"
+      },
+      "observability": {
+        "logs": {
+          "enabled": true,
+          "invocation_logs": true
+        }
       }
     }
   }
