@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "NODE_OPTIONS='--import ./instrument.server.mjs' vite dev",
     "build": "vite build",
-    "deploy:prod": "wrangler deploy --name isotope-web --env production",
-    "deploy:staging": "wrangler deploy --name isotope-web-staging --env staging",
+    "deploy:prod": "wrangler deploy --env production",
+    "deploy:staging": "wrangler deploy --env staging",
     "preview": "vite preview",
     "start": "node --import ./.output/server/instrument.server.mjs .output/server/index.mjs",
     "test": "vitest run",
