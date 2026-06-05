@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DotsThree, Eye, EyeSlash, MagnifyingGlass } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
 import type { AppTableColumn } from "./AppTable.types";
 import { cn } from "@/utils/tailwind";
@@ -28,12 +29,9 @@ export function AppTableVisibilityPanel<TRow>({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          aria-label="Show or hide columns"
-        >
+        <Button variant="ghost" size="icon-sm" aria-label="Show or hide columns">
           <DotsThree className="h-4 w-4" weight="bold" />
-        </button>
+        </Button>
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-72 p-0">
@@ -60,12 +58,14 @@ export function AppTableVisibilityPanel<TRow>({
           <span className="text-xs text-muted-foreground">
             {columns.filter((c) => columnVisibility[c.key]).length} shown
           </span>
-          <button
+          <Button
+            variant="link"
+            size="xs"
+            className="text-primary p-0 h-auto text-xs"
             onClick={allHidden ? onShowAll : onHideAll}
-            className="text-xs font-medium text-primary hover:underline"
           >
             {allHidden ? "Show all" : "Hide all"}
-          </button>
+          </Button>
         </div>
 
         {/* ─── Column list ─────────────────────────────────────────────── */}

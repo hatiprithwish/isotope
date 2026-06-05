@@ -9,9 +9,10 @@ import { FrameworkQueries } from "../../_without_nav/onboarding/job-search-frame
 import { ApiError } from "@/providers/apiClient";
 import { JobsTable } from "./-JobsTable";
 import { JobDetailPanel } from "./-JobDetailDrawer";
-import { JobFormModal } from "./-JobFormModal";
+import AddOrEditJobModal from "./-AddOrEditJobModal";
 import { MobileJobsList } from "./-MobileJobsList";
 import { SparkleIcon, PlusIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 
 const PAGE_SIZE = 20;
@@ -99,13 +100,21 @@ function JobsPage() {
 
   return (
     <>
-      {formMode !== null && (
-        <JobFormModal
-          editJob={formMode !== "create" ? formMode : undefined}
-          onSuccess={handleFormSuccess}
-          onClose={() => setFormMode(null)}
-        />
-      )}
+      {formMode !== null &&
+        (formMode === "create" ? (
+          <AddOrEditJobModal
+            mode="add"
+            onSuccess={handleFormSuccess}
+            onClose={() => setFormMode(null)}
+          />
+        ) : (
+          <AddOrEditJobModal
+            mode="edit"
+            job={formMode}
+            onSuccess={handleFormSuccess}
+            onClose={() => setFormMode(null)}
+          />
+        ))}
 
       <MobileJobsList
         allJobs={allJobs}
@@ -132,23 +141,21 @@ function JobsPage() {
           <header className="h-13 px-6 flex items-center justify-between border-b border-border bg-sidebar shrink-0">
             <span className="text-base font-semibold text-foreground tracking-tight">Jobs</span>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="lg"
                 onClick={() => void handleDiscoverClick()}
                 disabled={discoverMutation.isPending}
-                className="h-7.75 px-3 rounded-lg text-[13px] font-medium bg-(--ai-bg) border border-(--ai-border) text-(--ai-text) hover:opacity-90 transition-opacity flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-(--ai-bg) border-(--ai-border) text-(--ai-text) hover:bg-(--ai-bg)"
               >
                 <SparkleIcon size={13} className="text-(--ai)" weight="fill" />
                 {discoverMutation.isPending ? "Searching…" : "Discover"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormMode("create")}
-                className="h-7.75 px-3 rounded-lg text-[13px] font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center gap-1.5"
-              >
+              </Button>
+              <Button type="button" size="lg" onClick={() => setFormMode("create")}>
                 <PlusIcon size={13} />
                 Add
-              </button>
+              </Button>
             </div>
           </header>
           <JobsTable

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MinusIcon, PlusIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import { DEFAULT_CRITERIA, MAX_SCORE, computeWeightedScore, deriveFitBand } from "../-criteria";
 import { useUpdateCompany } from "../-data";
 
@@ -86,14 +87,16 @@ export function ScoredCriteriaCard({ companyId, isWaitingHuman }: Props) {
         })}
       </div>
       {isWaitingHuman && (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="lg"
           onClick={handleSaveScores}
           disabled={updateCompany.isPending}
-          className="mt-3 w-full h-11 rounded-[10px] text-sm font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors disabled:opacity-50"
+          className="mt-3 w-full"
         >
           Save scores
-        </button>
+        </Button>
       )}
     </div>
   );

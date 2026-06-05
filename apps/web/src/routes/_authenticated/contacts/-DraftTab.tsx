@@ -1,4 +1,5 @@
 import type * as Schemas from "@app/schemas";
+import { Button } from "@/shadcn/ui/button";
 
 export function DraftTab({ contact }: { contact: Schemas.Contact }) {
   if (!contact.draftSubject && !contact.draftBody) {
@@ -21,13 +22,15 @@ export function DraftTab({ contact }: { contact: Schemas.Contact }) {
           <div className="text-[13px] font-medium text-foreground pr-14 leading-snug">
             {contact.draftSubject}
           </div>
-          <button
+          <Button
             type="button"
-            className="absolute top-2.5 right-2.5 text-[11px] font-medium text-(--text-secondary) bg-sidebar border border-border rounded-md px-2 py-1 flex items-center gap-1 hover:text-foreground hover:bg-(--surface-raised) transition-colors"
+            variant="outline"
+            size="xs"
+            className="absolute top-2.5 right-2.5"
             onClick={() => navigator.clipboard.writeText(contact.draftSubject ?? "")}
           >
             Copy
-          </button>
+          </Button>
         </div>
       )}
 
@@ -36,13 +39,15 @@ export function DraftTab({ contact }: { contact: Schemas.Contact }) {
           <pre className="text-[13px] leading-[1.75] text-foreground whitespace-pre-wrap font-sans pr-16">
             {contact.draftBody}
           </pre>
-          <button
+          <Button
             type="button"
-            className="absolute top-2.5 right-2.5 text-[11px] font-medium text-(--text-secondary) bg-sidebar border border-border rounded-md px-2 py-1 flex items-center gap-1 hover:text-foreground hover:bg-(--surface-raised) transition-colors"
+            variant="outline"
+            size="xs"
+            className="absolute top-2.5 right-2.5"
             onClick={() => navigator.clipboard.writeText(contact.draftBody ?? "")}
           >
             Copy body
-          </button>
+          </Button>
         </div>
       )}
 

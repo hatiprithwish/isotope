@@ -1,4 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Button } from "@/shadcn/ui/button";
 import { useUser, useAuth, useClerk } from "@clerk/tanstack-react-start";
 import { GearSixIcon, SignOutIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -70,18 +71,14 @@ export function DesktopSidebar() {
       <div className="h-px bg-border mx-1.5 my-3.5" />
 
       {/* Sign out */}
-      <button
+      <Button
+        variant="ghost"
         onClick={handleSignOut}
-        className={[
-          "flex items-center gap-2.25 py-1.75 px-2.5 rounded-lg w-full",
-          "text-xs font-medium leading-none border border-transparent",
-          "transition-colors duration-120",
-          "text-(--text-secondary) hover:text-foreground",
-        ].join(" ")}
+        className="flex items-center gap-2.25 py-1.75 px-2.5 rounded-lg w-full justify-start text-xs font-medium leading-none border border-transparent text-(--text-secondary) hover:text-foreground h-auto"
       >
         <SignOutIcon size={16} weight="regular" />
         Sign out
-      </button>
+      </Button>
 
       {/* Settings */}
       <Link

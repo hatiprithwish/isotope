@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
 import { ContactsQueries } from "./-data";
-import AddContactModal from "./-AddContactModal";
+import AddOrEditContactModal from "./-AddOrEditContactModal";
 import { MobileContactsList } from "./-MobileContactsList";
 import { DesktopContactsTable } from "./-DesktopContactsTable";
 
@@ -51,7 +51,7 @@ function ContactsPage() {
         onAddClick={() => setShowAddModal(true)}
       />
 
-      {showAddModal && <AddContactModal onClose={() => setShowAddModal(false)} />}
+      {showAddModal && <AddOrEditContactModal mode="add" onClose={() => setShowAddModal(false)} />}
     </>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 import MobileCompanyRow from "./-MobileCompanyRow";
 
@@ -55,12 +56,9 @@ export function MobileCompaniesList({ companies, onAddClick }: Props) {
         <span className="flex-1 text-[17px] font-semibold text-foreground tracking-tight">
           Companies
         </span>
-        <button
-          type="button"
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-(--text-secondary) hover:bg-(--surface-raised)"
-        >
+        <Button type="button" variant="ghost" size="icon">
           <MagnifyingGlassIcon size={18} />
-        </button>
+        </Button>
       </header>
 
       <button

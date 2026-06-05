@@ -6,6 +6,7 @@ import {
   CaretLeftIcon,
   CaretRightIcon,
 } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shadcn/ui/tooltip";
 import { cn } from "@/utils/tailwind";
 import type { AppTablePaginationProps } from "./AppTable.types";
@@ -119,13 +120,14 @@ export function AppTablePagination({
         </p>
 
         {onRefresh && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={handleRefresh}
             disabled={isRefreshing || isLoading}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ArrowClockwiseIcon className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
-          </button>
+          </Button>
         )}
       </div>
 

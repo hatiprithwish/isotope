@@ -1,5 +1,6 @@
 import type * as Schemas from "@app/schemas";
 import Utilities from "@/utils";
+import { Button } from "@/shadcn/ui/button";
 
 function Avatar({ name }: { name: string }) {
   return (
@@ -41,10 +42,11 @@ export function AboutTab({
               </div>
               <div className="text-[11px] text-(--text-secondary) mt-0.5">Work email</div>
             </div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => navigator.clipboard.writeText(contact.email ?? "")}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-(--text-secondary) hover:bg-(--surface-raised) transition-colors"
             >
               <svg
                 width={14}
@@ -59,7 +61,7 @@ export function AboutTab({
                 <path d="M9 9m0 2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2z" />
                 <path d="M5 15h-1a2 2 0 0 1 -2 -2v-7a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v1" />
               </svg>
-            </button>
+            </Button>
           </div>
         )}
         {contact.linkedinUrl && (
@@ -137,13 +139,15 @@ export function AboutTab({
       </div>
 
       <div className="px-5 py-4.5">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="lg"
           onClick={onMarkDead}
-          className="text-[13px] font-medium text-(--danger) hover:bg-(--danger-bg) px-3 py-2 rounded-lg transition-colors w-full border border-transparent"
+          className="w-full text-(--danger) hover:bg-(--danger-bg) hover:text-(--danger)"
         >
           Mark as dead
-        </button>
+        </Button>
       </div>
     </div>
   );

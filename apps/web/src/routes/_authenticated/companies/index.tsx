@@ -4,10 +4,11 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useState } from "react";
 import { z } from "zod";
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import { CompaniesQueries } from "./-data";
 import DesktopCompanyRow from "./-DesktopCompanyRow";
 import { CompanyDetailPanel } from "./-DesktopPanel";
-import AddCompanyModal from "./-AddCompanyModal";
+import AddOrEditCompanyModal from "./-AddOrEditCompanyModal";
 import { MobileCompaniesList } from "./-MobileCompaniesList";
 import { CompaniesFilterBar, applyFilters } from "./-CompaniesFilterBar";
 import type { StatusFilter, FitFilter } from "./-CompaniesFilterBar";
@@ -48,7 +49,7 @@ function CompaniesPage() {
 
   return (
     <>
-      {showAddModal && <AddCompanyModal onClose={() => setShowAddModal(false)} />}
+      {showAddModal && <AddOrEditCompanyModal mode="add" onClose={() => setShowAddModal(false)} />}
 
       <MobileCompaniesList companies={companies} onAddClick={() => setShowAddModal(true)} />
 
@@ -59,20 +60,18 @@ function CompaniesPage() {
               Companies
             </span>
             <div className="ml-auto flex gap-2 items-center">
-              <button
-                type="button"
-                className="h-7.75 w-7.75 flex items-center justify-center rounded-lg text-(--text-secondary) hover:bg-(--surface-raised) border border-transparent transition-colors"
-              >
+              <Button type="button" variant="ghost" size="icon">
                 <MagnifyingGlassIcon size={14} />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
+                size="lg"
                 onClick={() => setShowAddModal(true)}
-                className="h-7.75 px-3 flex items-center gap-1.5 rounded-lg text-[13px] font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors"
               >
                 <PlusIcon size={13} />
                 Add company
-              </button>
+              </Button>
             </div>
           </header>
 

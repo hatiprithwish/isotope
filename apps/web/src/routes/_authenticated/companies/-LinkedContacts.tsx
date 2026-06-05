@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { UserIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import { CompaniesQueries } from "./-data";
 import Utilities from "@/utils";
 
@@ -21,13 +22,15 @@ export function LinkedContacts({ companyId }: Props) {
         <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
           Contacts{linkedContacts.length > 0 && ` · ${linkedContacts.length}`}
         </div>
-        <button
+        <Button
           type="button"
+          variant="link"
+          size="xs"
+          className="text-primary p-0 h-auto"
           onClick={() => navigate({ to: "/contacts" })}
-          className="text-[11px] font-medium text-primary hover:opacity-80 transition-opacity"
         >
           Add contact
-        </button>
+        </Button>
       </div>
       {linkedContacts.length === 0 ? (
         <div className="flex items-center gap-2 py-2 text-[13px] text-(--text-secondary)">

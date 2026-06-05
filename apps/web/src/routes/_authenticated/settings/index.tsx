@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Button } from "@/shadcn/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useState } from "react";
@@ -85,14 +86,16 @@ function SettingsFrameworksPage() {
                   You're using default criteria. Update these to match your actual preferences — AI
                   will use them for every future job search.
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() => setNoticeDismissed(true)}
-                  className="shrink-0 text-(--warning-text) hover:opacity-70 transition-opacity mt-0.5"
                   aria-label="Dismiss"
+                  className="shrink-0 text-(--warning-text) hover:bg-(--warning-bg) hover:text-(--warning-text) mt-0.5"
                 >
                   ×
-                </button>
+                </Button>
               </div>
             )}
 

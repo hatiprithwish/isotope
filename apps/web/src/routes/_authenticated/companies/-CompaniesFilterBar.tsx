@@ -1,4 +1,5 @@
 import type * as Schemas from "@app/schemas";
+import { Button } from "@/shadcn/ui/button";
 
 type StatusFilter = "all" | "waiting_human" | "accepted" | "contacts_added" | "rejected";
 type FitFilter = "all" | "strong" | "conditional" | "weak" | "disqualified";
@@ -90,13 +91,9 @@ export function CompaniesFilterBar({
         </span>
       </div>
       {(statusFilter !== "all" || fitFilter !== "all") && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="text-[12px] font-medium text-(--text-secondary) hover:text-foreground transition-colors"
-        >
+        <Button type="button" variant="ghost" size="xs" onClick={onClear}>
           Clear
-        </button>
+        </Button>
       )}
       <div className="flex-1" />
       <span className="text-[12px] font-medium text-(--text-secondary)">

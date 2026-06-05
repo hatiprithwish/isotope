@@ -1,4 +1,5 @@
 import { MagnifyingGlassIcon, FunnelIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 import MobileContactRow from "./-MobileContactRow";
 
@@ -32,18 +33,12 @@ export function MobileContactsList({ contacts }: Props) {
         <span className="flex-1 text-[17px] font-semibold text-foreground tracking-tight">
           Contacts
         </span>
-        <button
-          type="button"
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-(--text-secondary) hover:bg-(--surface-raised)"
-        >
+        <Button type="button" variant="ghost" size="icon">
           <MagnifyingGlassIcon size={18} />
-        </button>
-        <button
-          type="button"
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-(--text-secondary) hover:bg-(--surface-raised)"
-        >
+        </Button>
+        <Button type="button" variant="ghost" size="icon">
           <FunnelIcon size={18} />
-        </button>
+        </Button>
       </header>
 
       <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-border bg-background shrink-0 no-scrollbar">

@@ -1,12 +1,14 @@
-import { useState, useRef, KeyboardEvent } from "react";
+import { useRef, KeyboardEvent } from "react";
+import { useForm } from "@tanstack/react-form";
 import { PlusIcon, XIcon } from "@phosphor-icons/react";
-import type { FrameworkInput, PrioritisedSkill } from "@app/schemas";
+import { Field, FieldError } from "@/shadcn/ui/field";
+import * as Schemas from "@app/schemas";
 
 type Priority = "High" | "Medium" | "Low";
 
 interface Props {
-  initialValues: FrameworkInput;
-  onSubmit: (values: FrameworkInput) => Promise<void>;
+  initialValues: Schemas.FrameworkInput;
+  onSubmit: (values: Schemas.FrameworkInput) => Promise<void>;
   submitLabel: string;
   isSubmitting: boolean;
   submitError?: string;
@@ -25,17 +27,12 @@ function SectionDesc({ children }: { children: React.ReactNode }) {
   return <p className="text-[12px] text-(--text-secondary) -mt-2 mb-4">{children}</p>;
 }
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
+function FieldLabelText({ children }: { children: React.ReactNode }) {
   return <p className="text-[13px] font-medium text-foreground mb-1">{children}</p>;
 }
 
 function FieldSub({ children }: { children: React.ReactNode }) {
   return <p className="text-[12px] text-(--text-secondary) mb-2">{children}</p>;
-}
-
-function FieldError({ msg }: { msg?: string }) {
-  if (!msg) return null;
-  return <p className="text-[12px] text-destructive mt-1">{msg}</p>;
 }
 
 function Divider() {
@@ -47,71 +44,69 @@ function TagInput({
   tags,
   onChange,
   placeholder = "Type and press Enter…",
-  error,
 }: {
   tags: string[];
   onChange: (tags: string[]) => void;
   placeholder?: string;
-  error?: string;
 }) {
-  const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-
+  const [input, setInput] = [
+    useRef("").current,
+    (v: string) => {
+      inputRef.current && (inputRef.current.value = v);
+    },
+  ];
+  // Use uncontrolled input to avoid re-renders on each keystroke
   function addTag(raw: string) {
     const val = raw.trim().replace(/,$/, "").trim();
-    if (val && !tags.includes(val)) {
-      onChange([...tags, val]);
-    }
-    setInput("");
+    if (val && !tags.includes(val)) onChange([...tags, val]);
+    if (inputRef.current) inputRef.current.value = "";
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    const val = inputRef.current?.value ?? "";
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
-      addTag(input);
-    } else if (e.key === "Backspace" && input === "" && tags.length > 0) {
+      addTag(val);
+    } else if (e.key === "Backspace" && val === "" && tags.length > 0) {
       onChange(tags.slice(0, -1));
     }
   }
 
   return (
-    <div>
-      <div
-        className="min-h-9 px-2 py-1.5 rounded-lg bg-background border border-border flex flex-wrap gap-1.5 cursor-text"
-        onClick={() => inputRef.current?.focus()}
-      >
-        {tags.map((tag) => (
-          <span
-            key={tag}
-            className="flex items-center gap-1 bg-(--surface-raised) border border-border rounded-md px-2 py-0.5 text-[12px] font-medium text-foreground"
+    <div
+      className="min-h-9 px-2 py-1.5 rounded-lg bg-background border border-border flex flex-wrap gap-1.5 cursor-text"
+      onClick={() => inputRef.current?.focus()}
+    >
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="flex items-center gap-1 bg-(--surface-raised) border border-border rounded-md px-2 py-0.5 text-[12px] font-medium text-foreground"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(tags.filter((t) => t !== tag));
+            }}
+            className="text-muted-foreground hover:text-foreground transition-colors leading-none"
           >
-            {tag}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onChange(tags.filter((t) => t !== tag));
-              }}
-              className="text-muted-foreground hover:text-foreground transition-colors leading-none"
-            >
-              <XIcon size={10} />
-            </button>
-          </span>
-        ))}
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={() => {
-            if (input.trim()) addTag(input);
-          }}
-          placeholder={tags.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[120px] bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none py-0.5"
-        />
-      </div>
-      <FieldError msg={error} />
+            <XIcon size={10} />
+          </button>
+        </span>
+      ))}
+      <input
+        ref={inputRef}
+        type="text"
+        defaultValue=""
+        onKeyDown={handleKeyDown}
+        onBlur={(e) => {
+          if (e.target.value.trim()) addTag(e.target.value);
+        }}
+        placeholder={tags.length === 0 ? placeholder : ""}
+        className="flex-1 min-w-30 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none py-0.5"
+      />
     </div>
   );
 }
@@ -125,14 +120,14 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       aria-checked={value}
       onClick={() => onChange(!value)}
       className={[
-        "relative inline-flex w-8 h-[18px] rounded-full transition-colors duration-150 shrink-0",
+        "relative inline-flex w-8 h-4.5 rounded-full transition-colors duration-150 shrink-0",
         value ? "bg-primary" : "bg-border",
       ].join(" ")}
     >
       <span
         className={[
-          "absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform duration-150",
-          value ? "translate-x-[14px]" : "translate-x-0",
+          "absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-150",
+          value ? "translate-x-3.5" : "translate-x-0",
         ].join(" ")}
       />
     </button>
@@ -181,24 +176,21 @@ function RecencyControl({
 }) {
   return (
     <div className="flex gap-2">
-      {RECENCY_OPTIONS.map((opt) => {
-        const active = value === opt.value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={[
-              "h-8 px-4 rounded-full text-[12px] font-medium border transition-colors",
-              active
-                ? "bg-(--accent-bg) text-(--accent-text) border-primary"
-                : "bg-(--surface-raised) text-(--text-secondary) border-border hover:bg-background",
-            ].join(" ")}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
+      {RECENCY_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={[
+            "h-8 px-4 rounded-full text-[12px] font-medium border transition-colors",
+            value === opt.value
+              ? "bg-(--accent-bg) text-(--accent-text) border-primary"
+              : "bg-(--surface-raised) text-(--text-secondary) border-border hover:bg-background",
+          ].join(" ")}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -208,17 +200,15 @@ function PrioritisedSkillsRepeater({
   skills,
   onChange,
 }: {
-  skills: PrioritisedSkill[];
-  onChange: (s: PrioritisedSkill[]) => void;
+  skills: Schemas.PrioritisedSkill[];
+  onChange: (s: Schemas.PrioritisedSkill[]) => void;
 }) {
-  function update(index: number, patch: Partial<PrioritisedSkill>) {
+  function update(index: number, patch: Partial<Schemas.PrioritisedSkill>) {
     onChange(skills.map((s, i) => (i === index ? { ...s, ...patch } : s)));
   }
-
   function remove(index: number) {
     onChange(skills.filter((_, i) => i !== index));
   }
-
   function addRow() {
     onChange([...skills, { name: "", priority: "Medium" }]);
   }
@@ -273,166 +263,210 @@ export default function JobSearchFrameworkForm({
   isSubmitting,
   submitError,
 }: Props) {
-  const [values, setValues] = useState<FrameworkInput>(initialValues);
-  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
-
-  function set<K extends keyof FrameworkInput>(key: K, val: FrameworkInput[K]) {
-    setValues((prev) => ({ ...prev, [key]: val }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
-  }
-
-  function validate(): boolean {
-    const errs: Partial<Record<string, string>> = {};
-    if (values.targetRoles.length === 0) errs.targetRoles = "At least one target role is required";
-    if (values.requiredSkills.length === 0)
-      errs.requiredSkills = "At least one required skill is required";
-    if (values.minExp < 0) errs.minExp = "Min experience must be ≥ 0";
-    if (values.maxExp < values.minExp) errs.maxExp = "Max experience must be ≥ min experience";
-    if (values.minSalaryLpa < 0) errs.minSalaryLpa = "Salary must be ≥ 0";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
-    await onSubmit(values);
-  }
+  const form = useForm({
+    defaultValues: initialValues,
+    validators: {
+      onSubmit: Schemas.ZFrameworkInput,
+    },
+    onSubmit: async ({ value }) => {
+      await onSubmit(value);
+    },
+  });
 
   return (
-    <form onSubmit={handleSubmit}>
-      {/* Two-column grid on md+, single column on mobile */}
+    <form
+      onSubmit={(e: React.SyntheticEvent) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
         {/* ── LEFT COLUMN ─────────────────────────────── */}
         <div>
-          {/* Target roles */}
           <SectionLabel>Target roles</SectionLabel>
 
-          <div className="mb-4">
-            <FieldLabel>Job titles to search for</FieldLabel>
-            <FieldSub>AI will search for jobs matching any of these titles</FieldSub>
-            <TagInput
-              tags={values.targetRoles}
-              onChange={(v) => set("targetRoles", v)}
-              placeholder="e.g. Software Engineer, SDE-2…"
-              error={errors.targetRoles}
-            />
-          </div>
+          <form.Field name="targetRoles">
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid} className="mb-4">
+                  <FieldLabelText>Job titles to search for</FieldLabelText>
+                  <FieldSub>AI will search for jobs matching any of these titles</FieldSub>
+                  <TagInput
+                    tags={field.state.value}
+                    onChange={(v) => field.handleChange(v)}
+                    placeholder="e.g. Software Engineer, SDE-2…"
+                  />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          </form.Field>
 
-          <div className="mb-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <FieldLabel>Prefer remote roles</FieldLabel>
-                <FieldSub>Remote listings will be ranked higher when all else is equal</FieldSub>
+          <form.Field name="isRemote">
+            {(field) => (
+              <div className="mb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <FieldLabelText>Prefer remote roles</FieldLabelText>
+                    <FieldSub>
+                      Remote listings will be ranked higher when all else is equal
+                    </FieldSub>
+                  </div>
+                  <Toggle value={field.state.value} onChange={(v) => field.handleChange(v)} />
+                </div>
               </div>
-              <Toggle value={values.isRemote} onChange={(v) => set("isRemote", v)} />
-            </div>
-          </div>
+            )}
+          </form.Field>
 
           <Divider />
 
-          {/* Hard requirements */}
           <SectionLabel>Hard requirements</SectionLabel>
           <SectionDesc>Jobs missing all of these will be filtered out automatically</SectionDesc>
 
-          <div className="mb-4">
-            <FieldLabel>Required skills (OR logic)</FieldLabel>
-            <FieldSub>At least one must appear in the job description</FieldSub>
-            <TagInput
-              tags={values.requiredSkills}
-              onChange={(v) => set("requiredSkills", v)}
-              placeholder="e.g. Node.js, TypeScript…"
-              error={errors.requiredSkills}
-            />
-          </div>
+          <form.Field name="requiredSkills">
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid} className="mb-4">
+                  <FieldLabelText>Required skills (OR logic)</FieldLabelText>
+                  <FieldSub>At least one must appear in the job description</FieldSub>
+                  <TagInput
+                    tags={field.state.value}
+                    onChange={(v) => field.handleChange(v)}
+                    placeholder="e.g. Node.js, TypeScript…"
+                  />
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Field name="minSalaryLpa">
+            {(field) => {
+              const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+              return (
+                <Field data-invalid={isInvalid} className="mb-4">
+                  <FieldLabelText>Minimum salary</FieldLabelText>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                      onBlur={field.handleBlur}
+                      className="w-25 h-9 px-3 rounded-lg bg-background border border-border text-[13px] text-foreground focus:outline-none focus:border-primary"
+                    />
+                    <span className="text-[13px] text-(--text-secondary)">LPA</span>
+                  </div>
+                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                </Field>
+              );
+            }}
+          </form.Field>
 
           <div className="mb-4">
-            <FieldLabel>Minimum salary</FieldLabel>
+            <FieldLabelText>Experience range</FieldLabelText>
             <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                step={0.5}
-                value={values.minSalaryLpa}
-                onChange={(e) => set("minSalaryLpa", parseFloat(e.target.value) || 0)}
-                className="w-25 h-9 px-3 rounded-lg bg-background border border-border text-[13px] text-foreground focus:outline-none focus:border-primary"
-              />
-              <span className="text-[13px] text-(--text-secondary)">LPA</span>
-            </div>
-            <FieldError msg={errors.minSalaryLpa} />
-          </div>
-
-          <div className="mb-4">
-            <FieldLabel>Experience range</FieldLabel>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                step={0.5}
-                value={values.minExp}
-                onChange={(e) => set("minExp", parseFloat(e.target.value) || 0)}
-                className="w-20 h-9 px-3 rounded-lg bg-background border border-border text-[13px] text-foreground focus:outline-none focus:border-primary"
-              />
+              <form.Field name="minExp">
+                {(field) => {
+                  const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                        onBlur={field.handleBlur}
+                        aria-invalid={isInvalid}
+                        className="w-20 h-9 px-3 rounded-lg bg-background border border-border text-[13px] text-foreground focus:outline-none focus:border-primary group-data-[invalid=true]/field:border-destructive"
+                      />
+                      {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                    </Field>
+                  );
+                }}
+              </form.Field>
               <span className="text-[13px] text-(--text-secondary)">to</span>
-              <input
-                type="number"
-                min={0}
-                step={0.5}
-                value={values.maxExp}
-                onChange={(e) => set("maxExp", parseFloat(e.target.value) || 0)}
-                className="w-20 h-9 px-3 rounded-lg bg-background border border-border text-[13px] text-foreground focus:outline-none focus:border-primary"
-              />
+              <form.Field name="maxExp">
+                {(field) => {
+                  const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                        onBlur={field.handleBlur}
+                        aria-invalid={isInvalid}
+                        className="w-20 h-9 px-3 rounded-lg bg-background border border-border text-[13px] text-foreground focus:outline-none focus:border-primary group-data-[invalid=true]/field:border-destructive"
+                      />
+                      {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                    </Field>
+                  );
+                }}
+              </form.Field>
               <span className="text-[13px] text-(--text-secondary)">years</span>
             </div>
-            <FieldError msg={errors.minExp} />
-            <FieldError msg={errors.maxExp} />
           </div>
         </div>
 
         {/* ── RIGHT COLUMN ────────────────────────────── */}
         <div>
-          {/* Ranking signals */}
           <SectionLabel>Ranking signals</SectionLabel>
           <SectionDesc>
             Jobs with more of these skills will be ranked higher — they are not hard requirements
           </SectionDesc>
 
-          <div className="mb-4">
-            <FieldLabel>Skills to prioritise</FieldLabel>
-            <PrioritisedSkillsRepeater skills={values.skills} onChange={(v) => set("skills", v)} />
-          </div>
+          <form.Field name="skills">
+            {(field) => (
+              <div className="mb-4">
+                <FieldLabelText>Skills to prioritise</FieldLabelText>
+                <PrioritisedSkillsRepeater
+                  skills={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                />
+              </div>
+            )}
+          </form.Field>
 
           <Divider />
 
-          {/* Search settings */}
           <SectionLabel>Search settings</SectionLabel>
 
-          <div className="mb-6">
-            <FieldLabel>Only show jobs posted within</FieldLabel>
-            <RecencyControl
-              value={values.recencyWindow}
-              onChange={(v) => set("recencyWindow", v)}
-            />
-          </div>
+          <form.Field name="recencyWindow">
+            {(field) => (
+              <div className="mb-6">
+                <FieldLabelText>Only show jobs posted within</FieldLabelText>
+                <RecencyControl value={field.state.value} onChange={(v) => field.handleChange(v)} />
+              </div>
+            )}
+          </form.Field>
 
           <Divider />
 
-          {/* Location */}
           <SectionLabel>Location</SectionLabel>
 
-          <div className="mb-4">
-            <FieldLabel>Preferred cities or regions</FieldLabel>
-            <FieldSub>Leave empty to accept any location</FieldSub>
-            <TagInput
-              tags={values.preferredLocations}
-              onChange={(v) => set("preferredLocations", v)}
-              placeholder="e.g. Remote, Bengaluru…"
-            />
-          </div>
+          <form.Field name="preferredLocations">
+            {(field) => (
+              <div className="mb-4">
+                <FieldLabelText>Preferred cities or regions</FieldLabelText>
+                <FieldSub>Leave empty to accept any location</FieldSub>
+                <TagInput
+                  tags={field.state.value}
+                  onChange={(v) => field.handleChange(v)}
+                  placeholder="e.g. Remote, Bengaluru…"
+                />
+              </div>
+            )}
+          </form.Field>
         </div>
       </div>
 
-      {/* Submit — full width below both columns */}
       {submitError && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-(--danger-bg) border border-destructive text-[13px] text-destructive">
           {submitError}

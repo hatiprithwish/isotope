@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 import type * as Schemas from "@app/schemas";
 import { ContactsQueries, useDeleteContactHistory } from "./-data";
-import { ComposeForm } from "./-ComposeForm";
-import { EditHistoryForm } from "./-EditHistoryForm";
+import { AddOrEditContactHistoryForm } from "./-AddOrEditContactHistoryForm";
+import { Button } from "@/shadcn/ui/button";
 
 export function HistoryTab({
   contact,
@@ -60,28 +60,32 @@ export function HistoryTab({
               </span>
               {editingId !== h.id && (
                 <div className="flex gap-0.5 ml-1">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={() => setEditingId(h.id)}
-                    className="w-5 h-5 flex items-center justify-center rounded text-(--text-secondary) hover:text-foreground hover:bg-(--surface-raised) transition-colors"
                   >
                     <PencilSimpleIcon size={11} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={() => deleteHistory.mutate({ contactId: contact.id, historyId: h.id })}
                     disabled={deleteHistory.isPending}
-                    className="w-5 h-5 flex items-center justify-center rounded text-(--text-secondary) hover:text-destructive hover:bg-(--danger-bg) transition-colors disabled:opacity-40"
+                    className="hover:bg-(--danger-bg) hover:text-destructive"
                   >
                     <TrashIcon size={11} />
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
 
             {editingId === h.id ? (
               <div className="w-full">
-                <EditHistoryForm
+                <AddOrEditContactHistoryForm
+                  mode="edit"
                   contactId={contact.id}
                   entry={h}
                   onDone={() => setEditingId(null)}
@@ -108,7 +112,7 @@ export function HistoryTab({
         );
       })}
 
-      <ComposeForm contactId={contact.id} onSaved={() => {}} />
+      <AddOrEditContactHistoryForm mode="add" contactId={contact.id} onSaved={() => {}} />
     </div>
   );
 }

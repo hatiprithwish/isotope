@@ -1,4 +1,5 @@
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 import DesktopContactRow from "./-DesktopContactRow";
 import { ContactDetailPanel } from "./-DesktopPanel";
@@ -24,20 +25,13 @@ export function DesktopContactsTable({
         <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
           <span className="text-base font-semibold text-foreground tracking-tight">Contacts</span>
           <div className="ml-auto flex gap-2 items-center">
-            <button
-              type="button"
-              className="h-7.75 w-7.75 flex items-center justify-center rounded-lg text-(--text-secondary) hover:bg-(--surface-raised) border border-transparent transition-colors"
-            >
+            <Button type="button" variant="ghost" size="icon">
               <MagnifyingGlassIcon size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={onAddClick}
-              className="h-7.75 px-3 flex items-center gap-1.5 rounded-lg text-[13px] font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors"
-            >
+            </Button>
+            <Button type="button" variant="outline" size="lg" onClick={onAddClick}>
               <PlusIcon size={13} />
               Add manually
-            </button>
+            </Button>
           </div>
         </header>
 

@@ -1,4 +1,5 @@
 import { SparkleIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 import type { JobStatusIntEnum } from "@app/schemas";
 import { JobStatusBadge } from "./-JobStatusBadge";
@@ -75,14 +76,16 @@ export function MobileJobsList({
         <span className="flex-1 text-[12px] font-medium text-(--ai-text)">
           Find new jobs matching your framework
         </span>
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="xs"
           onClick={onDiscoverClick}
           disabled={discoverPending}
-          className="shrink-0 h-6 px-2.5 rounded-md bg-background border border-border text-[11px] font-medium text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+          className="shrink-0"
         >
           {discoverPending ? "Searching…" : "Discover"}
-        </button>
+        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-background">

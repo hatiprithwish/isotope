@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowsOutSimpleIcon, XIcon, PencilSimpleIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import { JobsQueries } from "./-data";
 import { JobStatusBadge, JobTypeBadge } from "./-JobStatusBadge";
 import { JobPanelDetails } from "./-JobPanelDetails";
@@ -38,31 +39,34 @@ export function JobPanelContent({ jobId, onClose, onEdit }: Props) {
           </div>
           <div className="flex gap-0.5 shrink-0">
             {onEdit && job && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => onEdit(job)}
-                className="w-7 h-7 rounded-md flex items-center justify-center text-(--text-secondary) hover:bg-(--surface-raised) hover:text-foreground transition-colors"
                 title="Edit job"
               >
                 <PencilSimpleIcon size={14} />
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => navigate({ to: "/jobs/$jobId", params: { jobId: String(jobId) } })}
-              className="w-7 h-7 rounded-md flex items-center justify-center text-(--text-secondary) hover:bg-(--surface-raised) hover:text-foreground transition-colors"
               title="Open full page"
             >
               <ArrowsOutSimpleIcon size={14} />
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={onClose}
-              className="w-7 h-7 rounded-md flex items-center justify-center text-(--text-secondary) hover:bg-(--surface-raised) hover:text-foreground transition-colors"
               title="Close panel"
             >
               <XIcon size={14} />
-            </button>
+            </Button>
           </div>
         </div>
         <div className="flex gap-2 items-center mt-3 flex-wrap">

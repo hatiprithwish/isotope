@@ -1,4 +1,5 @@
 import { MagnifyingGlassIcon, FunnelIcon } from "@phosphor-icons/react";
+import { Button } from "@/shadcn/ui/button";
 import type { JobStatusIntEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
 
@@ -36,19 +37,12 @@ export function MobileJobsHeader({
       <div className="flex items-center justify-between mb-3">
         <span className="text-[22px] font-semibold text-foreground tracking-tight">Jobs</span>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onSearchToggle}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-(--text-secondary) hover:bg-(--surface-raised) transition-colors"
-          >
+          <Button type="button" variant="ghost" size="icon" onClick={onSearchToggle}>
             <MagnifyingGlassIcon size={18} />
-          </button>
-          <button
-            type="button"
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-(--text-secondary) hover:bg-(--surface-raised) transition-colors"
-          >
+          </Button>
+          <Button type="button" variant="ghost" size="icon">
             <FunnelIcon size={18} />
-          </button>
+          </Button>
         </div>
       </div>
 
