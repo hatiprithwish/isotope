@@ -7,6 +7,12 @@
   "vars": {
     "VITE_API_URL": "http://localhost:8787"
   },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  },
   "env": {
     "staging": {
       "name": "isotope-web-staging",
