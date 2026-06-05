@@ -46,7 +46,7 @@ jobs:
             [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
             key="${line%%=*}"
             [[ -z "${!key}" ]] && missing+=("$key")
-          done < apps/worker/.env.example
+          done < apps/worker/.dev.vars.example
           if [[ ${#missing[@]} -gt 0 ]]; then
             echo "❌ Missing secrets: ${missing[*]}"
             exit 1

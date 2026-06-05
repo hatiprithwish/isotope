@@ -1,3 +1,11 @@
+# ============================================================
+# SOURCE OF TRUTH for required environment variables.
+#
+# When adding a new env var:
+#   1. Add the key here (value empty)
+#   2. Add the secret value in GitHub → Settings → Environments → staging + production
+# ============================================================
+
 CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 TAVILY_API_KEY=
