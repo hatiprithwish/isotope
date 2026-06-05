@@ -42,8 +42,11 @@ jobs:
       - name: Validate secrets
         run: |
           missing=()
-          [[ -z "$CLOUDFLARE_API_TOKEN" ]] && missing+=("CLOUDFLARE_API_TOKEN")
-          [[ -z "$CLOUDFLARE_ACCOUNT_ID" ]] && missing+=("CLOUDFLARE_ACCOUNT_ID")
+          while IFS= read -r line; do
+            [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+            key="${line%%=*}"
+            [[ -z "${!key}" ]] && missing+=("$key")
+          done < apps/worker/.env.example
           if [[ ${#missing[@]} -gt 0 ]]; then
             echo "❌ Missing secrets: ${missing[*]}"
             exit 1
