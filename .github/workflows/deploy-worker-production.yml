@@ -44,7 +44,9 @@ jobs:
           missing=()
           while IFS= read -r line; do
             [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+            [[ "$line" != *"# ci-required"* ]] && continue
             key="${line%%=*}"
+            key="${key%% *}"
             [[ -z "${!key}" ]] && missing+=("$key")
           done < apps/worker/.dev.vars.example
           if [[ ${#missing[@]} -gt 0 ]]; then
