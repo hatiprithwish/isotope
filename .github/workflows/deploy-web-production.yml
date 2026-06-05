@@ -52,7 +52,7 @@ jobs:
       - name: Deploy to Cloudflare Workers
         working-directory: apps/web
         run: |
-          rm -f dist/server/wrangler.json
+          rm -f dist/server/wrangler.json .wrangler/deploy/config.json
           pnpm run deploy:prod
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
