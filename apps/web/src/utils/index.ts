@@ -9,7 +9,6 @@ export default class Utilities {
   }
 
   static relativeTime(iso: string): string {
-    // This is a simple implementation and may not cover all edge cases or be localized.
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60_000);
     if (mins < 1) return "just now";
