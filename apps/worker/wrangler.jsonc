@@ -1,5 +1,5 @@
 {
-  "name": "scaffold-worker",
+  "name": "isotope-worker",
   "main": "src/index.ts",
   // DEV_NOTE: keep it up to date with the current date.
   "compatibility_date": "2026-05-22",
@@ -34,9 +34,9 @@
   ],
   "env": {
     "staging": {
-      "name": "scaffold-worker-staging",
+      "name": "isotope-worker-staging",
       "vars": {
-        "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://scaffold-web-staging.hatiprithwish.workers.dev"
+        "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://isotope-web-staging.hatiprithwish.workers.dev"
       },
       "ai": {
         "binding": "AI"
@@ -59,9 +59,9 @@
       ]
     },
     "production": {
-      "name": "scaffold-worker",
+      "name": "isotope-worker",
       "vars": {
-        "ALLOWED_CORS_ORIGIN": "https://scaffold-web.hatiprithwish.workers.dev"
+        "ALLOWED_CORS_ORIGIN": "https://isotope-web.hatiprithwish.workers.dev"
       },
       "ai": {
         "binding": "AI"
