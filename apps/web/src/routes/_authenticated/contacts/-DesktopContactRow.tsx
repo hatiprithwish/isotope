@@ -10,11 +10,6 @@ function DesktopContactRow({
   active: boolean;
   onClick: () => void;
 }) {
-  const touchLabel =
-    contact.sequencePosition != null && contact.sequencePosition > 0
-      ? `T${contact.sequencePosition}`
-      : "—";
-
   return (
     <div
       role="button"
@@ -25,7 +20,7 @@ function DesktopContactRow({
         "grid items-center px-6 border-b border-border h-12.5 cursor-pointer transition-colors duration-100",
         active ? "bg-sidebar" : "bg-sidebar hover:bg-(--surface-raised)",
       ].join(" ")}
-      style={{ gridTemplateColumns: "2fr 1.4fr 80px 1fr 110px 90px" }}
+      style={{ gridTemplateColumns: "2fr 1.4fr 1fr 1fr 110px 90px" }}
     >
       {/* Name */}
       <div>
@@ -40,12 +35,14 @@ function DesktopContactRow({
           {contact.companyName ?? "—"}
         </div>
       </div>
-      {/* Touch */}
-      <div>
-        <span className="text-[13px] font-semibold text-primary">{touchLabel}</span>
+      {/* Email */}
+      <div className="text-[12px] text-(--text-secondary) truncate pr-2">
+        {contact.email ?? "—"}
       </div>
-      {/* Channel */}
-      <div className="text-[11px] text-(--text-secondary)">{contact.abVariable ?? "—"}</div>
+      {/* LinkedIn */}
+      <div className="text-[12px] text-(--text-secondary) truncate pr-2">
+        {contact.linkedinUrl ?? "—"}
+      </div>
       {/* Status */}
       <div>{contact.status && <StatusBadge status={contact.status} sm />}</div>
       {/* Next */}

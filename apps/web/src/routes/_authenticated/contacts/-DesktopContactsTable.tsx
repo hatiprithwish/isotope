@@ -83,12 +83,12 @@ export function DesktopContactsTable({
             <>
               <div
                 className="grid items-center px-6 border-b border-border bg-sidebar h-10.5 text-[11px] font-semibold uppercase tracking-wider text-(--text-secondary) sticky top-0"
-                style={{ gridTemplateColumns: "2fr 1.4fr 80px 1fr 110px 90px" }}
+                style={{ gridTemplateColumns: "2fr 1.4fr 1fr 1fr 110px 90px" }}
               >
                 <div>Name</div>
                 <div>Company</div>
-                <div>Touch</div>
-                <div>Channel</div>
+                <div>Email</div>
+                <div>LinkedIn</div>
                 <div>Status</div>
                 <div>Next</div>
               </div>

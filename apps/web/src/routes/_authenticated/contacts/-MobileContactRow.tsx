@@ -4,11 +4,6 @@ import { StatusBadge } from "./-StatusBadge";
 import Utilities from "@/utils";
 
 function MobileContactRow({ contact }: { contact: Schemas.Contact }) {
-  const touchLabel =
-    contact.sequencePosition != null && contact.sequencePosition > 0
-      ? `T${contact.sequencePosition}`
-      : null;
-
   return (
     <Link
       to="/contacts/$contactId"
@@ -23,11 +18,20 @@ function MobileContactRow({ contact }: { contact: Schemas.Contact }) {
         <span className="text-xs text-(--text-secondary) mt-0.5 truncate">
           {[contact.companyName, contact.designation].filter(Boolean).join(" · ")}
         </span>
+        <div className="flex gap-2 mt-1">
+          {contact.email && (
+            <span className="text-[11px] text-(--text-secondary) truncate max-w-36">
+              {contact.email}
+            </span>
+          )}
+          {contact.linkedinUrl && (
+            <span className="text-[11px] text-primary truncate max-w-36">LinkedIn</span>
+          )}
+        </div>
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
         <StatusBadge status={contact.status} sm />
-        {touchLabel && <span className="text-[11px] font-semibold text-primary">{touchLabel}</span>}
-        {contact.nextTouchDueAt && !touchLabel && (
+        {contact.nextTouchDueAt && (
           <span className="text-[11px] text-(--text-secondary)">
             {new Date(contact.nextTouchDueAt).toLocaleDateString()}
           </span>
