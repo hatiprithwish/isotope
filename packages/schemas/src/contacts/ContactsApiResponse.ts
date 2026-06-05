@@ -24,3 +24,9 @@ export interface GetContactHistoryApiResponse extends ApiResponse {
 export interface CreateContactHistoryApiResponse extends ApiResponse {
   history?: ContactHistory;
 }
+
+export interface UpdateContactHistoryApiResponse extends ApiResponse {
+  history?: ContactHistory;
+}
+
+export interface DeleteContactHistoryApiResponse extends ApiResponse {}

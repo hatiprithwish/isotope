@@ -1,9 +1,9 @@
-import { and, asc, count, desc, eq, like, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, like, or } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { jobs, companies } from "@/db/tables";
 import * as Schemas from "@app/schemas";
-import AppLogger from "@/providers/logger";
+import AppLogger from "@/providers/AppLogger";
 import Utility from "@/utils";
 
 export default class JobsDAL {
@@ -224,6 +224,73 @@ export default class JobsDAL {
     }
 
     return response;
+  }
+
+  async getExistingUrls(params: { createdBy: string; urls: string[] }): Promise<Set<string>> {
+    try {
+      if (params.urls.length === 0) return new Set();
+
+      const rows = await this.db
+        .select({ url: jobs.url })
+        .from(jobs)
+        .where(and(eq(jobs.createdBy, params.createdBy), inArray(jobs.url, params.urls)));
+
+      return new Set(rows.map((r) => r.url).filter((u): u is string => u !== null));
+    } catch (error) {
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.DuplicateJobBlocked,
+        message: "Failed to fetch existing job URLs for dedup",
+        error,
+        metadata: { createdBy: params.createdBy, urlCount: params.urls.length },
+      });
+      return new Set();
+    }
+  }
+
+  async bulkInsertJobs(params: {
+    createdBy: string;
+    jobs: Schemas.CreateJobDALRequest[];
+  }): Promise<number> {
+    let inserted = 0;
+
+    for (const job of params.jobs) {
+      try {
+        await this.db.insert(jobs).values({
+          title: job.title,
+          status: job.status,
+          type: job.type,
+          companyId: job.companyId,
+          url: job.url,
+          location: job.location,
+          salary: job.salary,
+          source: job.source,
+          description: job.description,
+          skills: job.skills ? JSON.stringify(job.skills) : null,
+          matchScore: job.matchScore,
+          createdBy: job.createdBy,
+          createdAt: Utility.getCurrentISOTimestamp(),
+        });
+        inserted++;
+      } catch (error) {
+        AppLogger.error({
+          category: Schemas.LogCategory.DAL,
+          action: Schemas.LogAction.BulkInsertJobs,
+          message: "Failed to insert single job during bulk insert — continuing",
+          error,
+          metadata: { title: job.title, url: job.url, createdBy: job.createdBy },
+        });
+      }
+    }
+
+    AppLogger.info({
+      category: Schemas.LogCategory.DAL,
+      action: Schemas.LogAction.BulkInsertJobs,
+      message: "Bulk insert complete",
+      metadata: { attempted: params.jobs.length, inserted, createdBy: params.createdBy },
+    });
+
+    return inserted;
   }
 
   async getJobsCount(params: Schemas.GetJobsCountDALRequest) {

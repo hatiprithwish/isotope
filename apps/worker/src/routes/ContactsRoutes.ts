@@ -98,20 +98,59 @@ ContactsRoutes.post(
   "/:id/history",
   checkAuth,
   zValidator("param", z.object({ id: z.string() })),
-  zValidator("json", Schemas.ZCreateContactHistoryApiRequest),
+  zValidator("json", Schemas.ZLogContactHistoryApiRequest),
   async (c) => {
     const userId = c.get("clerkUserId");
     const { id } = c.req.valid("param");
     const body = c.req.valid("json");
 
     const repo = new ContactsRepo(c.env);
-    const response = await repo.createContactHistory({
+    const response = await repo.logContactHistory({
       contactId: Number(id),
       userId,
-      history: body.history,
+      ...body,
     });
 
     return c.json(response, response.isSuccess ? 201 : 500);
+  },
+);
+
+ContactsRoutes.patch(
+  "/:id/history/:historyId",
+  checkAuth,
+  zValidator("param", z.object({ id: z.string(), historyId: z.string() })),
+  zValidator("json", Schemas.ZUpdateContactHistoryApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { historyId } = c.req.valid("param");
+    const body = c.req.valid("json");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.updateContactHistory({
+      historyId: Number(historyId),
+      userId,
+      ...body,
+    });
+
+    return c.json(response, response.isSuccess ? 200 : 404);
+  },
+);
+
+ContactsRoutes.delete(
+  "/:id/history/:historyId",
+  checkAuth,
+  zValidator("param", z.object({ id: z.string(), historyId: z.string() })),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { historyId } = c.req.valid("param");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.deleteContactHistory({
+      historyId: Number(historyId),
+      userId,
+    });
+
+    return c.json(response, response.isSuccess ? 200 : 404);
   },
 );
 

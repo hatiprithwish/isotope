@@ -101,10 +101,7 @@ export function DesktopSidebar() {
 
       {/* User row */}
       <div className="flex items-center gap-2 py-1.75 px-2.5 mt-0.5">
-        <span
-          className="w-7 h-7 rounded-full flex items-center justify-center text-xxs font-semibold shrink-0"
-          style={{ background: "var(--accent-bg)", color: "var(--accent-text)" }}
-        >
+        <span className="w-7 h-7 rounded-full flex items-center justify-center text-xxs font-semibold shrink-0 bg-(--accent-bg) text-(--accent-text)">
           {initials}
         </span>
         <div className="flex flex-col min-w-0">

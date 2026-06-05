@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import UsersRepo from "@/repositories/UsersRepo";
 import checkAuth from "@/middlewares/AuthMiddleware";
-import ClerkProvider from "@/providers/clerk";
+import ClerkProvider from "@/providers/ClerkProvider";
 import type AppContext from "@/config/AppContext";
 import * as Schemas from "@app/schemas";
 

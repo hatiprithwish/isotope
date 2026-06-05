@@ -1,5 +1,5 @@
 import type Constants from "@/config/Constants";
-import AppLogger from "@/providers/logger";
+import AppLogger from "@/providers/AppLogger";
 import * as Schemas from "@app/schemas";
 
 export type AiModel = (typeof Constants.AI_MODELS)[keyof typeof Constants.AI_MODELS];

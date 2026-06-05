@@ -1,52 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/tanstack-react-start";
-import { CompaniesQueries, useUpdateCompany } from "./-data";
+import { useUpdateCompany } from "./-data";
 import type * as Schemas from "@app/schemas";
 import Avatar from "./-Avatar";
-import {
-  ArrowsOutSimpleIcon,
-  CheckCircleIcon,
-  XIcon,
-  MinusIcon,
-  PlusIcon,
-  UserIcon,
-} from "@phosphor-icons/react";
+import { ArrowsOutSimpleIcon, CheckCircleIcon, XIcon } from "@phosphor-icons/react";
 import { StatusBadge } from "./-StatusBadge";
 import ScoreBar from "./-ScoreBar";
-import { DEFAULT_CRITERIA, MAX_SCORE, computeWeightedScore, deriveFitBand } from "./-criteria";
-import Utilities from "@/utils";
+import { MAX_SCORE } from "./-criteria";
+import { ScoredCriteria } from "./-ScoredCriteria";
+import { LinkedContacts } from "./-LinkedContacts";
+import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
 
-function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose: () => void }) {
+interface CompanyPanelProps {
+  company: Schemas.Company;
+  onClose: () => void;
+}
+
+function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
   const navigate = useNavigate();
-  const { getToken } = useAuth();
   const updateCompany = useUpdateCompany();
   const score = company.weightedScore ?? 0;
   const hasEthicsFlag = company.isEthicsCompliant === false;
   const isWaitingHuman = company.status === 1;
-
-  const { data: contactsData } = useQuery(CompaniesQueries.companyContacts(company.id, getToken));
-  const linkedContacts = contactsData?.contacts ?? [];
-
-  const initialScores = Object.fromEntries(DEFAULT_CRITERIA.map((c) => [c.name, c.defaultScore]));
-  const [criteriaScores, setCriteriaScores] = useState<Record<string, number>>(initialScores);
-
-  function adjustScore(name: string, delta: number) {
-    setCriteriaScores((prev) => ({
-      ...prev,
-      [name]: Math.max(1, Math.min(5, (prev[name] ?? 3) + delta)),
-    }));
-  }
-
-  function handleSaveScores() {
-    const weighted = computeWeightedScore(criteriaScores);
-    const fit = deriveFitBand(weighted);
-    updateCompany.mutate({
-      id: company.id,
-      body: { company: { weightedScore: weighted, fitBand: fit } },
-    });
-  }
 
   function handleAccept() {
     updateCompany.mutate({ id: company.id, body: { company: { status: 2 } } });
@@ -56,13 +31,8 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
     updateCompany.mutate({ id: company.id, body: { company: { status: 4 } } });
   }
 
-  const localWeighted = computeWeightedScore(criteriaScores);
-  const localPct = MAX_SCORE > 0 ? Math.round((localWeighted / MAX_SCORE) * 100) : 0;
-  const displayScore = isWaitingHuman ? localWeighted : score;
-
   return (
-    <aside className="bg-sidebar border-l border-border flex flex-col h-full overflow-hidden">
-      {/* Head */}
+    <div className="flex flex-col h-full overflow-hidden bg-card">
       <div className="px-5 pt-4 pb-3.5 border-b border-border shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -110,9 +80,7 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
         </div>
       </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto">
-        {/* User context */}
         <div className="px-5 py-4.5 border-b border-border">
           <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5">
             Your context for AI
@@ -125,15 +93,13 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
           />
         </div>
 
-        {/* Score */}
         <div className="px-5 py-4.5 border-b border-border">
           <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5">
             Score
           </div>
-          <ScoreBar score={displayScore} max={MAX_SCORE} />
+          <ScoreBar score={score} max={MAX_SCORE} />
         </div>
 
-        {/* Stage 1 pre-filters */}
         <div className="px-5 py-4.5 border-b border-border">
           <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5">
             Stage 1 · Pre-filters
@@ -157,7 +123,6 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
           </div>
         </div>
 
-        {/* Ethics callout */}
         {hasEthicsFlag && (
           <div className="px-5 py-4.5 border-b border-border">
             <div className="bg-(--danger-bg) border-l-[3px] border-(--danger) rounded-r-lg px-3.5 py-3 text-[13px] leading-[1.55] text-(--text-secondary)">
@@ -167,7 +132,6 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
           </div>
         )}
 
-        {/* AI summary */}
         {company.aiSummary && (
           <div className="px-5 py-4.5 border-b border-border">
             <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5 flex items-center gap-1.5">
@@ -180,146 +144,12 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
           </div>
         )}
 
-        {/* Stage 3 Scored criteria */}
-        <div className="px-5 py-4.5 border-b border-border">
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
-              Stage 3 · Scored criteria
-            </div>
-            {isWaitingHuman && (
-              <span className="text-[10px] font-medium text-(--text-secondary)">
-                {localPct}% · Adjust to override
-              </span>
-            )}
-          </div>
-          <div className="flex flex-col">
-            {DEFAULT_CRITERIA.map((c, i) => {
-              const s = criteriaScores[c.name] ?? c.defaultScore;
-              return (
-                <div
-                  key={c.name}
-                  className={[
-                    "flex items-center gap-2 py-2",
-                    i < DEFAULT_CRITERIA.length - 1 ? "border-b border-border" : "",
-                  ].join(" ")}
-                >
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[12px] font-medium text-foreground leading-snug">
-                      {c.name}
-                    </span>
-                    <span className="text-[11px] text-(--text-secondary) ml-1.5">w{c.weight}</span>
-                  </div>
-                  {isWaitingHuman ? (
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => adjustScore(c.name, -1)}
-                        disabled={s <= 1}
-                        className="w-5.5 h-5.5 flex items-center justify-center rounded bg-(--surface-raised) text-(--text-secondary) hover:bg-border hover:text-foreground transition-colors disabled:opacity-30"
-                      >
-                        <MinusIcon size={11} />
-                      </button>
-                      <span className="w-5.5 text-center text-[12px] font-semibold text-foreground">
-                        {s}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => adjustScore(c.name, 1)}
-                        disabled={s >= 5}
-                        className="w-5.5 h-5.5 flex items-center justify-center rounded bg-(--surface-raised) text-(--text-secondary) hover:bg-border hover:text-foreground transition-colors disabled:opacity-30"
-                      >
-                        <PlusIcon size={11} />
-                      </button>
-                      <span className="w-7 text-right text-[11px] text-(--text-secondary) shrink-0">
-                        {s * c.weight}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-[12px] font-semibold text-foreground shrink-0">
-                      {s * c.weight}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {isWaitingHuman && (
-            <button
-              type="button"
-              onClick={handleSaveScores}
-              disabled={updateCompany.isPending}
-              className="mt-3 w-full h-7.75 rounded-lg text-[13px] font-medium border border-border text-foreground hover:bg-(--surface-raised) transition-colors disabled:opacity-50"
-            >
-              Save scores
-            </button>
-          )}
-        </div>
+        <ScoredCriteria companyId={company.id} isWaitingHuman={isWaitingHuman} />
 
-        {/* Linked contacts */}
-        <div className="px-5 py-4.5 border-b border-border">
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
-              Contacts{linkedContacts.length > 0 && ` · ${linkedContacts.length}`}
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/contacts" })}
-              className="text-[11px] font-medium text-primary hover:opacity-80 transition-opacity"
-            >
-              Add contact
-            </button>
-          </div>
-          {linkedContacts.length === 0 ? (
-            <div className="flex items-center gap-2 py-2 text-[13px] text-(--text-secondary)">
-              <UserIcon size={14} className="opacity-40" />
-              No contacts yet
-            </div>
-          ) : (
-            <div className="flex flex-col gap-0">
-              {linkedContacts.map((contact, i) => (
-                <div
-                  key={contact.id}
-                  className={[
-                    "flex items-center gap-2.5 py-2",
-                    i < linkedContacts.length - 1 ? "border-b border-border" : "",
-                  ].join(" ")}
-                >
-                  <span className="w-6 h-6 rounded-full inline-flex items-center justify-center text-[10px] font-semibold bg-(--accent-bg) text-(--accent-text) shrink-0">
-                    {Utilities.getInitials(contact.name)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] font-medium text-foreground truncate">
-                      {contact.name}
-                    </div>
-                    {contact.designation && (
-                      <div className="text-[11px] text-(--text-secondary) truncate">
-                        {contact.designation}
-                      </div>
-                    )}
-                  </div>
-                  <span
-                    className={[
-                      "inline-flex items-center h-4.5 px-1.5 rounded-[5px] text-[10px] font-semibold shrink-0",
-                      contact.status === 2
-                        ? "bg-(--accent-bg) text-(--accent-text)"
-                        : contact.status === 3 || contact.status === 4
-                          ? "bg-(--pipeline-bg) text-(--pipeline-text)"
-                          : contact.status === 5
-                            ? "bg-(--success-bg) text-(--success-text)"
-                            : "bg-(--surface-raised) text-(--text-secondary)",
-                    ].join(" ")}
-                  >
-                    {contact.statusLabel}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <LinkedContacts companyId={company.id} />
       </div>
 
-      {/* Footer */}
-      <div className="px-5 py-3.5 border-t border-border bg-sidebar flex gap-2 shrink-0">
+      <div className="px-5 py-3.5 border-t border-border bg-card flex gap-2 shrink-0">
         <button
           type="button"
           onClick={handleReject}
@@ -346,8 +176,65 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
           Accept · find contacts
         </button>
       </div>
+    </div>
+  );
+}
+
+interface CompanyDetailPanelProps {
+  companyId: number | null;
+  company: Schemas.Company | null;
+  onClose: () => void;
+}
+
+export function CompanyDetailPanel({ companyId, company, onClose }: CompanyDetailPanelProps) {
+  const isOpen = companyId != null && company != null;
+
+  return (
+    <aside
+      className={[
+        "hidden md:flex flex-col absolute inset-y-0 right-0 border-l border-border shadow-xl z-20 overflow-hidden",
+        "transition-all duration-200 ease-out",
+        isOpen ? "w-1/3" : "w-0 border-l-0",
+      ].join(" ")}
+      aria-hidden={!isOpen}
+    >
+      {isOpen && <CompanyPanelContent company={company} onClose={onClose} />}
     </aside>
   );
 }
 
-export default DesktopPanel;
+export function CompanyDetailMobileDrawer({
+  companyId,
+  company,
+  onClose,
+}: CompanyDetailPanelProps) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const isOpen = companyId != null && company != null && isMobile;
+
+  return (
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      direction="bottom"
+    >
+      <DrawerPortal>
+        <DrawerOverlay />
+        <DrawerContent className="h-[90vh] w-full p-0 bg-card border-t border-border rounded-t-xl">
+          {isOpen && <CompanyPanelContent company={company} onClose={onClose} />}
+        </DrawerContent>
+      </DrawerPortal>
+    </Drawer>
+  );
+}

@@ -4,7 +4,7 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { contacts, contactHistory, companies } from "@/db/tables";
 import * as Schemas from "@app/schemas";
-import AppLogger from "@/providers/logger";
+import AppLogger from "@/providers/AppLogger";
 import Utility from "@/utils";
 
 const contactStatusLabelExpr = sql<Schemas.ContactStatusLabelEnum>`CASE
@@ -403,7 +403,8 @@ export default class ContactsDAL {
             eq(contactHistory.contactId, params.contactId),
             eq(contactHistory.createdBy, params.createdBy),
           ),
-        );
+        )
+        .orderBy(contactHistory.sentAt);
 
       response.isSuccess = true;
       response.message = "Contact history fetched successfully";
@@ -412,7 +413,7 @@ export default class ContactsDAL {
       const message = "Unknown error in fetching contact history";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.GetContactDetails,
+        action: Schemas.LogAction.GetContactHistory,
         message,
         error,
         metadata: params,
@@ -427,6 +428,27 @@ export default class ContactsDAL {
     const response: Schemas.CreateContactHistoryApiResponse = { isSuccess: false };
 
     try {
+      const isSent = params.type.endsWith("_sent");
+      let nextSequencePosition: number | null = null;
+
+      if (isSent) {
+        const existing = await this.db
+          .select({ sequencePosition: contactHistory.sequencePosition })
+          .from(contactHistory)
+          .where(
+            and(
+              eq(contactHistory.contactId, params.contactId),
+              eq(contactHistory.createdBy, params.createdBy),
+            ),
+          );
+
+        const maxPos = existing.reduce((max, row) => {
+          const pos = row.sequencePosition ?? 0;
+          return pos > max ? pos : max;
+        }, 0);
+        nextSequencePosition = maxPos + 1;
+      }
+
       const created = await this.db
         .insert(contactHistory)
         .values({
@@ -436,7 +458,7 @@ export default class ContactsDAL {
           channel: params.channel,
           subject: params.subject ?? null,
           body: params.body,
-          sequencePosition: params.sequencePosition ?? null,
+          sequencePosition: nextSequencePosition,
           abVariable: params.abVariable ?? null,
           abVariant: params.abVariant ?? null,
           sentAt: params.sentAt,
@@ -452,7 +474,81 @@ export default class ContactsDAL {
       const message = "Unknown error in creating contact history entry";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.CreateContact,
+        action: Schemas.LogAction.CreateContactHistory,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async updateContactHistory(params: Schemas.UpdateContactHistoryDALRequest) {
+    const response: Schemas.UpdateContactHistoryApiResponse = { isSuccess: false };
+
+    try {
+      const updated = await this.db
+        .update(contactHistory)
+        .set({
+          body: params.body ?? undefined,
+          sentAt: params.sentAt ?? undefined,
+          subject: params.subject,
+        })
+        .where(
+          and(eq(contactHistory.id, params.id), eq(contactHistory.createdBy, params.createdBy)),
+        )
+        .returning()
+        .get();
+
+      if (!updated) {
+        const message = "History entry not found";
+        AppLogger.error({
+          category: Schemas.LogCategory.DAL,
+          action: Schemas.LogAction.UpdateContactHistory,
+          message,
+          metadata: params,
+        });
+        response.message = message;
+        return response;
+      }
+
+      response.isSuccess = true;
+      response.message = "History entry updated successfully";
+      response.history = updated;
+    } catch (error) {
+      const message = "Unknown error in updating contact history entry";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.UpdateContactHistory,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async deleteContactHistory(params: Schemas.FindContactHistoryDALRequest) {
+    const response: Schemas.DeleteContactHistoryApiResponse = { isSuccess: false };
+
+    try {
+      await this.db
+        .delete(contactHistory)
+        .where(
+          and(eq(contactHistory.id, params.id), eq(contactHistory.createdBy, params.createdBy)),
+        );
+
+      response.isSuccess = true;
+      response.message = "History entry deleted successfully";
+    } catch (error) {
+      const message = "Unknown error in deleting contact history entry";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.DeleteContactHistory,
         message,
         error,
         metadata: params,

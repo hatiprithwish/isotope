@@ -1,13 +1,16 @@
 import JobsDAL from "@/data-access-layer/JobsDAL";
+import FrameworksDAL from "@/data-access-layer/FrameworksDAL";
 import * as Schemas from "@app/schemas";
-import AppLogger from "@/providers/logger";
+import AppLogger from "@/providers/AppLogger";
 import Constants from "@/config/Constants";
 
 export default class JobsRepo {
   private dal: JobsDAL;
+  private env: Env;
 
   constructor(env: Env) {
     this.dal = new JobsDAL(env);
+    this.env = env;
   }
 
   async createJob(params: Schemas.CreateJobApiRequest & { userId: string }) {
@@ -84,6 +87,35 @@ export default class JobsRepo {
       createdBy: params.userId,
       searchText: params.searchText ?? null,
     });
+  }
+
+  async discoverJobs(params: { userId: string }): Promise<Schemas.DiscoverJobsApiResponse> {
+    AppLogger.info({
+      category: Schemas.LogCategory.Repo,
+      action: Schemas.LogAction.DiscoverJobs,
+      message: "Triggering job discovery workflow",
+      metadata: { userId: params.userId },
+    });
+
+    const frameworksDal = new FrameworksDAL(this.env);
+    const frameworkResult = await frameworksDal.getFrameworkDetails({ createdBy: params.userId });
+
+    if (!frameworkResult.isSuccess || !frameworkResult.framework?.isCustomized) {
+      return {
+        isSuccess: false,
+        message: "No job search framework found. Please set up your framework first.",
+      };
+    }
+
+    const instance = await this.env.JOB_DISCOVERY_WORKFLOW.create({
+      params: { createdBy: params.userId },
+    });
+
+    return {
+      isSuccess: true,
+      message: "Job discovery started",
+      workflowInstanceId: instance.id,
+    };
   }
 
   async getJobs(params: Schemas.GetJobsApiRequest & { userId: string }) {

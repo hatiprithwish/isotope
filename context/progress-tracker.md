@@ -88,14 +88,33 @@ change.
   - Settings route: `apps/web/src/routes/_authenticated/settings/frameworks.tsx` — no `max-w` constraint; `showNotice = !noticeDismissed && framework != null && !framework.isCustomized`; skeleton while `isPending || !framework`; no hardcoded defaults.
   - Jobs page: `hasFramework` checks `frameworkQuery.data?.framework?.isCustomized` (not mere row presence); Discover button navigates to onboarding if `!hasFramework`.
 
+- **Spec 003G — Job Discovery Workflow**:
+  - `WebSearchProvider.ts`: `WebSearchProvider` interface + `TavilySearchProvider` — maps Tavily `/search` endpoint to `WebSearchResult[]`. `time_range` param for recency; throws on non-200.
+  - `JobDiscoveryWorkflow.ts`: `JobDiscoveryWorkflow extends WorkflowEntrypoint` — 6 durable steps: fetch-framework → web-search (per targetRole query, URL-deduped) → extract-jobs (Workers AI JSON extraction) → filter-jobs (required skills hard-gate) → dedup-jobs (against existing `jobs` table) → insert-jobs (bulk insert, one-by-one with continue-on-error).
+  - `JobsDAL.ts`: `getExistingUrls` (Set of existing URLs for dedup) + `bulkInsertJobs` (one-by-one, logs per-failure, returns insert count).
+  - `JobsRepo.ts`: `discoverJobs` — checks framework, triggers `JOB_DISCOVERY_WORKFLOW.create()`, returns 400 if no customized framework.
+  - `JobsRoutes.ts`: `POST /jobs/discover` — returns 202 immediately; 400 if no framework.
+  - `wrangler.jsonc`: `workflows` binding `JOB_DISCOVERY_WORKFLOW` → `JobDiscoveryWorkflow` in base + staging + production envs. `TAVILY_API_KEY` placeholder var added.
+  - `index.ts`: `export { JobDiscoveryWorkflow }` — required by Cloudflare Workflows runtime.
+  - `wrangler types` re-run — `JOB_DISCOVERY_WORKFLOW: Workflow<...>` and `TAVILY_API_KEY: string` now in generated `Env`.
+  - Frontend: `useDiscoverJobs` mutation in `-data.ts`. Both Discover buttons (desktop header + mobile banner) wired — disabled + "Searching…" while pending, success toast on 202, redirect to onboarding on 400, error toast on other failures.
+
+- **Spec 04 — Contact History (CRUD)**:
+  - LogAction: Added `GetContactHistory`, `CreateContactHistory`, `UpdateContactHistory`, `DeleteContactHistory` to `packages/schemas/src/log.ts`.
+  - Schemas: Added `ContactHistoryDirectionEnum` (me/contact) and `ContactHistoryChannelEnum` (email/linkedin) to `ContactsCommon.ts`. Added `ZLogContactHistoryApiRequest` (direction+channel+body+sentAt), `ZUpdateContactHistoryApiRequest` to `ContactsApiRequest.ts`. Added `UpdateContactHistoryApiResponse`, `DeleteContactHistoryApiResponse` to `ContactsApiResponse.ts`. Added `FindContactHistoryDALRequest`, `UpdateContactHistoryDALRequest` to `ContactsDALRequest.ts`.
+  - DAL: Updated `getContactHistory` (orderBy sentAt, correct LogAction). Updated `createContactHistory` (auto-increment sequencePosition for sent messages from prior max). Added `updateContactHistory` (body/sentAt/subject patch, ownership check). Added `deleteContactHistory` (ownership-scoped delete).
+  - Repo: Added `logContactHistory` (derives `type` from direction+channel, e.g. `email_sent`). Added `updateContactHistory`, `deleteContactHistory`.
+  - Routes: Changed `POST /:id/history` to use `ZLogContactHistoryApiRequest` via `logContactHistory`. Added `PATCH /:id/history/:historyId` and `DELETE /:id/history/:historyId`.
+  - Frontend data: Updated `useCreateContactHistory` to use `LogContactHistoryApiRequest`. Added `useUpdateContactHistory`, `useDeleteContactHistory` mutation hooks.
+  - Frontend UI: Replaced read-only `HistoryTab` with interactive version — `ComposeForm` (direction toggle, channel toggle, date picker, textarea), `EditHistoryForm` (inline edit per message), per-message edit/delete icon buttons, Touch N label on outgoing messages, reply count in header.
+
 ## In Progress
 
 - None.
 
 ## Next Up
 
-- Spec 003E — Manual Entry Form (Add New Job)
-- Update frontend `-data.ts` to use `/jobs/query` and `/jobs/query/count`
+- None.
 
 ## Open Questions
 

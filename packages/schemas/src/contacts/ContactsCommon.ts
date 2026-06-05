@@ -92,6 +92,18 @@ export const ZContact = ZContactBase.extend({
 });
 export type Contact = z.infer<typeof ZContact>;
 
+export enum ContactHistoryDirectionEnum {
+  Me = "me",
+  Contact = "contact",
+}
+export const ZContactHistoryDirectionEnum = z.nativeEnum(ContactHistoryDirectionEnum);
+
+export enum ContactHistoryChannelEnum {
+  Email = "email",
+  LinkedIn = "linkedin",
+}
+export const ZContactHistoryChannelEnum = z.nativeEnum(ContactHistoryChannelEnum);
+
 export const ZContactHistoryBase = z.object({
   contactId: z.number(),
   type: z.string(),

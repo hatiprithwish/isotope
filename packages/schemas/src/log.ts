@@ -39,6 +39,10 @@ export enum LogAction {
   ListContacts = "ListContacts",
   UpdateContact = "UpdateContact",
   DeleteContact = "DeleteContact",
+  GetContactHistory = "GetContactHistory",
+  CreateContactHistory = "CreateContactHistory",
+  UpdateContactHistory = "UpdateContactHistory",
+  DeleteContactHistory = "DeleteContactHistory",
 
   // Frameworks
   SaveFramework = "SaveFramework",
@@ -54,4 +58,8 @@ export enum LogAction {
   DeleteJob = "DeleteJob",
   RunJobIngestion = "RunJobIngestion",
   DuplicateJobBlocked = "DuplicateJobBlocked",
+  DiscoverJobs = "DiscoverJobs",
+  WebSearch = "WebSearch",
+  ExtractJobs = "ExtractJobs",
+  BulkInsertJobs = "BulkInsertJobs",
 }

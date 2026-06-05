@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import checkAuth from "@/middlewares/AuthMiddleware";
 import type AppContext from "@/config/AppContext";
-import ClerkProvider from "@/providers/clerk";
-import AppLogger from "@/providers/logger";
+import ClerkProvider from "@/providers/ClerkProvider";
+import AppLogger from "@/providers/AppLogger";
 import * as Schemas from "@app/schemas";
 
 const AuthRoutes = new Hono<AppContext>();
