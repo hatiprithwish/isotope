@@ -6,7 +6,7 @@ import { z } from "zod";
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
 import { CompaniesQueries } from "./-data";
 import DesktopCompanyRow from "./-DesktopCompanyRow";
-import DesktopPanel from "./-DesktopPanel";
+import { CompanyDetailPanel } from "./-DesktopPanel";
 import AddCompanyModal from "./-AddCompanyModal";
 import { MobileCompaniesList } from "./-MobileCompaniesList";
 import { CompaniesFilterBar, applyFilters } from "./-CompaniesFilterBar";
@@ -52,7 +52,7 @@ function CompaniesPage() {
 
       <MobileCompaniesList companies={companies} onAddClick={() => setShowAddModal(true)} />
 
-      <div className="hidden md:flex h-full overflow-hidden">
+      <div className="hidden md:flex h-full overflow-hidden relative">
         <div className="flex flex-col overflow-hidden border-r border-border flex-1">
           <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
             <span className="text-base font-semibold text-foreground tracking-tight">
@@ -122,11 +122,11 @@ function CompaniesPage() {
           </div>
         </div>
 
-        {selectedCompany && (
-          <div className="w-100 shrink-0">
-            <DesktopPanel company={selectedCompany} onClose={closePanel} />
-          </div>
-        )}
+        <CompanyDetailPanel
+          companyId={selectedCompany?.id ?? null}
+          company={selectedCompany}
+          onClose={closePanel}
+        />
       </div>
     </>
   );

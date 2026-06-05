@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useUpdateCompany } from "./-data";
 import type * as Schemas from "@app/schemas";
@@ -8,8 +9,14 @@ import ScoreBar from "./-ScoreBar";
 import { MAX_SCORE } from "./-criteria";
 import { ScoredCriteria } from "./-ScoredCriteria";
 import { LinkedContacts } from "./-LinkedContacts";
+import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
 
-function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose: () => void }) {
+interface CompanyPanelProps {
+  company: Schemas.Company;
+  onClose: () => void;
+}
+
+function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
   const navigate = useNavigate();
   const updateCompany = useUpdateCompany();
   const score = company.weightedScore ?? 0;
@@ -25,7 +32,7 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
   }
 
   return (
-    <aside className="bg-sidebar border-l border-border flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-card">
       <div className="px-5 pt-4 pb-3.5 border-b border-border shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -90,7 +97,7 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
           <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5">
             Score
           </div>
-          <ScoreBar score={isWaitingHuman ? score : score} max={MAX_SCORE} />
+          <ScoreBar score={score} max={MAX_SCORE} />
         </div>
 
         <div className="px-5 py-4.5 border-b border-border">
@@ -142,7 +149,7 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
         <LinkedContacts companyId={company.id} />
       </div>
 
-      <div className="px-5 py-3.5 border-t border-border bg-sidebar flex gap-2 shrink-0">
+      <div className="px-5 py-3.5 border-t border-border bg-card flex gap-2 shrink-0">
         <button
           type="button"
           onClick={handleReject}
@@ -169,8 +176,65 @@ function DesktopPanel({ company, onClose }: { company: Schemas.Company; onClose:
           Accept · find contacts
         </button>
       </div>
+    </div>
+  );
+}
+
+interface CompanyDetailPanelProps {
+  companyId: number | null;
+  company: Schemas.Company | null;
+  onClose: () => void;
+}
+
+export function CompanyDetailPanel({ companyId, company, onClose }: CompanyDetailPanelProps) {
+  const isOpen = companyId != null && company != null;
+
+  return (
+    <aside
+      className={[
+        "hidden md:flex flex-col absolute inset-y-0 right-0 border-l border-border shadow-xl z-20 overflow-hidden",
+        "transition-all duration-200 ease-out",
+        isOpen ? "w-1/3" : "w-0 border-l-0",
+      ].join(" ")}
+      aria-hidden={!isOpen}
+    >
+      {isOpen && <CompanyPanelContent company={company} onClose={onClose} />}
     </aside>
   );
 }
 
-export default DesktopPanel;
+export function CompanyDetailMobileDrawer({
+  companyId,
+  company,
+  onClose,
+}: CompanyDetailPanelProps) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const isOpen = companyId != null && company != null && isMobile;
+
+  return (
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      direction="bottom"
+    >
+      <DrawerPortal>
+        <DrawerOverlay />
+        <DrawerContent className="h-[90vh] w-full p-0 bg-card border-t border-border rounded-t-xl">
+          {isOpen && <CompanyPanelContent company={company} onClose={onClose} />}
+        </DrawerContent>
+      </DrawerPortal>
+    </Drawer>
+  );
+}

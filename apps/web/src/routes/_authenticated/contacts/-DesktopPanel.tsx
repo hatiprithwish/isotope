@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
 import type * as Schemas from "@app/schemas";
@@ -9,6 +9,7 @@ import Utilities from "@/utils";
 import { DraftTab } from "./-DraftTab";
 import { HistoryTab } from "./-HistoryTab";
 import { AboutTab } from "./-AboutTab";
+import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
 
 type Tab = "draft" | "history" | "about";
 
@@ -20,7 +21,13 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-function DesktopPanel({ contact, onClose }: { contact: Schemas.Contact; onClose: () => void }) {
+function ContactPanelContent({
+  contact,
+  onClose,
+}: {
+  contact: Schemas.Contact;
+  onClose: () => void;
+}) {
   const [activeTab, setActiveTab] = useState<Tab>("draft");
   const { getToken } = useAuth();
   const navigate = useNavigate();
@@ -44,7 +51,7 @@ function DesktopPanel({ contact, onClose }: { contact: Schemas.Contact; onClose:
   }
 
   return (
-    <aside className="bg-sidebar border-l border-border flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-card">
       <div className="px-5 pt-4 pb-3.5 border-b border-border shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -95,7 +102,7 @@ function DesktopPanel({ contact, onClose }: { contact: Schemas.Contact; onClose:
         </div>
       </div>
 
-      <div className="flex border-b border-border bg-sidebar shrink-0 px-1">
+      <div className="flex border-b border-border bg-card shrink-0 px-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -119,7 +126,7 @@ function DesktopPanel({ contact, onClose }: { contact: Schemas.Contact; onClose:
         {activeTab === "about" && <AboutTab contact={contact} onMarkDead={handleMarkDead} />}
       </div>
 
-      <div className="px-5 py-3.5 border-t border-border bg-sidebar flex gap-2 shrink-0">
+      <div className="px-5 py-3.5 border-t border-border bg-card flex gap-2 shrink-0">
         <div className="flex-1" />
         <button
           type="button"
@@ -138,8 +145,65 @@ function DesktopPanel({ contact, onClose }: { contact: Schemas.Contact; onClose:
           Mark as sent
         </button>
       </div>
+    </div>
+  );
+}
+
+interface ContactDetailPanelProps {
+  contactId: number | null;
+  contact: Schemas.Contact | null;
+  onClose: () => void;
+}
+
+export function ContactDetailPanel({ contactId, contact, onClose }: ContactDetailPanelProps) {
+  const isOpen = contactId != null && contact != null;
+
+  return (
+    <aside
+      className={[
+        "hidden md:flex flex-col absolute inset-y-0 right-0 border-l border-border shadow-xl z-20 overflow-hidden",
+        "transition-all duration-200 ease-out",
+        isOpen ? "w-1/3" : "w-0 border-l-0",
+      ].join(" ")}
+      aria-hidden={!isOpen}
+    >
+      {isOpen && <ContactPanelContent contact={contact} onClose={onClose} />}
     </aside>
   );
 }
 
-export default DesktopPanel;
+export function ContactDetailMobileDrawer({
+  contactId,
+  contact,
+  onClose,
+}: ContactDetailPanelProps) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const isOpen = contactId != null && contact != null && isMobile;
+
+  return (
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      direction="bottom"
+    >
+      <DrawerPortal>
+        <DrawerOverlay />
+        <DrawerContent className="h-[90vh] w-full p-0 bg-card border-t border-border rounded-t-xl">
+          {isOpen && <ContactPanelContent contact={contact} onClose={onClose} />}
+        </DrawerContent>
+      </DrawerPortal>
+    </Drawer>
+  );
+}

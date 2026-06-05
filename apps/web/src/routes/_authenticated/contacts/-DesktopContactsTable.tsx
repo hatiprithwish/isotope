@@ -1,7 +1,7 @@
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
 import type * as Schemas from "@app/schemas";
 import DesktopContactRow from "./-DesktopContactRow";
-import DesktopPanel from "./-DesktopPanel";
+import { ContactDetailPanel } from "./-DesktopPanel";
 
 interface Props {
   contacts: Schemas.Contact[];
@@ -107,14 +107,11 @@ export function DesktopContactsTable({
         </div>
       </div>
 
-      {selectedContact && (
-        <div className="absolute inset-0 z-10" onClick={onClosePanel} aria-hidden />
-      )}
-      {selectedContact && (
-        <div className="absolute inset-y-0 right-0 w-1/3 border-l border-border shadow-xl z-20">
-          <DesktopPanel contact={selectedContact} onClose={onClosePanel} />
-        </div>
-      )}
+      <ContactDetailPanel
+        contactId={selectedContact?.id ?? null}
+        contact={selectedContact}
+        onClose={onClosePanel}
+      />
     </div>
   );
 }
