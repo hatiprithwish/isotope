@@ -19,11 +19,11 @@
 
 ## System Boundaries
 
-- `packages/schemas/src/<feature>/` — Owns all Zod schemas and TypeScript types. The only place where request/response types and enums are defined. Shared by both `apps/web` and `apps/worker`.
-- `apps/worker/src/data-access-layer/` — Raw Drizzle DB operations only. No business logic. Every method wraps in try/catch and returns a typed response object.
-- `apps/worker/src/repositories/` — Business logic layer. Maps API request shapes to DAL params. The only layer that may call DAL methods.
-- `apps/worker/src/routes/` — Hono route handlers. Auth middleware runs first (`checkAuth`), then `zValidator`, then delegates to Repo. Instantiates Repo per request.
-- `apps/worker/src/index.ts` — Hono app entry point. Mounts all route groups, configures CORS, request ID, and logger middleware.
+- `packages/schemas/src/<feature>/` — Owns all Zod schemas and TypeScript types. The only place where request/response types and enums are defined. Shared by both `apps/web` and `apps/backend`.
+- `apps/backend/src/data-access-layer/` — Raw Drizzle DB operations only. No business logic. Every method wraps in try/catch and returns a typed response object.
+- `apps/backend/src/repositories/` — Business logic layer. Maps API request shapes to DAL params. The only layer that may call DAL methods.
+- `apps/backend/src/routes/` — Hono route handlers. Auth middleware runs first (`checkAuth`), then `zValidator`, then delegates to Repo. Instantiates Repo per request.
+- `apps/backend/src/index.ts` — Hono app entry point. Mounts all route groups, configures CORS, request ID, and logger middleware.
 - `apps/web/src/routes/_authenticated/` — All authenticated frontend pages and co-located private components. Route layout wrapper enforces Clerk session check.
 - `apps/web/src/routes/_authenticated/<feature>/-data.ts` — Frontend data layer per feature. `QueryOptions` classes with hierarchical keys, mutation hooks with explicit `onError` handlers, `apiClient` calls.
 
@@ -51,10 +51,10 @@ Pagination fields (`pageNo`, `pageSize`, `sortColumn`, `sortDirection`) are part
 ## Invariants
 
 1. **Layer import order is strictly enforced: Routes → Repo → DAL → DB.** Routes never call DAL or Drizzle directly. Repos never call Drizzle directly. All data serialization (e.g. `JSON.stringify` for array columns) and DB-level concerns (version calculation, pruning) belong in the DAL, not the Repo.
-2. **All types and Zod schemas live exclusively in `packages/schemas`.** No type or schema may be defined inside `apps/web` or `apps/worker`.
+2. **All types and Zod schemas live exclusively in `packages/schemas`.** No type or schema may be defined inside `apps/web` or `apps/backend`.
 3. **Every DB query filters by `created_by`.** No query may return records belonging to a different user.
 4. **Enum values stored as integers in DB; API responses include both the integer and the human-readable label.** The DAL maps int → label before returning to routes.
 5. **Every mutation hook must declare an explicit `onError` handler that surfaces the error via the shadcn toast utility.** Silent or absent `onError` is forbidden.
 6. **Every Drizzle schema change must be immediately followed by `pnpm db:generate` and `pnpm db:migrate`.** Migration files are committed in the same change as the schema modification.
-7. **Default / canonical framework documents are stored as static string constants in `apps/worker/src/config/Constants.ts`, not in the database.** They are injected into AI system prompts as reference templates. The DB only stores user-customised versions saved after generation.
+7. **Default / canonical framework documents are stored as static string constants in `apps/backend/src/config/Constants.ts`, not in the database.** They are injected into AI system prompts as reference templates. The DB only stores user-customised versions saved after generation.
 8. **`isCustomized` is the single source of truth for framework onboarding state.** Every user always has a `job_search_frameworks` row (seeded on sign-up). Row presence alone does not mean the user has set up their criteria — only `isCustomized === true` does. The onboarding redirect gate and the settings warning banner both read this flag, never row presence.

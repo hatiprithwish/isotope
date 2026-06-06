@@ -13,10 +13,10 @@ change.
 
 ## Completed
 
-- **spec 01 — Workers AI setup**: Added `"ai": { "binding": "AI" }` to `wrangler.jsonc` (base + staging + production envs). Ran `wrangler types` to regenerate `worker-configuration.d.ts` — `AI: Ai` now present in all env interfaces. Removed stale `@cloudflare/workers-types` entry from `tsconfig.json` (package not installed; superseded by generated runtime types). Created `apps/worker/src/providers/ai.ts` — `AiProvider` class with `run()` and `runWithRetry()` methods; `AI_MODELS` constants for Sonnet (general) and Haiku (personalisation research only).
+- **spec 01 — Workers AI setup**: Added `"ai": { "binding": "AI" }` to `wrangler.jsonc` (base + staging + production envs). Ran `wrangler types` to regenerate `worker-configuration.d.ts` — `AI: Ai` now present in all env interfaces. Removed stale `@cloudflare/workers-types` entry from `tsconfig.json` (package not installed; superseded by generated runtime types). Created `apps/backend/src/providers/ai.ts` — `AiProvider` class with `run()` and `runWithRetry()` methods; `AI_MODELS` constants for Sonnet (general) and Haiku (personalisation research only).
 
 - **Spec 003A — Jobs Database Schema**:
-  - Schema: Added `jobs` table to `apps/worker/src/db/tables.ts`. 15 columns, 3 indexes (UNIQUE on `url`, IDX on `created_by`, IDX on `company_id`). `status` + `type` as IntEnum integers; `skills` as JSON text; `match_score` nullable real (v2.0 reserved).
+  - Schema: Added `jobs` table to `apps/backend/src/db/tables.ts`. 15 columns, 3 indexes (UNIQUE on `url`, IDX on `created_by`, IDX on `company_id`). `status` + `type` as IntEnum integers; `skills` as JSON text; `match_score` nullable real (v2.0 reserved).
   - Enums: Created `packages/schemas/src/jobs/JobsCommon.ts` — `JobStatusIntEnum` / `JobTypeLabelEnum` + label enums, int→label maps, `ZJobBase`, `ZJob`. Exported from `packages/schemas/src/index.ts`.
 
 - **Spec 003B — Jobs Zod Schemas & System Contracts**:
@@ -44,7 +44,7 @@ change.
   - No DDL migration needed (column type unchanged; dev/staging DB had no real rows).
 
 - **spec 02 — Company Research Framework Form**:
-  - DB: Added `frameworks` table to `apps/worker/src/db/tables.ts`. Generated migration `0004_isotope.sql` and applied to remote D1.
+  - DB: Added `frameworks` table to `apps/backend/src/db/tables.ts`. Generated migration `0004_isotope.sql` and applied to remote D1.
   - Schemas: Created `packages/schemas/src/frameworks/` — `FrameworksCommon.ts` (enums, `ScoredCriterion`, `CompanyFrameworkFormInputs`, `Framework`), `FrameworksApiRequest.ts`, `FrameworksApiResponse.ts`, `FrameworksDALRequest.ts`, `index.ts`. Added `FrameworkTypeIntEnum` (1=CompanyResearch). Exported from `packages/schemas/src/index.ts`.
   - Log: Added `GenerateFramework`, `SaveFramework`, `GetLatestFramework`, `GetFrameworkVersions` to `LogAction` enum.
   - Backend: `FrameworksDAL.ts` — `getLatestFramework`, `getFrameworkVersions`, `createFramework`. `FrameworksRepo.ts` — `generateCompanyFramework` (calls AiProvider with structured system prompt + user message), `saveCompanyFramework` (auto-increments version), `getLatestCompanyFramework`, `getCompanyFrameworkVersions`. `FrameworksRoutes.ts` — `POST /frameworks/generate`, `PUT /frameworks/company`, `GET /frameworks/company`, `GET /frameworks/company/versions`. Mounted in `index.ts`.
@@ -79,7 +79,7 @@ change.
   - DB: Added `job_search_frameworks` table to `tables.ts` (15 columns, `idx_job_fw_user` index). Migration `0007_isotope.sql` generated and applied to remote D1.
   - Schemas: `packages/schemas/src/frameworks/` — `FrameworksCommon.ts` (`ZPrioritisedSkill`, `ZFramework`, `ZFrameworkInput`), `FrameworksApiRequest.ts`, `FrameworksApiResponse.ts`, `FrameworksDALRequest.ts` (`GetFrameworkDALRequest`, `CreateFrameworkDALRequest`, `SaveFrameworkDALRequest`), `index.ts`. Exported from `packages/schemas/src/index.ts` as `export * from "./frameworks"`. Old `job-search-frameworks/` directory deleted.
   - LogAction: `SaveFramework`, `GetFramework` in `packages/schemas/src/log.ts`.
-  - Constants: `JOB_SEARCH_FRAMEWORK_DEFAULTS` in `apps/worker/src/config/Constants.ts` — single backend source of truth for default values.
+  - Constants: `JOB_SEARCH_FRAMEWORK_DEFAULTS` in `apps/backend/src/config/Constants.ts` — single backend source of truth for default values.
   - Backend: `FrameworksDAL.ts` — `getFrameworkDetails`, `saveFramework` (fetches version, JSON-stringifies arrays, calls `createFramework`, sets `isCustomized: true`), `createFramework` (raw insert + prunes to 5 versions), `createDefaultIfAbsent` (idempotent seed from Constants). `FrameworksRepo.ts` — `seedDefault`, `getFrameworkDetails`, `saveFramework` (pure delegation to DAL — no DB logic). Routes: `GET /frameworks/job-search`, `POST /frameworks/job-search` in `FrameworksRoutes.ts`.
   - User seeding: `UsersRepo.syncClerkUser` calls `fwRepo.seedDefault(clerkId)` after successful upsert — every new user gets a default framework row with `isCustomized: false`.
   - Frontend data: `FrameworkQueries` (key: `["frameworks","job-search","latest"]`), `useSaveFramework` in `apps/web/src/routes/_without_nav/onboarding/job-search-framework/-data.ts`.
@@ -119,6 +119,18 @@ change.
   - `MobileJobsList`: "Select" toggle enters select mode; per-card checkbox; sticky bottom action bar with status select + Apply + Delete while in select mode.
   - `index.tsx`: `handleBulkDelete`, `handleBulkStatusUpdate`, `handlePanelDelete` wired; panel URL cleared on delete; all bulk mutations threaded into table + mobile list.
 
+- **Spec 06 — Queue Setup**:
+  - Created `isotope-queue` (producer binding `ISOTOPE_QUEUE`) and `isotope-queue-dlq` (DLQ — no consumer).
+  - API worker entry point moved: `src/index.ts` → `workers/api/index.ts`. Wrangler config + .dev.vars files moved into `workers/api/`.
+  - Processor worker entry point created at `workers/processor/index.ts` — `queue()` handler boilerplate; routes messages via `message.ack()` / `message.retry()`.
+  - `workers/api/wrangler.jsonc`: added `queues.producers` binding for `isotope-queue` in staging + production envs.
+  - `workers/processor/wrangler.jsonc`: consumer binding for `isotope-queue` with `dead_letter_queue: "isotope-queue-dlq"`, `max_retries: 3`, `max_batch_size: 10`, `max_batch_timeout: 30`.
+  - `src/api/.dev.vars` + `.dev.vars.example`, `src/processor/.dev.vars` + `.dev.vars.example` created.
+  - `package.json` scripts split into `dev:api`, `dev:processor`, `build:api`, `build:processor`, `deploy:api`, `deploy:processor`, `generate-types:api`, `generate-types:processor`.
+  - CI: `deploy-worker-staging.yml` + `deploy-worker-production.yml` updated — workingDirectory → `apps/backend/src/api`, secrets path → `src/api/.dev.vars.example`.
+  - CI: `deploy-worker-staging.yml` + `deploy-worker-production.yml` updated — each now deploys both API worker and processor worker in sequence within the same job.
+  - **Manual steps required**: Run `wrangler queues create isotope-queue` and `wrangler queues create isotope-queue-dlq` in Cloudflare dashboard or CLI before deploying. Run `pnpm generate-types:api` and `pnpm generate-types:processor` (from `apps/backend/`) to regenerate `worker-configuration.d.ts` for each worker.
+
 ## In Progress
 
 - None.
@@ -140,7 +152,7 @@ change.
 - `frameworks` table uses integer `type` column (`FrameworkTypeIntEnum`) and auto-incremented `version` per user per type — latest is always `ORDER BY version DESC LIMIT 1`.
 - Onboarding step-1 navigates to `/today` on framework save (step-2 route does not exist yet — will be updated when spec 03 is implemented).
 - `--accent-bg` / `--accent-text` CSS tokens added to `styles.css` Block 4 — were referenced in ui-context.md but not yet defined.
-- `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/worker/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template.
+- `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/backend/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template.
 - **Query route convention** — read-only endpoints that need a request body use `POST /jobs/query` sub-paths within the same resource router. All routes for a resource stay in one `<Feature>Routes.ts` file. `Constants.DEFAULT_PAGE_NO` and `Constants.DEFAULT_PAGE_SIZE` applied in Repo so routes and DAL stay decoupled from default business logic.
 
 ## Session Notes

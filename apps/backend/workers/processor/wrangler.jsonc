@@ -1,0 +1,38 @@
+{
+  "name": "isotope-processor",
+  "main": "index.ts",
+  // DEV_NOTE: keep it up to date with the current date.
+  "compatibility_date": "2026-05-22",
+  // DEV_NOTE: nodejs_compat flag is needed for using AsyncLocalStorage.
+  "compatibility_flags": ["nodejs_compat"],
+  "env": {
+    "staging": {
+      "name": "isotope-processor-staging",
+      "queues": {
+        "consumers": [
+          {
+            "queue": "isotope-queue",
+            "max_batch_size": 10,
+            "max_batch_timeout": 30,
+            "max_retries": 3,
+            "dead_letter_queue": "isotope-queue-dlq"
+          }
+        ]
+      }
+    },
+    "production": {
+      "name": "isotope-processor",
+      "queues": {
+        "consumers": [
+          {
+            "queue": "isotope-queue",
+            "max_batch_size": 10,
+            "max_batch_timeout": 30,
+            "max_retries": 3,
+            "dead_letter_queue": "isotope-queue-dlq"
+          }
+        ]
+      }
+    }
+  }
+}

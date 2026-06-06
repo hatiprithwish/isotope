@@ -23,7 +23,7 @@ These rules are mandatory per CLAUDE.md.
 **Detection:**
 
 ```
-File: apps/worker/src/routes/*.ts
+File: apps/backend/src/routes/*.ts
 - ❌ import { drizzle } from "drizzle-orm"
 - ❌ import { SomeDAL } from "../data-access-layer"
 - ✅ import { SomeRepo } from "../repositories"
@@ -44,14 +44,14 @@ File: apps/web/src/**/*.tsx
 **Violations:**
 
 - Type definitions in `apps/web/src/`
-- Type definitions in `apps/worker/src/`
+- Type definitions in `apps/backend/src/`
 - Zod schemas outside `packages/schemas/`
 - Request/Response types in app folders instead of schemas
 
 **Detection:**
 
 ```
-File: apps/worker/src/**/*.ts
+File: apps/backend/src/**/*.ts
 - ❌ type GetUserRequest = { id: string }
 - ❌ export const UserSchema = z.object({...})
 - ✅ import { GetUserRequest, UserSchema } from "@app/schemas"
@@ -125,7 +125,7 @@ File: apps/web/src/**/*.tsx
 **Detection:**
 
 ```
-File: apps/worker/src/routes/NotesRoutes.ts (golden file)
+File: apps/backend/src/routes/NotesRoutes.ts (golden file)
 - ✅ import { NotesRepo } from "../repositories"
 - ✅ import { LogCategory } from "@app/schemas"
 - ❌ import { NotesRepo } from "../../routes/../repositories" (verbose relative)
@@ -141,14 +141,14 @@ File: apps/worker/src/routes/NotesRoutes.ts (golden file)
 
 **Violations:**
 
-- Schema change in `apps/worker/src/db/tables.ts` without `pnpm db:generate` command
+- Schema change in `apps/backend/src/db/tables.ts` without `pnpm db:generate` command
 - Schema change without migration file committed alongside
 - Migration file missing or in separate commit
 
 **Detection:**
 
 ```
-PR contains changes to: apps/worker/src/db/tables.ts
+PR contains changes to: apps/backend/src/db/tables.ts
 But does NOT contain:
 - Generated migration file
 - Evidence of db:generate command
@@ -173,8 +173,8 @@ But does NOT contain:
 **Detection:**
 
 ```
-- ❌ apps/worker/src/repositories/NotesDAL.ts
-- ✅ apps/worker/src/data-access-layer/NotesDAL.ts
+- ❌ apps/backend/src/repositories/NotesDAL.ts
+- ✅ apps/backend/src/data-access-layer/NotesDAL.ts
 
 - ❌ apps/web/src/routes/_authenticated/notes/data.ts
 - ✅ apps/web/src/routes/_authenticated/notes/-data.ts

@@ -10,7 +10,7 @@ on:
     types: [opened, synchronize]
     paths:
       - "apps/web/src/**/*.{ts,tsx,js,jsx}"
-      - "apps/worker/src/**/*.{ts,tsx,js,jsx}"
+      - "apps/backend/src/**/*.{ts,tsx,js,jsx}"
       - "packages/schemas/src/**/*.{ts,tsx,js,jsx}"
 
 permissions:
@@ -65,7 +65,7 @@ jobs:
 
             **Issue:** Routes are importing directly from Drizzle, skipping the Repo layer.
 
-            **Location:** \`apps/worker/src/routes/NotesRoutes.ts\` (line XX)
+            **Location:** \`apps/backend/src/routes/NotesRoutes.ts\` (line XX)
 
             **Current Code:**
             \`\`\`typescript

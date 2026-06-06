@@ -11,7 +11,7 @@
 
 - Strict mode required throughout — no `@ts-ignore`, no `as any`
 - Never use `any` — use `unknown` and narrow, or explicit interfaces from `packages/schemas`
-- All types and Zod schemas live in `packages/schemas` — never define them in `apps/web` or `apps/worker`
+- All types and Zod schemas live in `packages/schemas` — never define them in `apps/web` or `apps/backend`
 - Validate unknown external input at system boundaries before passing inward
 - DB column names are `snake_case`; TypeScript interfaces use `camelCase` — the Repo layer maps between them
 - Enum columns stored as integers in DB using `t.integer().$type<IntEnum>()` — API response includes both the int value and a human-readable label
@@ -59,13 +59,12 @@
 
 - All LLM calls go through `ContextBuilder` to assemble the input bundle: fresh framework fetch + company record + job record (or null) + conversation history
 - Wrap all LLM calls in try/catch. On failure: set `failed_at = now`, increment `retry_count`. After `retry_count >= 3`, set `status = Failed`
-- Claude Haiku is used exclusively for personalisation research (Step 5 of Contact Finder). All other AI work uses Claude Sonnet or higher
 
 ## Logging
 
 Logging is mandatory throughout the backend. Silent failures are forbidden.
 
-**Backend (`AppLogger` in `apps/worker/src/providers/logger.ts`)**
+**Backend (`AppLogger` in `apps/backend/src/providers/logger.ts`)**
 
 - Every DAL method must log on every error path — both caught exceptions and "not found" branches — using `AppLogger.error()`
 - Every Repo and AI method must log at the start of meaningful operations (`AppLogger.info()`) and on all error paths (`AppLogger.error()`)
@@ -80,7 +79,7 @@ Logging is mandatory throughout the backend. Silent failures are forbidden.
 ## Data and Storage
 
 - All types and Zod schemas belong in `packages/schemas/src/<feature>/` — the single source of truth
-- DB table definitions live in `apps/worker/src/db/tables.ts` only — use `sqliteTable` aliased as `table`
+- DB table definitions live in `apps/backend/src/db/tables.ts` only — use `sqliteTable` aliased as `table`
 - All timestamps: `t.integer({ mode: "timestamp" })` — never text
 - Always include `createdAt` (notNull) and `updatedAt` (nullable) on every table
 - Add index for all foreign key columns; add unique index where field must be unique
@@ -89,10 +88,10 @@ Logging is mandatory throughout the backend. Silent failures are forbidden.
 ## File Organisation
 
 - `packages/schemas/src/<feature>/` — Zod schemas and TypeScript types; one folder per feature with `Common`, `ApiRequest`, `ApiResponse`, `DALRequest`, and `index.ts`
-- `apps/worker/src/data-access-layer/` — raw Drizzle DB operations only; one class per feature
-- `apps/worker/src/repositories/` — business logic; maps API shapes to DAL params; one class per feature
-- `apps/worker/src/routes/` — Hono route declarations; auth + validation only, delegate to Repo
-- `apps/worker/src/config/` — `AppContext`, `EnvConfig`, `Constants`; environment and app-wide config
+- `apps/backend/src/data-access-layer/` — raw Drizzle DB operations only; one class per feature
+- `apps/backend/src/repositories/` — business logic; maps API shapes to DAL params; one class per feature
+- `apps/backend/src/routes/` — Hono route declarations; auth + validation only, delegate to Repo
+- `apps/backend/src/config/` — `AppContext`, `EnvConfig`, `Constants`; environment and app-wide config
 - `apps/web/src/routes/_authenticated/<feature>/` — page components, `-data.ts`, and `-`-prefixed co-located components
 - `apps/web/src/shadcn/ui/` — shadcn component files; never modify directly
 - `apps/web/src/utils/` — shared utility functions; check here before writing any new helper
