@@ -4,7 +4,15 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useState, useDeferredValue, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { JobsQueries, useJobs, useJobsCount, useDiscoverJobs } from "./-data";
+import {
+  JobsQueries,
+  useJobs,
+  useJobsCount,
+  useDiscoverJobs,
+  useDeleteJob,
+  useBulkDeleteJobs,
+  useBulkUpdateJobs,
+} from "./-data";
 import { FrameworkQueries } from "../../_without_nav/onboarding/job-search-framework/-data";
 import { ApiError } from "@/providers/apiClient";
 import { JobsTable } from "./-JobsTable";
@@ -14,6 +22,7 @@ import { MobileJobsList } from "./-MobileJobsList";
 import { SparkleIcon, PlusIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
+import { JobStatusIntEnum } from "@app/schemas";
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +45,9 @@ function JobsPage() {
   const frameworkQuery = useQuery(FrameworkQueries.latest(getToken));
   const hasFramework = Boolean(frameworkQuery.data?.framework?.isCustomized);
   const discoverMutation = useDiscoverJobs();
+  const deleteJobMutation = useDeleteJob();
+  const bulkDeleteMutation = useBulkDeleteJobs();
+  const bulkUpdateMutation = useBulkUpdateJobs();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,6 +98,23 @@ function JobsPage() {
     void handleRefresh();
   }
 
+  async function handleBulkDelete(ids: number[]) {
+    const response = await bulkDeleteMutation.mutateAsync({ ids });
+    toast.success(`${response.deletedCount ?? ids.length} job(s) deleted.`);
+    if (panel != null && ids.includes(panel)) {
+      void navigate({ search: (prev) => ({ ...prev, panel: undefined }) });
+    }
+  }
+
+  async function handleBulkStatusUpdate(ids: number[], status: JobStatusIntEnum) {
+    const response = await bulkUpdateMutation.mutateAsync({ ids, status });
+    toast.success(`${response.updatedCount ?? ids.length} job(s) updated.`);
+  }
+
+  function handlePanelDelete(_id: number) {
+    void navigate({ search: (prev) => ({ ...prev, panel: undefined }) });
+  }
+
   const pagination = {
     totalRecords,
     currentPage: safePage,
@@ -125,6 +154,7 @@ function JobsPage() {
         mobileSearch={mobileSearch}
         mobileStatusFilter={mobileStatusFilter}
         discoverPending={discoverMutation.isPending}
+        isBulkPending={bulkDeleteMutation.isPending || bulkUpdateMutation.isPending}
         onSearchToggle={() => setMobileSearch((s) => !s)}
         onSearchChange={(v) => {
           setSearchQuery(v);
@@ -134,6 +164,8 @@ function JobsPage() {
         onDiscoverClick={() => void handleDiscoverClick()}
         onRowClick={(job) => navigate({ to: "/jobs/$jobId", params: { jobId: String(job.id) } })}
         onAddClick={() => setFormMode("create")}
+        onBulkDelete={(ids) => void handleBulkDelete(ids)}
+        onBulkStatusUpdate={(ids, status) => void handleBulkStatusUpdate(ids, status)}
       />
 
       <div className="hidden md:flex h-full overflow-hidden relative">
@@ -173,6 +205,9 @@ function JobsPage() {
               setSearchQuery(v);
               setCurrentPage(1);
             }}
+            onBulkDelete={(ids) => void handleBulkDelete(ids)}
+            onBulkStatusUpdate={(ids, status) => void handleBulkStatusUpdate(ids, status)}
+            isBulkPending={bulkDeleteMutation.isPending || bulkUpdateMutation.isPending}
           />
         </div>
 
@@ -180,6 +215,7 @@ function JobsPage() {
           jobId={panel ?? null}
           onClose={() => navigate({ search: (prev) => ({ ...prev, panel: undefined }) })}
           onEdit={(job) => setFormMode(job)}
+          onDelete={handlePanelDelete}
         />
       </div>
     </>

@@ -62,4 +62,6 @@ export enum LogAction {
   WebSearch = "WebSearch",
   ExtractJobs = "ExtractJobs",
   BulkInsertJobs = "BulkInsertJobs",
+  BulkDeleteJobs = "BulkDeleteJobs",
+  BulkUpdateJobs = "BulkUpdateJobs",
 }

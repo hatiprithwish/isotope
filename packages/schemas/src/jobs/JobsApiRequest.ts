@@ -38,3 +38,19 @@ export const ZUpdateJobApiRequest = z.object({
   matchScore: z.number().nullable().optional(),
 });
 export type UpdateJobApiRequest = z.infer<typeof ZUpdateJobApiRequest>;
+
+export const ZDeleteJobApiRequest = z.object({
+  id: z.number().int().positive(),
+});
+export type DeleteJobApiRequest = z.infer<typeof ZDeleteJobApiRequest>;
+
+export const ZBulkDeleteJobsApiRequest = z.object({
+  ids: z.array(z.number().int().positive()).min(1),
+});
+export type BulkDeleteJobsApiRequest = z.infer<typeof ZBulkDeleteJobsApiRequest>;
+
+export const ZBulkUpdateJobsApiRequest = z.object({
+  ids: z.array(z.number().int().positive()).min(1),
+  status: ZJobStatusIntEnum,
+});
+export type BulkUpdateJobsApiRequest = z.infer<typeof ZBulkUpdateJobsApiRequest>;

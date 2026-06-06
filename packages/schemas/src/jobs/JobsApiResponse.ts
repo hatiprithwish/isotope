@@ -24,3 +24,13 @@ export interface UpdateJobApiResponse extends ApiResponse {
 export interface DiscoverJobsApiResponse extends ApiResponse {
   workflowInstanceId?: string;
 }
+
+export interface DeleteJobApiResponse extends ApiResponse {}
+
+export interface BulkDeleteJobsApiResponse extends ApiResponse {
+  deletedCount?: number;
+}
+
+export interface BulkUpdateJobsApiResponse extends ApiResponse {
+  updatedCount?: number;
+}

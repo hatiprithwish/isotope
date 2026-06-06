@@ -7,9 +7,10 @@ interface JobDetailDrawerProps {
   jobId: number | null;
   onClose: () => void;
   onEdit?: (job: Schemas.Job) => void;
+  onDelete?: (id: number) => void;
 }
 
-export function JobDetailPanel({ jobId, onClose, onEdit }: JobDetailDrawerProps) {
+export function JobDetailPanel({ jobId, onClose, onEdit, onDelete }: JobDetailDrawerProps) {
   const isOpen = jobId != null;
 
   return (
@@ -21,12 +22,14 @@ export function JobDetailPanel({ jobId, onClose, onEdit }: JobDetailDrawerProps)
       ].join(" ")}
       aria-hidden={!isOpen}
     >
-      {isOpen && <JobPanelContent jobId={jobId} onClose={onClose} onEdit={onEdit} />}
+      {isOpen && (
+        <JobPanelContent jobId={jobId} onClose={onClose} onEdit={onEdit} onDelete={onDelete} />
+      )}
     </aside>
   );
 }
 
-export function JobDetailMobileDrawer({ jobId, onClose, onEdit }: JobDetailDrawerProps) {
+export function JobDetailMobileDrawer({ jobId, onClose, onEdit, onDelete }: JobDetailDrawerProps) {
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
   );
@@ -51,7 +54,9 @@ export function JobDetailMobileDrawer({ jobId, onClose, onEdit }: JobDetailDrawe
       <DrawerPortal>
         <DrawerOverlay />
         <DrawerContent className="h-[90vh] w-full p-0 bg-card border-t border-border rounded-t-xl">
-          {isOpen && <JobPanelContent jobId={jobId} onClose={onClose} onEdit={onEdit} />}
+          {isOpen && (
+            <JobPanelContent jobId={jobId} onClose={onClose} onEdit={onEdit} onDelete={onDelete} />
+          )}
         </DrawerContent>
       </DrawerPortal>
     </Drawer>

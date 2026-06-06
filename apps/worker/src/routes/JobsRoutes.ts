@@ -85,4 +85,53 @@ JobsRoutes.get(
   },
 );
 
+JobsRoutes.delete(
+  "/bulk",
+  checkAuth,
+  zValidator("json", Schemas.ZBulkDeleteJobsApiRequest),
+  async (c) => {
+    const clerkUserId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new JobsRepo(c.env);
+    const response = await repo.bulkDeleteJobs({ ...body, userId: clerkUserId });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
+JobsRoutes.patch(
+  "/bulk",
+  checkAuth,
+  zValidator("json", Schemas.ZBulkUpdateJobsApiRequest),
+  async (c) => {
+    const clerkUserId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new JobsRepo(c.env);
+    const response = await repo.bulkUpdateJobs({ ...body, userId: clerkUserId });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
+JobsRoutes.delete(
+  "/:id",
+  checkAuth,
+  zValidator("param", z.object({ id: z.string().regex(/^\d+$/) })),
+  async (c) => {
+    const clerkUserId = c.get("clerkUserId");
+    const { id } = c.req.valid("param");
+
+    const repo = new JobsRepo(c.env);
+    const response = await repo.deleteJob({ id: Number(id), userId: clerkUserId });
+
+    if (!response.isSuccess && response.message?.includes("not found")) {
+      return c.json(response, 404);
+    }
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
 export default JobsRoutes;

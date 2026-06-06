@@ -293,6 +293,121 @@ export default class JobsDAL {
     return inserted;
   }
 
+  async deleteJob(params: Schemas.DeleteJobDALRequest) {
+    const response: Schemas.DeleteJobApiResponse = { isSuccess: false };
+
+    try {
+      AppLogger.info({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.DeleteJob,
+        message: "Deleting job row",
+        metadata: { id: params.id, createdBy: params.createdBy },
+      });
+
+      const result = await this.db
+        .delete(jobs)
+        .where(and(eq(jobs.id, params.id), eq(jobs.createdBy, params.createdBy)))
+        .returning({ id: jobs.id })
+        .get();
+
+      if (!result) {
+        const message = "Job not found or not owned by user";
+        AppLogger.error({
+          category: Schemas.LogCategory.DAL,
+          action: Schemas.LogAction.DeleteJob,
+          message,
+          metadata: params,
+        });
+        response.message = message;
+        return response;
+      }
+
+      response.isSuccess = true;
+      response.message = "Job deleted successfully";
+    } catch (error) {
+      const message = "Unknown error in deleting job";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.DeleteJob,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async bulkDeleteJobs(params: Schemas.BulkDeleteJobsDALRequest) {
+    const response: Schemas.BulkDeleteJobsApiResponse = { isSuccess: false };
+
+    try {
+      AppLogger.info({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkDeleteJobs,
+        message: "Bulk deleting jobs",
+        metadata: { count: params.ids.length, createdBy: params.createdBy },
+      });
+
+      const result = await this.db
+        .delete(jobs)
+        .where(and(eq(jobs.createdBy, params.createdBy), inArray(jobs.id, params.ids)))
+        .returning({ id: jobs.id });
+
+      response.isSuccess = true;
+      response.message = `${result.length} job(s) deleted`;
+      response.deletedCount = result.length;
+    } catch (error) {
+      const message = "Unknown error in bulk deleting jobs";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkDeleteJobs,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async bulkUpdateJobs(params: Schemas.BulkUpdateJobsDALRequest) {
+    const response: Schemas.BulkUpdateJobsApiResponse = { isSuccess: false };
+
+    try {
+      AppLogger.info({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkUpdateJobs,
+        message: "Bulk updating job status",
+        metadata: { count: params.ids.length, status: params.status, createdBy: params.createdBy },
+      });
+
+      const result = await this.db
+        .update(jobs)
+        .set({ status: params.status, updatedAt: Utility.getCurrentISOTimestamp() })
+        .where(and(eq(jobs.createdBy, params.createdBy), inArray(jobs.id, params.ids)))
+        .returning({ id: jobs.id });
+
+      response.isSuccess = true;
+      response.message = `${result.length} job(s) updated`;
+      response.updatedCount = result.length;
+    } catch (error) {
+      const message = "Unknown error in bulk updating jobs";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkUpdateJobs,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
   async getJobsCount(params: Schemas.GetJobsCountDALRequest) {
     const response: Schemas.GetJobsCountApiResponse = { isSuccess: false };
 

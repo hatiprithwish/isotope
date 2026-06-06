@@ -115,3 +115,62 @@ export function useUpdateJob() {
     },
   });
 }
+
+export function useDeleteJob() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient<Schemas.DeleteJobApiResponse>(`/jobs/${id}`, getToken, {
+        method: "DELETE",
+      }),
+    onSuccess: async (_, id) => {
+      queryClient.removeQueries({ queryKey: JobsQueries.keys.detail(id) });
+      await queryClient.invalidateQueries({ queryKey: JobsQueries.keys.all() });
+    },
+    onError: () => {
+      toast.error("Failed to delete job. Please try again.");
+    },
+  });
+}
+
+export function useBulkDeleteJobs() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Schemas.BulkDeleteJobsApiRequest) =>
+      apiClient<Schemas.BulkDeleteJobsApiResponse>("/jobs/bulk", getToken, {
+        method: "DELETE",
+        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: JobsQueries.keys.all() });
+    },
+    onError: () => {
+      toast.error("Failed to delete selected jobs. Please try again.");
+    },
+  });
+}
+
+export function useBulkUpdateJobs() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Schemas.BulkUpdateJobsApiRequest) =>
+      apiClient<Schemas.BulkUpdateJobsApiResponse>("/jobs/bulk", getToken, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: JobsQueries.keys.all() });
+    },
+    onError: () => {
+      toast.error("Failed to update selected jobs. Please try again.");
+    },
+  });
+}

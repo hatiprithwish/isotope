@@ -22,3 +22,16 @@ export type UpdateJobDALRequest = FindJobDetailsDALRequest &
   Partial<
     NullableDALFields<Omit<Job, "id" | "createdBy" | "createdAt" | "statusLabel" | "typeLabel">>
   >;
+
+export type DeleteJobDALRequest = Pick<Job, "id" | "createdBy">;
+
+export type BulkDeleteJobsDALRequest = {
+  ids: number[];
+  createdBy: string;
+};
+
+export type BulkUpdateJobsDALRequest = {
+  ids: number[];
+  createdBy: string;
+  status: Job["status"];
+};

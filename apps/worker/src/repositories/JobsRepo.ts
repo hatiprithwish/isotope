@@ -75,6 +75,43 @@ export default class JobsRepo {
     return await this.dal.getJobDetails({ id: params.id, createdBy: params.userId });
   }
 
+  async deleteJob(params: { userId: string; id: number }) {
+    AppLogger.info({
+      category: Schemas.LogCategory.Repo,
+      action: Schemas.LogAction.DeleteJob,
+      message: "Deleting job",
+      metadata: params,
+    });
+
+    return await this.dal.deleteJob({ id: params.id, createdBy: params.userId });
+  }
+
+  async bulkDeleteJobs(params: Schemas.BulkDeleteJobsApiRequest & { userId: string }) {
+    AppLogger.info({
+      category: Schemas.LogCategory.Repo,
+      action: Schemas.LogAction.BulkDeleteJobs,
+      message: "Bulk deleting jobs",
+      metadata: { userId: params.userId, count: params.ids.length },
+    });
+
+    return await this.dal.bulkDeleteJobs({ ids: params.ids, createdBy: params.userId });
+  }
+
+  async bulkUpdateJobs(params: Schemas.BulkUpdateJobsApiRequest & { userId: string }) {
+    AppLogger.info({
+      category: Schemas.LogCategory.Repo,
+      action: Schemas.LogAction.BulkUpdateJobs,
+      message: "Bulk updating jobs",
+      metadata: { userId: params.userId, count: params.ids.length, status: params.status },
+    });
+
+    return await this.dal.bulkUpdateJobs({
+      ids: params.ids,
+      createdBy: params.userId,
+      status: params.status,
+    });
+  }
+
   async countJobs(params: Schemas.GetJobsApiRequest & { userId: string }) {
     AppLogger.info({
       category: Schemas.LogCategory.Repo,

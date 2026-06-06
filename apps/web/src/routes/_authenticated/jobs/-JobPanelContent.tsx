@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowsOutSimpleIcon, XIcon, PencilSimpleIcon } from "@phosphor-icons/react";
+import { ArrowsOutSimpleIcon, XIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
-import { JobsQueries } from "./-data";
+import { toast } from "sonner";
+import { JobsQueries, useDeleteJob } from "./-data";
 import { JobStatusBadge, JobTypeBadge } from "./-JobStatusBadge";
 import { JobPanelDetails } from "./-JobPanelDetails";
 import type * as Schemas from "@app/schemas";
@@ -12,13 +13,23 @@ interface Props {
   jobId: number;
   onClose: () => void;
   onEdit?: (job: Schemas.Job) => void;
+  onDelete?: (id: number) => void;
 }
 
-export function JobPanelContent({ jobId, onClose, onEdit }: Props) {
+export function JobPanelContent({ jobId, onClose, onEdit, onDelete }: Props) {
   const { getToken } = useAuth();
   const navigate = useNavigate();
   const { data, isPending, isError } = useQuery(JobsQueries.detail(jobId, getToken));
+  const deleteMutation = useDeleteJob();
   const job = data?.job;
+
+  async function handleDelete() {
+    if (!job) return;
+    await deleteMutation.mutateAsync(job.id);
+    toast.success("Job deleted.");
+    if (onDelete) onDelete(job.id);
+    else onClose();
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-card">
@@ -47,6 +58,19 @@ export function JobPanelContent({ jobId, onClose, onEdit }: Props) {
                 title="Edit job"
               >
                 <PencilSimpleIcon size={14} />
+              </Button>
+            )}
+            {job && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => void handleDelete()}
+                disabled={deleteMutation.isPending}
+                title="Delete job"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <TrashIcon size={14} />
               </Button>
             )}
             <Button

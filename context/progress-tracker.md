@@ -108,6 +108,17 @@ change.
   - Frontend data: Updated `useCreateContactHistory` to use `LogContactHistoryApiRequest`. Added `useUpdateContactHistory`, `useDeleteContactHistory` mutation hooks.
   - Frontend UI: Replaced read-only `HistoryTab` with interactive version — `ComposeForm` (direction toggle, channel toggle, date picker, textarea), `EditHistoryForm` (inline edit per message), per-message edit/delete icon buttons, Touch N label on outgoing messages, reply count in header.
 
+- **Spec 003H — Jobs Delete + Bulk Actions**:
+  - Schemas: `ZDeleteJobApiRequest`, `ZBulkDeleteJobsApiRequest`, `ZBulkUpdateJobsApiRequest` added to `JobsApiRequest.ts`. `DeleteJobApiResponse`, `BulkDeleteJobsApiResponse`, `BulkUpdateJobsApiResponse` added to `JobsApiResponse.ts`. `DeleteJobDALRequest`, `BulkDeleteJobsDALRequest`, `BulkUpdateJobsDALRequest` added to `JobsDALRequest.ts`. `LogAction.BulkDeleteJobs`, `LogAction.BulkUpdateJobs` added to `log.ts`.
+  - DAL: `deleteJob` (ownership-scoped DELETE, 404 if not found), `bulkDeleteJobs` (inArray DELETE, returns count), `bulkUpdateJobs` (inArray UPDATE status, returns count) added to `JobsDAL.ts`.
+  - Repo: `deleteJob`, `bulkDeleteJobs`, `bulkUpdateJobs` delegation methods added to `JobsRepo.ts`.
+  - Routes: `DELETE /jobs/:id` (404 on not-found), `DELETE /jobs/bulk` (body: `{ ids }` ), `PATCH /jobs/bulk` (body: `{ ids, status }`) registered in `JobsRoutes.ts`. Bulk routes registered before `/:id` to avoid param conflict.
+  - Frontend data: `useDeleteJob`, `useBulkDeleteJobs`, `useBulkUpdateJobs` hooks added to `-data.ts`. `useDeleteJob.onSuccess` removes detail query cache entry. Bulk hooks invalidate `keys.all()`.
+  - `JobPanelContent`: trash icon button in header; on delete → toast + calls `onDelete?.(id)`. `onDelete` prop threaded through `JobDetailPanel` / `JobDetailMobileDrawer`.
+  - `JobsTable`: checkbox column added (select-one per row), select-all toggle in toolbar. Bulk action bar in toolbar replaces search when rows selected: status select + Apply, Delete, Clear.
+  - `MobileJobsList`: "Select" toggle enters select mode; per-card checkbox; sticky bottom action bar with status select + Apply + Delete while in select mode.
+  - `index.tsx`: `handleBulkDelete`, `handleBulkStatusUpdate`, `handlePanelDelete` wired; panel URL cleared on delete; all bulk mutations threaded into table + mobile list.
+
 ## In Progress
 
 - None.
