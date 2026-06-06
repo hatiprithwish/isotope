@@ -25,7 +25,7 @@
       "queues": {
         "producers": [
           {
-            "queue": "isotope-queue",
+            "queue": "isotope-queue-staging",
             "binding": "ISOTOPE_QUEUE"
           }
         ]

@@ -11,11 +11,11 @@
       "queues": {
         "consumers": [
           {
-            "queue": "isotope-queue",
+            "queue": "isotope-queue-staging",
             "max_batch_size": 10,
             "max_batch_timeout": 30,
             "max_retries": 3,
-            "dead_letter_queue": "isotope-queue-dlq"
+            "dead_letter_queue": "isotope-queue-dlq-staging"
           }
         ]
       }
