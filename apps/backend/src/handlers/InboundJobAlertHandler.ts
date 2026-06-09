@@ -1,10 +1,10 @@
 import { Resend } from "resend";
+import type { GetReceivingEmailResponseSuccess } from "resend";
 import JobsDAL from "@/data-access-layer/JobsDAL";
 import CompaniesDAL from "@/data-access-layer/CompaniesDAL";
 import AppLogger from "@/providers/AppLogger";
 import Constants from "@/config/Constants";
 import * as Schemas from "@app/schemas";
-import Utility from "@/utils";
 
 interface InboundJobAlertMessage {
   type: "InboundJobAlert";
@@ -194,8 +194,9 @@ export async function inboundJobAlertHandler(
 
     const { emailId, userId } = msg;
 
-    const emailResult = await resend.emails.get(emailId);
-    if (emailResult.error || !emailResult.data?.html) {
+    const emailResult = await resend.emails.receiving.get(emailId);
+    const emailData = emailResult.data as GetReceivingEmailResponseSuccess | null;
+    if (emailResult.error || !emailData?.html) {
       AppLogger.error({
         category: Schemas.LogCategory.Provider,
         action: Schemas.LogAction.InboundEmailFetchFailed,
@@ -206,7 +207,7 @@ export async function inboundJobAlertHandler(
       continue;
     }
 
-    const rawUrls = extractJobUrls(emailResult.data.html);
+    const rawUrls = extractJobUrls(emailData.html);
 
     AppLogger.info({
       category: Schemas.LogCategory.Provider,
