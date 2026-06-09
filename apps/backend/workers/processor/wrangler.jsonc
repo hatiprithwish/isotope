@@ -5,11 +5,6 @@
   "compatibility_date": "2026-05-22",
   // DEV_NOTE: nodejs_compat flag is needed for using AsyncLocalStorage.
   "compatibility_flags": ["nodejs_compat"],
-  // DEV_NOTE: Empty consumers at base level — prevents Cloudflare from inheriting
-  // base queue bindings into env-specific deployments.
-  "queues": {
-    "consumers": []
-  },
   "env": {
     "staging": {
       "name": "isotope-processor-staging",
@@ -32,7 +27,22 @@
           "migrations_dir": "../../src/db/migrations",
           "remote": true
         }
-      ]
+      ],
+      "observability": {
+        "enabled": false,
+        "head_sampling_rate": 1,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        },
+        "traces": {
+          "enabled": true,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      }
     },
     "production": {
       "name": "isotope-processor",
@@ -55,7 +65,22 @@
           "migrations_dir": "../../src/db/migrations",
           "remote": true
         }
-      ]
+      ],
+      "observability": {
+        "enabled": false,
+        "head_sampling_rate": 1,
+        "logs": {
+          "enabled": true,
+          "head_sampling_rate": 1,
+          "persist": true,
+          "invocation_logs": true
+        },
+        "traces": {
+          "enabled": true,
+          "persist": true,
+          "head_sampling_rate": 1
+        }
+      }
     }
   }
 }
