@@ -131,6 +131,21 @@ change.
   - CI: `deploy-worker-staging.yml` + `deploy-worker-production.yml` updated — each now deploys both API worker and processor worker in sequence within the same job.
   - **Manual steps required**: Run `wrangler queues create isotope-queue` and `wrangler queues create isotope-queue-dlq` in Cloudflare dashboard or CLI before deploying. Run `pnpm generate-types:api` and `pnpm generate-types:processor` (from `apps/backend/`) to regenerate `worker-configuration.d.ts` for each worker.
 
+- **Spec 05 — Email Job Ingestion**:
+  - `LogAction`: Added `InboundEmailReceived`, `InboundEmailFetchFailed`, `InboundUrlExtracted`, `InboundScrapeStarted`, `InboundScrapeFailed`, `InboundJobInserted` to `packages/schemas/src/log.ts`.
+  - `Constants.ts`: Added `BROWSER_RUN_URL`, `INBOUND_ATS_DOMAINS`, `INBOUND_JOB_PATHS`, `BROWSER_RUN_PROMPT`, `BROWSER_RUN_TIMEOUT_MS`.
+  - `CompaniesDAL.ts`: Added `findCompanyByName` (case-insensitive `lower()` LIKE match, scoped to user).
+  - `EmailInboundRoutes.ts`: `POST /api/email-inbound` — public, no auth. Verifies Resend svix signature via `resend.webhooks.verify()`. Returns 400 on bad sig, 200+ignore for non-`email.received` events. Extracts userId from `to[0]` local part, enqueues `{ type: "InboundJobAlert", action: "Process", emailId, userId }` to `ISOTOPE_QUEUE`, returns 200 immediately.
+  - `SettingsRoutes.ts`: `GET /settings/inbound-address` — `checkAuth` required. Returns `{ isSuccess: true, address: "{userId}@{RESEND_INBOUND_DOMAIN}" }`.
+  - `InboundJobAlertHandler.ts`: Queue consumer for `InboundJobAlert` messages. Fetches email HTML from Resend. Extracts job URLs via href regex + ATS domain / job-path filters. Resolves tracking redirects via HEAD fetch. Deduplicates in-flight + against existing DB URLs. For each new URL: calls Cloudflare Browser Run `/json` (30s timeout), resolves or creates stub company (`CompanyStatusIntEnum.WaitingHuman`), inserts via `JobsDAL.createJob()` with `type=LLM, status=WaitingForHuman`. Acks every message.
+  - `workers/api/index.ts`: Mounted `EmailInboundRoutes` at `/api/email-inbound` (public, before auth routes) and `SettingsRoutes` at `/settings`.
+  - `workers/processor/index.ts`: Routes `InboundJobAlert` messages to `inboundJobAlertHandler`.
+  - `workers/processor/wrangler.jsonc`: Added `d1_databases` binding for `isotope-db` in staging + production envs (processor needs DB).
+  - `workers/processor/.dev.vars.example`: Added `RESEND_API_KEY`.
+  - `apps/web/src/routes/_authenticated/settings/index.tsx`: Replaced "A/B Testing" tab with "Account" tab. Added `AccountTab` component — fetches `/settings/inbound-address`, displays read-only address field with copy-to-clipboard button (✓ icon feedback).
+  - `-JobDetailBody.tsx` + `-JobPanelDetails.tsx`: Description section now always rendered. When `job.description` is null, shows warning banner (WarningCircleIcon + "Edit this job to paste the description manually").
+  - **Manual steps required**: Run `pnpm generate-types:api` and `pnpm generate-types:processor` after deploying to regenerate `worker-configuration.d.ts` with new bindings. Set secrets via `wrangler secret put RESEND_WEBHOOK_SECRET`, `RESEND_INBOUND_DOMAIN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `RESEND_API_KEY` for both API and processor workers.
+
 ## In Progress
 
 - None.

@@ -64,4 +64,12 @@ export enum LogAction {
   BulkInsertJobs = "BulkInsertJobs",
   BulkDeleteJobs = "BulkDeleteJobs",
   BulkUpdateJobs = "BulkUpdateJobs",
+
+  // Email inbound ingestion
+  InboundEmailReceived = "InboundEmailReceived",
+  InboundEmailFetchFailed = "InboundEmailFetchFailed",
+  InboundUrlExtracted = "InboundUrlExtracted",
+  InboundScrapeStarted = "InboundScrapeStarted",
+  InboundScrapeFailed = "InboundScrapeFailed",
+  InboundJobInserted = "InboundJobInserted",
 }

@@ -105,22 +105,17 @@ The handler must complete in under 3 seconds to avoid Resend retry storms.
 
 ## 5. Cloudflare Queue
 
-**Queue name:** `email-job-ingestion`  
-Add the binding to `wrangler.jsonc`:
-
-```jsonc
-"queues": {
-  "producers": [{ "queue": "email-job-ingestion", "binding": "EMAIL_JOB_QUEUE" }],
-  "consumers": [{ "queue": "email-job-ingestion", "max_batch_size": 5, "max_batch_timeout": 10 }]
-}
-```
-
-Run `wrangler types` after updating `wrangler.jsonc` so `EMAIL_JOB_QUEUE: Queue` appears in the generated `Env`.
+Use the existing queue in wrangler.jsonc
 
 **Message shape:**
 
 ```ts
-type EmailJobMessage = {
+interface QueueMessageBase {
+  type: "InboundJobAlert"
+  action: "Process"
+}
+
+interface InboundJobAlertCFQ extends CFQMessageBase = {
   emailId: string;
   userId: string;
 };
@@ -132,16 +127,7 @@ The queue message contains only the `emailId` and `userId`. URL extraction happe
 
 ## 6. Queue consumer
 
-Export a `queue` handler from `apps/worker/src/index.ts` alongside the existing `fetch` handler:
-
-```ts
-export default {
-  fetch: app.fetch,
-  queue: emailJobQueueHandler,
-};
-```
-
-### `emailJobQueueHandler`
+### `inboundJobAlertHandler`
 
 For each message in the batch:
 
@@ -160,7 +146,10 @@ For each message in the batch:
    a. Call Browser Run `/json` endpoint (see §7) — scrapes and extracts structured fields in one call.
    b. If the call fails (non-200 or empty response), log and skip — do not fail the whole batch.
    c. If the response contains no `title`, skip — not a valid job page.
-   d. Call `JobsDAL.createJob()`. If insert fails due to unique constraint (duplicate), log `LogAction.DuplicateJobBlocked` and continue.
+   d. If `description` is null or empty, insert the job anyway with `description = null`. The frontend will show a warning icon prompting the user to paste it in manually.
+   e. If `skills` is null or empty, default to `[]` — never store null for skills.
+   f. Resolve `company_id` (see §8) before inserting.
+   g. Call `JobsDAL.createJob()`. If insert fails due to unique constraint (duplicate), log `LogAction.DuplicateJobBlocked` and continue.
 
 6. `ack` every message — do not let failures block the queue.
 
@@ -176,7 +165,7 @@ Add the Browser Rendering binding to `wrangler.jsonc`:
 "browser": { "binding": "BROWSER" }
 ```
 
-Call the REST Quick Actions endpoint from within the worker:
+Call the REST Quick Actions endpoint from within the worker. Keep the URL in `Constants.ts`:
 
 ```
 POST https://api.cloudflare.com/client/v4/accounts/{accountId}/browser-run/json
@@ -206,36 +195,47 @@ Add `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` as env vars.
 **On success:** use the returned JSON object directly.  
 **On failure or missing `title`:** log `AppLogger.error` with the URL; return null — caller skips the URL.
 
-> Before implementing, check `llm-context/` for any existing Cloudflare Browser Rendering docs to confirm the correct request shape for the `/json` endpoint. Follow the docs over this spec if they differ.
+> Before implementing, check `llm-context/` for any existing Cloudflare Browser Rendering docs to confirm the correct request shape for the `/json` endpoint. Follow the docs over this spec if they differ. Use `/cloudflare` skill to fetch latest docs if not available under llm-context.
 
 ---
 
-## 8. DAL insert
+## 8. Company resolution
+
+Before inserting a job, resolve the `company_id` as follows:
+
+1. If Browser Run returns no `company` string, set `company_id = null` and proceed.
+2. Otherwise, query `CompaniesDAL` for an existing company matching the name (case-insensitive) scoped to this user (`created_by = userId`).
+3. **If found:** use that company's `id` as `company_id`.
+4. **If not found:** create a stub company record — name only, no research triggered. Read `CompaniesDAL` and `CompaniesRepo` to find the correct method and initial status for a company that has not yet entered the research pipeline. Do not invent a status — use whatever the existing codebase defines as the pre-research state.
+
+The stub company exists purely to satisfy the FK and give the user a company link in the job detail view. AI research is only triggered later when the user explicitly accepts the job in the review flow — this is already handled by the existing jobs acceptance path.
+
+---
+
+## 9. DAL insert
 
 Call the existing `JobsDAL.createJob()` with:
 
 ```ts
 {
-  title,
+  title,                             // string — required; skip if missing
   url: canonicalUrl,
-  company,         // string | null → pass through
-  location,        // string | null → pass through
-  salary,          // string | null → pass through
-  description,     // string | null → pass through
-  skills,          // string[] → JobsDAL JSON-stringifies on write
+  companyId,                         // number | null — resolved in §8
+  location,                          // string | null — pass through
+  salary,                            // string | null — pass through
+  description,                       // string | null — null if not extracted; frontend shows warning
+  skills,                            // string[] — default [] if not extracted; never null
   type: JobTypeIntEnum.LLM,          // 2
   status: JobStatusIntEnum.WaitingForHuman,  // 2
   createdBy: userId,
 }
 ```
 
-`company_id` is null — the company lookup/creation step (which triggers company research) happens when the user accepts the job in the review flow, which is already built.
-
 ---
 
-## 9. Settings UI
+## 10. Settings UI
 
-**Location:** Settings → Account tab (`apps/web/src/routes/_authenticated/settings/account.tsx` or equivalent — read the existing file to confirm the path before editing).
+**Location:** Settings → Account tab (`apps/web/src/routes/_authenticated/settings/account.tsx`).
 
 Add a new read-only section "Job alerts":
 
@@ -248,7 +248,7 @@ Use the existing `useAuth` + `apiClient` pattern. The query key is `["settings",
 
 ---
 
-## 10. New log actions
+## 11. New log actions
 
 Add to `LogAction` enum in `packages/schemas/src/log.ts` before writing any log call:
 
@@ -265,7 +265,7 @@ InboundJobInserted
 
 ---
 
-## 11. Environment variables
+## 12. Environment variables
 
 Add to `wrangler.jsonc` (all three envs: base, staging, production):
 
@@ -274,13 +274,12 @@ RESEND_WEBHOOK_SECRET   — Resend svix signing secret for inbound webhook
 RESEND_INBOUND_DOMAIN   — e.g. cool-hedgehog.resend.app
 CLOUDFLARE_ACCOUNT_ID   — needed if using Browser Run REST API
 CLOUDFLARE_API_TOKEN    — needed if using Browser Run REST API
+`RESEND_API_KEY`
 ```
-
-`RESEND_API_KEY` is already present (used for digest sending).
 
 ---
 
-## 12. Verification checklist
+## 13. Verification checklist
 
 ### Webhook endpoint
 
@@ -298,8 +297,17 @@ CLOUDFLARE_API_TOKEN    — needed if using Browser Run REST API
 - [ ] Skips URLs already in the `jobs` table for this user (no duplicate row inserted)
 - [ ] Skips a URL gracefully when Browser Run `/json` returns non-200
 - [ ] Skips a URL gracefully when Browser Run `/json` returns no `title`
+- [ ] Inserts job with `description = null` when description is not extracted — does not skip
+- [ ] Inserts job with `skills = []` when no skills are extracted — never null
+- [ ] Links `company_id` when a matching company already exists for this user
+- [ ] Creates a stub company and links it when no matching company exists
 - [ ] Inserts with `type = 2` (LLM) and `status = 2` (WaitingForHuman)
 - [ ] `acks` every message — queue does not stall on partial failures
+
+### Job detail UI
+
+- [ ] Warning icon shown on job detail when `description` is null
+- [ ] Warning icon is not shown when `description` is present
 
 ### Settings UI
 

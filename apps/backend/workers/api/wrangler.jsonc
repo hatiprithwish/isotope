@@ -9,7 +9,8 @@
     "staging": {
       "name": "isotope-worker-staging",
       "vars": {
-        "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://isotope-web-staging.hatiprithwish.workers.dev"
+        "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://isotope-web-staging.hatiprithwish.workers.dev",
+        "RESEND_INBOUND_DOMAIN": "ousteiulka.resend.app"
       },
       "ai": {
         "binding": "AI",
@@ -58,7 +59,8 @@
     "production": {
       "name": "isotope-worker",
       "vars": {
-        "ALLOWED_CORS_ORIGIN": "https://isotope-web.hatiprithwish.workers.dev"
+        "ALLOWED_CORS_ORIGIN": "https://isotope-web.hatiprithwish.workers.dev",
+        "RESEND_INBOUND_DOMAIN": "ousteiulka.resend.app"
       },
       "ai": {
         "binding": "AI",

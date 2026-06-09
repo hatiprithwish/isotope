@@ -18,7 +18,16 @@
             "dead_letter_queue": "isotope-queue-dlq-staging"
           }
         ]
-      }
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "isotope-db",
+          "database_id": "ade49f6b-b66a-4f50-9cf0-2f32f8974a6f",
+          "migrations_dir": "../../src/db/migrations",
+          "remote": true
+        }
+      ]
     },
     "production": {
       "name": "isotope-processor",
@@ -32,7 +41,16 @@
             "dead_letter_queue": "isotope-queue-dlq"
           }
         ]
-      }
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "isotope-db",
+          "database_id": "ade49f6b-b66a-4f50-9cf0-2f32f8974a6f",
+          "migrations_dir": "../../src/db/migrations",
+          "remote": true
+        }
+      ]
     }
   }
 }

@@ -11,3 +11,4 @@
 
 CLOUDFLARE_API_TOKEN=   # ci-required
 CLOUDFLARE_ACCOUNT_ID=  # ci-required
+RESEND_API_KEY=         # runtime-only

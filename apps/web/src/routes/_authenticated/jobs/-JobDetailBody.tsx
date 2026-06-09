@@ -1,4 +1,4 @@
-import { CaretRightIcon, LinkIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, LinkIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { JobStatusBadge, JobTypeBadge } from "./-JobStatusBadge";
 import type * as Schemas from "@app/schemas";
 
@@ -132,16 +132,23 @@ export function JobDetailBody({ job }: Props) {
         </div>
       </div>
 
-      {job.description && (
-        <div>
-          <SectionLabel>Job description</SectionLabel>
+      <div>
+        <SectionLabel>Job description</SectionLabel>
+        {job.description ? (
           <div className="bg-card border border-border rounded-lg px-3.5 py-3 overflow-y-auto">
             <pre className="text-[12px] leading-[1.75] text-foreground whitespace-pre-wrap wrap-break-word m-0 font-sans">
               {job.description}
             </pre>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-start gap-2 px-3 py-3 rounded-lg bg-(--warning-bg) border border-(--warning)">
+            <WarningCircleIcon size={14} className="text-(--warning-text) shrink-0 mt-0.5" />
+            <p className="text-[12px] text-(--warning-text)">
+              No description was extracted. Edit this job to paste the description manually.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/shadcn/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, queryOptions } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CopyIcon, CheckIcon } from "@phosphor-icons/react";
 import type { FrameworkInput } from "@app/schemas";
 import JobSearchFrameworkForm from "@/shared/forms/JobSearchFrameworkForm";
 import {
@@ -11,12 +12,72 @@ import {
   useSaveFramework,
 } from "../../_without_nav/onboarding/job-search-framework/-data";
 import Utilities from "@/utils";
+import { apiClient } from "@/providers/apiClient";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
   component: SettingsFrameworksPage,
 });
 
-type Tab = "job-search" | "company-research" | "ab-testing";
+type Tab = "job-search" | "company-research" | "account";
+
+function useInboundAddress(getToken: () => Promise<string | null>) {
+  return useQuery(
+    queryOptions({
+      queryKey: ["settings", "inbound-address"],
+      queryFn: ({ signal }) =>
+        apiClient<{ isSuccess: boolean; address: string }>("/settings/inbound-address", getToken, {
+          signal,
+        }),
+    }),
+  );
+}
+
+function AccountTab({ getToken }: { getToken: () => Promise<string | null> }) {
+  const { data, isPending } = useInboundAddress(getToken);
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    if (!data?.address) return;
+    void navigator.clipboard.writeText(data.address).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="px-6 py-6 max-w-xl">
+      <h2 className="text-[13px] font-semibold text-foreground mb-1">Job alerts</h2>
+      <p className="text-[12px] text-(--text-secondary) mb-4">
+        Forward any job alert email here and we'll automatically import the listings for review.
+      </p>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
+          Forward job alert emails to
+        </span>
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-lg">
+          {isPending ? (
+            <div className="h-4 flex-1 rounded bg-(--surface-raised) animate-pulse" />
+          ) : (
+            <span className="text-[13px] font-medium text-foreground flex-1 select-all break-all">
+              {data?.address ?? "—"}
+            </span>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleCopy}
+            disabled={isPending || !data?.address}
+            title={copied ? "Copied!" : "Copy address"}
+          >
+            {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SettingsFrameworksPage() {
   const { getToken } = useAuth();
@@ -44,7 +105,7 @@ function SettingsFrameworksPage() {
   const TABS: { key: Tab; label: string }[] = [
     { key: "job-search", label: "Job Search" },
     { key: "company-research", label: "Company Research" },
-    { key: "ab-testing", label: "A/B Testing" },
+    { key: "account", label: "Account" },
   ];
 
   return (
@@ -131,11 +192,7 @@ function SettingsFrameworksPage() {
           </div>
         )}
 
-        {activeTab === "ab-testing" && (
-          <div className="flex items-center justify-center h-64">
-            <p className="text-[13px] text-(--text-secondary)">Coming soon</p>
-          </div>
-        )}
+        {activeTab === "account" && <AccountTab getToken={getToken} />}
       </div>
     </div>
   );

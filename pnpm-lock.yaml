@@ -36,6 +36,61 @@ importers:
         specifier: ^8.59.3
         version: 8.59.3(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
 
+  apps/backend:
+    dependencies:
+      '@app/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
+      '@clerk/backend':
+        specifier: ^1.0.0
+        version: 1.34.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@hono/zod-validator':
+        specifier: ^0.8.0
+        version: 0.8.0(hono@4.12.18)(zod@4.4.3)
+      '@logtape/hono':
+        specifier: ^2.0.0
+        version: 2.0.7(@logtape/logtape@2.0.7)(hono@4.12.18)
+      '@logtape/logtape':
+        specifier: ^2.0.0
+        version: 2.0.7
+      '@logtape/redaction':
+        specifier: ^2.0.0
+        version: 2.0.7(@logtape/logtape@2.0.7)
+      dayjs:
+        specifier: ^1.0.0
+        version: 1.11.20
+      drizzle-orm:
+        specifier: ^0.45.0
+        version: 0.45.2(@cloudflare/workers-types@4.20260517.1)(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)
+      hono:
+        specifier: ^4.0.0
+        version: 4.12.18
+      resend:
+        specifier: ^6.0.0
+        version: 6.12.4
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+    devDependencies:
+      '@cloudflare/vitest-pool-workers':
+        specifier: ^0.16.0
+        version: 0.16.6(@cloudflare/workers-types@4.20260517.1)(@vitest/runner@4.1.6)(@vitest/snapshot@4.1.6)(vitest@4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.8.0)(typescript@6.0.3))(vite@8.0.13(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.47.1)(tsx@4.22.0)(yaml@2.9.0)))
+      '@types/node':
+        specifier: ^25.0.0
+        version: 25.8.0
+      drizzle-kit:
+        specifier: ^0.31.0
+        version: 0.31.10
+      typescript:
+        specifier: ^6.0.0
+        version: 6.0.3
+      vitest:
+        specifier: ^4.0.0
+        version: 4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.8.0)(typescript@6.0.3))(vite@8.0.13(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.47.1)(tsx@4.22.0)(yaml@2.9.0))
+      wrangler:
+        specifier: ^4.0.0
+        version: 4.92.0(@cloudflare/workers-types@4.20260517.1)
+
   apps/web:
     dependencies:
       '@app/schemas':
@@ -170,58 +225,6 @@ importers:
         version: 4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.8.0)(typescript@6.0.3))(vite@8.0.13(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.47.1)(tsx@4.22.0)(yaml@2.9.0))
       wrangler:
         specifier: ^4.92.0
-        version: 4.92.0(@cloudflare/workers-types@4.20260517.1)
-
-  apps/backend:
-    dependencies:
-      '@app/schemas':
-        specifier: workspace:*
-        version: link:../../packages/schemas
-      '@clerk/backend':
-        specifier: ^1.0.0
-        version: 1.34.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@hono/zod-validator':
-        specifier: ^0.8.0
-        version: 0.8.0(hono@4.12.18)(zod@4.4.3)
-      '@logtape/hono':
-        specifier: ^2.0.0
-        version: 2.0.7(@logtape/logtape@2.0.7)(hono@4.12.18)
-      '@logtape/logtape':
-        specifier: ^2.0.0
-        version: 2.0.7
-      '@logtape/redaction':
-        specifier: ^2.0.0
-        version: 2.0.7(@logtape/logtape@2.0.7)
-      dayjs:
-        specifier: ^1.0.0
-        version: 1.11.20
-      drizzle-orm:
-        specifier: ^0.45.0
-        version: 0.45.2(@cloudflare/workers-types@4.20260517.1)(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)
-      hono:
-        specifier: ^4.0.0
-        version: 4.12.18
-      zod:
-        specifier: ^4.0.0
-        version: 4.4.3
-    devDependencies:
-      '@cloudflare/vitest-pool-workers':
-        specifier: ^0.16.0
-        version: 0.16.6(@cloudflare/workers-types@4.20260517.1)(@vitest/runner@4.1.6)(@vitest/snapshot@4.1.6)(vitest@4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.8.0)(typescript@6.0.3))(vite@8.0.13(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.47.1)(tsx@4.22.0)(yaml@2.9.0)))
-      '@types/node':
-        specifier: ^25.0.0
-        version: 25.8.0
-      drizzle-kit:
-        specifier: ^0.31.0
-        version: 0.31.10
-      typescript:
-        specifier: ^6.0.0
-        version: 6.0.3
-      vitest:
-        specifier: ^4.0.0
-        version: 4.1.6(@opentelemetry/api@1.9.1)(@types/node@25.8.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.8.0)(typescript@6.0.3))(vite@8.0.13(@types/node@25.8.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.47.1)(tsx@4.22.0)(yaml@2.9.0))
-      wrangler:
-        specifier: ^4.0.0
         version: 4.92.0(@cloudflare/workers-types@4.20260517.1)
 
   packages/schemas:
@@ -4956,6 +4959,9 @@ packages:
     resolution: {integrity: sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==}
     engines: {node: '>=16.20.0'}
 
+  postal-mime@2.7.4:
+    resolution: {integrity: sha512-0WdnFQYUrPGGTFu1uOqD2s7omwua8xaeYGdO6rb88oD5yJ/4pPHDA4sdWqfD8wQVfCny563n/HQS7zTFft+f/g==}
+
   postcss-selector-parser@7.1.1:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
     engines: {node: '>=4'}
@@ -5119,6 +5125,15 @@ packages:
   require-in-the-middle@8.0.1:
     resolution: {integrity: sha512-QT7FVMXfWOYFbeRBF6nu+I6tr2Tf3u0q8RIEjNob/heKY/nh7drD/k7eeMFmSQgnTtCzLDcCu/XEnpW2wk4xCQ==}
     engines: {node: '>=9.3.0 || >=8.10.0 <9.0.0'}
+
+  resend@6.12.4:
+    resolution: {integrity: sha512-lRpJ2Hxd+ht+JPDm97juRcUp9HOMuZyxaRFRFmc9Tx8iNWiei94Dx9v6SWufgKk2667C/uCeKKspMotOHSpCSg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@react-email/render': '*'
+    peerDependenciesMeta:
+      '@react-email/render':
+        optional: true
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -10403,6 +10418,8 @@ snapshots:
 
   pkce-challenge@5.0.1: {}
 
+  postal-mime@2.7.4: {}
+
   postcss-selector-parser@7.1.1:
     dependencies:
       cssesc: 3.0.0
@@ -10601,6 +10618,11 @@ snapshots:
       module-details-from-path: 1.0.4
     transitivePeerDependencies:
       - supports-color
+
+  resend@6.12.4:
+    dependencies:
+      postal-mime: 2.7.4
+      standardwebhooks: 1.0.0
 
   resolve-from@4.0.0: {}
 

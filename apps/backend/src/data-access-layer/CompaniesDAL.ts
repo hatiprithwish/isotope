@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, like, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { companies, users } from "@/db/tables";
@@ -262,6 +262,34 @@ export default class CompaniesDAL {
     }
 
     return response;
+  }
+
+  async findCompanyByName(params: {
+    createdBy: string;
+    name: string;
+  }): Promise<{ id: number } | null> {
+    try {
+      const [row] = await this.db
+        .select({ id: companies.id })
+        .from(companies)
+        .where(
+          and(
+            eq(companies.createdBy, params.createdBy),
+            like(sql`lower(${companies.name})`, params.name.toLowerCase()),
+          ),
+        )
+        .limit(1);
+      return row ?? null;
+    } catch (error) {
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.GetCompanyDetails,
+        message: "Failed to find company by name",
+        error,
+        metadata: params,
+      });
+      return null;
+    }
   }
 
   async deleteCompany(params: Schemas.FindCompanyDALRequest) {

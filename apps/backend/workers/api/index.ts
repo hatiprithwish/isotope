@@ -12,6 +12,8 @@ import ContactsRoutes from "@/routes/ContactsRoutes";
 import FrameworksRoutes from "@/routes/FrameworksRoutes";
 import JobsRoutes from "@/routes/JobsRoutes";
 import AuthRoutes from "@/routes/AuthRoutes";
+import EmailInboundRoutes from "@/routes/EmailInboundRoutes";
+import SettingsRoutes from "@/routes/SettingsRoutes";
 export { JobDiscoveryWorkflow } from "@/workflows/JobDiscoveryWorkflow";
 
 // DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests
@@ -45,6 +47,9 @@ app.use(
   }),
 );
 
+// Public webhook — no auth middleware, mounted before auth routes
+app.route("/api/email-inbound", EmailInboundRoutes);
+
 app.route("/auth", AuthRoutes);
 app.route("/users", UsersRoutes);
 app.route("/notes", NotesRoutes);
@@ -52,6 +57,7 @@ app.route("/companies", CompaniesRoutes);
 app.route("/contacts", ContactsRoutes);
 app.route("/frameworks", FrameworksRoutes);
 app.route("/jobs", JobsRoutes);
+app.route("/settings", SettingsRoutes);
 
 export default {
   fetch(req: Request, env: Env, ctx: ExecutionContext) {
