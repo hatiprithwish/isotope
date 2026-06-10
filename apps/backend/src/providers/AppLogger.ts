@@ -2,37 +2,18 @@ import Constants from "@/config/Constants";
 import {
   type LogRecord,
   type Sink,
-  defaultConsoleFormatter,
   configure,
   dispose,
   getConsoleSink,
   getLogger,
   withContext,
 } from "@logtape/logtape";
-import {
-  DEFAULT_REDACT_FIELDS,
-  EMAIL_ADDRESS_PATTERN,
-  redactByField,
-  redactByPattern,
-} from "@logtape/redaction";
+
 import type * as Schemas from "@app/schemas";
 import { AsyncLocalStorage } from "node:async_hooks";
 
-function consoleFormatterWithProps(record: LogRecord): readonly unknown[] {
-  const base = defaultConsoleFormatter(record);
-  const { action, metadata, error, category } = record.properties;
-  const props: Record<string, unknown> = {};
-  if (category !== undefined) props.category = category;
-  if (action !== undefined) props.action = action;
-  if (metadata !== undefined) props.metadata = metadata;
-  if (error !== undefined) props.error = error;
-  if (Object.keys(props).length === 0) return base;
-  return [...base, "\n", props];
-}
-
 // Cloudflare Workers observability parses a plain object passed to console.log as structured fields.
 // The standard getConsoleSink formats everything into one styled string, which CF captures as a blob.
-// This sink emits a separate structured object so category/action/metadata are queryable in the dashboard.
 function cfStructuredSink(): Sink {
   return (record: LogRecord) => {
     const { action, metadata, error, category } = record.properties;
@@ -48,15 +29,10 @@ function cfStructuredSink(): Sink {
 }
 
 export async function configureLogger(): Promise<void> {
-  const consoleSink = redactByField(
-    getConsoleSink({
-      formatter: redactByPattern(consoleFormatterWithProps, [EMAIL_ADDRESS_PATTERN]),
-    }),
-    [...Constants.APP_REDACT_FIELDS, ...DEFAULT_REDACT_FIELDS],
-  );
+  const metaConsoleSink = getConsoleSink();
 
   await configure({
-    sinks: { console: consoleSink, cf: cfStructuredSink() },
+    sinks: { console: metaConsoleSink, cf: cfStructuredSink() },
     contextLocalStorage: new AsyncLocalStorage<Record<string, unknown>>(),
     loggers: [
       {
@@ -65,10 +41,10 @@ export async function configureLogger(): Promise<void> {
         sinks: ["console"],
         lowestLevel: "warning",
       },
-      // DEV_NOTE: category for application logs.
+      // DEV_NOTE: category for application logs — cf sink only emits structured JSON, no styled string noise.
       {
         category: [Constants.APP_NAME],
-        sinks: ["console", "cf"],
+        sinks: ["cf"],
         lowestLevel: "info",
       },
     ],
