@@ -1,6 +1,7 @@
 import Constants from "@/config/Constants";
 import {
   type LogRecord,
+  type Sink,
   defaultConsoleFormatter,
   configure,
   dispose,
@@ -29,6 +30,24 @@ function consoleFormatterWithProps(record: LogRecord): readonly unknown[] {
   return [...base, "\n", props];
 }
 
+// Cloudflare Workers observability parses a plain object passed to console.log as structured fields.
+// The standard getConsoleSink formats everything into one styled string, which CF captures as a blob.
+// This sink emits a separate structured object so category/action/metadata are queryable in the dashboard.
+function cfStructuredSink(): Sink {
+  return (record: LogRecord) => {
+    const { action, metadata, error, category } = record.properties;
+    // eslint-disable-next-line no-console
+    console.log({
+      level: record.level,
+      message: String(record.message),
+      category,
+      action,
+      ...(metadata !== undefined ? { metadata } : {}),
+      ...(error !== undefined ? { error: String(error) } : {}),
+    });
+  };
+}
+
 export async function configureLogger(): Promise<void> {
   const consoleSink = redactByField(
     getConsoleSink({
@@ -38,7 +57,7 @@ export async function configureLogger(): Promise<void> {
   );
 
   await configure({
-    sinks: { console: consoleSink },
+    sinks: { console: consoleSink, cf: cfStructuredSink() },
     contextLocalStorage: new AsyncLocalStorage<Record<string, unknown>>(),
     loggers: [
       {
@@ -50,7 +69,7 @@ export async function configureLogger(): Promise<void> {
       // DEV_NOTE: category for application logs.
       {
         category: [Constants.APP_NAME],
-        sinks: ["console"],
+        sinks: ["console", "cf"],
         lowestLevel: "info",
       },
     ],
