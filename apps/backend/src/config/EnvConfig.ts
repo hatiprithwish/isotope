@@ -8,7 +8,6 @@ export default class EnvConfig {
       "RESEND_INBOUND_DOMAIN",
       "RESEND_WEBHOOK_SECRET",
       "TAVILY_API_KEY",
-      "CLOUDFLARE_ACCOUNT_ID",
     ]);
   }
 
