@@ -87,20 +87,51 @@ export default class InboundJobAlertHandler {
       metadata: { url },
     });
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), Constants.BROWSER_RUN_TIMEOUT_MS);
+    const doFetch = async (): Promise<Response | null> => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), Constants.BROWSER_RUN_TIMEOUT_MS);
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ url, prompt: Constants.BROWSER_RUN_PROMPT }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return res;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        AppLogger.error({
+          category: Schemas.LogCategory.Provider,
+          action: Schemas.LogAction.InboundScrapeFailed,
+          message: "Browser Run fetch failed",
+          error,
+          metadata: { url },
+        });
+        return null;
+      }
+    };
 
     try {
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ url, prompt: Constants.BROWSER_RUN_PROMPT }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
+      let res = await doFetch();
+      if (!res) return null;
+
+      if (res.status === 429) {
+        const retryAfterSec = Number(res.headers.get("Retry-After") ?? "2");
+        const waitMs = (isNaN(retryAfterSec) ? 2 : retryAfterSec) * 1_000;
+        AppLogger.warn({
+          category: Schemas.LogCategory.Provider,
+          action: Schemas.LogAction.InboundScrapeFailed,
+          message: `Browser Run 429 — retrying after ${waitMs}ms`,
+          metadata: { url, waitMs },
+        });
+        await new Promise((r) => setTimeout(r, waitMs));
+        res = await doFetch();
+        if (!res) return null;
+      }
 
       if (!res.ok) {
         AppLogger.error({
@@ -124,11 +155,10 @@ export default class InboundJobAlertHandler {
         skills: Array.isArray(extracted?.skills) ? extracted.skills : [],
       };
     } catch (error) {
-      clearTimeout(timeoutId);
       AppLogger.error({
         category: Schemas.LogCategory.Provider,
         action: Schemas.LogAction.InboundScrapeFailed,
-        message: "Browser Run fetch failed",
+        message: "Browser Run response parse failed",
         error,
         metadata: { url },
       });

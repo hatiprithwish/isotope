@@ -27,7 +27,7 @@ export default class Constants {
     recencyWindow: 7,
   } as const;
 
-  static readonly BROWSER_RUN_DELAY_MS = 150 as const;
+  static readonly BROWSER_RUN_DELAY_MS = 1_100 as const;
 
   static readonly INBOUND_BLOCKED_DOMAINS = [
     "twitter.com",
