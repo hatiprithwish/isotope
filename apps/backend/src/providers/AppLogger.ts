@@ -36,7 +36,6 @@ function consoleFormatterWithProps(record: LogRecord): readonly unknown[] {
 function cfStructuredSink(): Sink {
   return (record: LogRecord) => {
     const { action, metadata, error, category } = record.properties;
-    // eslint-disable-next-line no-console
     console.log({
       level: record.level,
       message: String(record.message),

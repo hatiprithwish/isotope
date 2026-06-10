@@ -133,11 +133,11 @@ change.
 
 - **Spec 05 — Email Job Ingestion**:
   - `LogAction`: Added `InboundEmailReceived`, `InboundEmailFetchFailed`, `InboundUrlExtracted`, `InboundScrapeStarted`, `InboundScrapeFailed`, `InboundJobInserted` to `packages/schemas/src/log.ts`.
-  - `Constants.ts`: Added `BROWSER_RUN_URL`, `INBOUND_ATS_DOMAINS`, `INBOUND_JOB_PATHS`, `BROWSER_RUN_PROMPT`, `BROWSER_RUN_TIMEOUT_MS`.
+  - `Constants.ts`: Added `BROWSER_RUN_URL`, `BROWSER_RUN_PROMPT`, `BROWSER_RUN_TIMEOUT_MS`. (Note: `INBOUND_ATS_DOMAINS` and `INBOUND_JOB_PATHS` were added then removed — see architecture decision below.)
   - `CompaniesDAL.ts`: Added `findCompanyByName` (case-insensitive `lower()` LIKE match, scoped to user).
   - `EmailInboundRoutes.ts`: `POST /api/email-inbound` — public, no auth. Verifies Resend svix signature via `resend.webhooks.verify()`. Returns 400 on bad sig, 200+ignore for non-`email.received` events. Extracts userId from `to[0]` local part, enqueues `{ type: "InboundJobAlert", action: "Process", emailId, userId }` to `ISOTOPE_QUEUE`, returns 200 immediately.
   - `SettingsRoutes.ts`: `GET /settings/inbound-address` — `checkAuth` required. Returns `{ isSuccess: true, address: "{userId}@{RESEND_INBOUND_DOMAIN}" }`.
-  - `InboundJobAlertHandler.ts`: Queue consumer for `InboundJobAlert` messages. Fetches email HTML from Resend. Extracts job URLs via href regex + ATS domain / job-path filters. Resolves tracking redirects via HEAD fetch. Deduplicates in-flight + against existing DB URLs. For each new URL: calls Cloudflare Browser Run `/json` (30s timeout), resolves or creates stub company (`CompanyStatusIntEnum.WaitingHuman`), inserts via `JobsDAL.createJob()` with `type=LLM, status=WaitingForHuman`. Acks every message.
+  - `InboundJobAlertHandler.ts`: Queue consumer for `InboundJobAlert` messages. Fetches email HTML from Resend. Extracts all unique `https://` hrefs (no ATS domain filter — job alert emails wrap links in tracking redirects that defeat domain checks). Deduplicates against existing DB URLs. For each new URL: calls Cloudflare Browser Run `/json` (30s timeout) which follows redirects and scrapes the final landing page. If Browser Run returns null title, falls back to URL path slug. Resolves or creates stub company (`CompanyStatusIntEnum.WaitingHuman`). Inserts via `JobsDAL.createJob()` with `type=LLM, status=WaitingForHuman`. Acks every message.
   - `workers/api/index.ts`: Mounted `EmailInboundRoutes` at `/api/email-inbound` (public, before auth routes) and `SettingsRoutes` at `/settings`.
   - `workers/processor/index.ts`: Routes `InboundJobAlert` messages to `inboundJobAlertHandler`.
   - `workers/processor/wrangler.jsonc`: Added `d1_databases` binding for `isotope-db` in staging + production envs (processor needs DB).
@@ -169,6 +169,8 @@ change.
 - `--accent-bg` / `--accent-text` CSS tokens added to `styles.css` Block 4 — were referenced in ui-context.md but not yet defined.
 - `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/backend/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template.
 - **Query route convention** — read-only endpoints that need a request body use `POST /jobs/query` sub-paths within the same resource router. All routes for a resource stay in one `<Feature>Routes.ts` file. `Constants.DEFAULT_PAGE_NO` and `Constants.DEFAULT_PAGE_SIZE` applied in Repo so routes and DAL stay decoupled from default business logic.
+
+- **Inbound email URL extraction strategy** — ATS domain + job-path filtering was dropped. Job alert emails (e.g. Instahyre) wrap every link in a tracking redirect domain (e.g. `click4.instahyre.com`) so the final ATS hostname is never visible pre-click. The new approach extracts all unique `https://` hrefs and passes them directly to Browser Run, which follows redirects natively and scrapes the final page. Non-job pages return null/partial data which is still stored (title falls back to URL path slug). This is simpler and handles all email providers without needing a domain allowlist.
 
 ## Session Notes
 

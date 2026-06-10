@@ -14,7 +14,7 @@ interface InboundJobAlertMessage {
 }
 
 interface BrowserRunExtracted {
-  title: string;
+  title: string | null;
   company: string | null;
   location: string | null;
   salary: string | null;
@@ -23,38 +23,14 @@ interface BrowserRunExtracted {
 }
 
 export default class InboundJobAlertHandler {
-  static isJobUrl(rawUrl: string): boolean {
-    let parsed: URL;
-    try {
-      parsed = new URL(rawUrl);
-    } catch {
-      return false;
-    }
-
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
-
-    const host = parsed.hostname;
-    for (const domain of Constants.INBOUND_ATS_DOMAINS) {
-      if (host === domain || host.endsWith(`.${domain}`)) return true;
-    }
-
-    const pathname = parsed.pathname;
-    for (const segment of Constants.INBOUND_JOB_PATHS) {
-      if (pathname.includes(segment)) return true;
-    }
-
-    return false;
-  }
-
-  static extractJobUrls(html: string): string[] {
+  static extractHttpsUrls(html: string): string[] {
     const seen = new Set<string>();
     const urls: string[] = [];
-    // Match href="..." or href='...' — covers the vast majority of email HTML
     const hrefRe = /href=["']([^"']+)["']/gi;
     let match: RegExpExecArray | null;
     while ((match = hrefRe.exec(html)) !== null) {
       const href = match[1] ?? "";
-      if (InboundJobAlertHandler.isJobUrl(href) && !seen.has(href)) {
+      if (href.startsWith("https://") && !seen.has(href)) {
         seen.add(href);
         urls.push(href);
       }
@@ -62,10 +38,15 @@ export default class InboundJobAlertHandler {
     return urls;
   }
 
-  static async resolveRedirect(url: string): Promise<string> {
+  static titleFallback(url: string): string {
     try {
-      const res = await fetch(url, { method: "HEAD", redirect: "follow" });
-      return res.url || url;
+      const parsed = new URL(url);
+      const slug =
+        parsed.pathname
+          .replace(/^\/|\/$/g, "")
+          .split("/")
+          .pop() ?? "";
+      return slug || parsed.hostname;
     } catch {
       return url;
     }
@@ -111,23 +92,13 @@ export default class InboundJobAlertHandler {
       const json = (await res.json()) as unknown;
       const extracted = json as BrowserRunExtracted;
 
-      if (!extracted?.title) {
-        AppLogger.error({
-          category: Schemas.LogCategory.Provider,
-          action: Schemas.LogAction.InboundScrapeFailed,
-          message: "Browser Run returned no title",
-          metadata: { url },
-        });
-        return null;
-      }
-
       return {
-        title: extracted.title,
-        company: extracted.company ?? null,
-        location: extracted.location ?? null,
-        salary: extracted.salary ?? null,
-        description: extracted.description ?? null,
-        skills: Array.isArray(extracted.skills) ? extracted.skills : [],
+        title: extracted?.title ?? null,
+        company: extracted?.company ?? null,
+        location: extracted?.location ?? null,
+        salary: extracted?.salary ?? null,
+        description: extracted?.description ?? null,
+        skills: Array.isArray(extracted?.skills) ? extracted.skills : [],
       };
     } catch (error) {
       clearTimeout(timeoutId);
@@ -236,18 +207,16 @@ export default class InboundJobAlertHandler {
         metadata: { emailId, userId, totalHrefs: allHrefs.length, sample: allHrefs.slice(0, 10) },
       });
 
-      const rawUrls = InboundJobAlertHandler.extractJobUrls(emailData.html);
+      const rawUrls = InboundJobAlertHandler.extractHttpsUrls(emailData.html);
 
       AppLogger.info({
         category: Schemas.LogCategory.Provider,
         action: Schemas.LogAction.InboundUrlExtracted,
-        message: `Extracted ${rawUrls.length} job URL(s) after ATS/path filter`,
+        message: `Extracted ${rawUrls.length} unique https URL(s) from email`,
         metadata: { emailId, userId, count: rawUrls.length, urls: rawUrls },
       });
 
-      const resolvedUrls = await Promise.all(rawUrls.map(InboundJobAlertHandler.resolveRedirect));
-
-      const dedupedUrls = [...new Set(resolvedUrls)];
+      const dedupedUrls = rawUrls;
 
       const jobsDAL = new JobsDAL(env);
       const existingUrls = await jobsDAL.getExistingUrls({
@@ -280,8 +249,10 @@ export default class InboundJobAlertHandler {
           env,
         );
 
+        const title = extracted.title ?? InboundJobAlertHandler.titleFallback(url);
+
         const insertResult = await jobsDAL.createJob({
-          title: extracted.title,
+          title,
           url,
           companyId,
           location: extracted.location,
@@ -300,7 +271,7 @@ export default class InboundJobAlertHandler {
             category: Schemas.LogCategory.Provider,
             action: Schemas.LogAction.InboundJobInserted,
             message: "Inserted inbound job",
-            metadata: { url, userId, title: extracted.title },
+            metadata: { url, userId, title },
           });
         } else if (insertResult.message?.includes("UNIQUE constraint")) {
           AppLogger.info({

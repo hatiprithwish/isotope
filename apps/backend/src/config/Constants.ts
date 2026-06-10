@@ -30,18 +30,6 @@ export default class Constants {
   static readonly BROWSER_RUN_URL =
     "https://api.cloudflare.com/client/v4/accounts/{accountId}/browser-run/json" as const;
 
-  static readonly INBOUND_ATS_DOMAINS = [
-    "greenhouse.io",
-    "lever.co",
-    "workday.com",
-    "ashbyhq.com",
-    "jobs.smartrecruiters.com",
-    "apply.workable.com",
-    "boards.eu.greenhouse.io",
-  ] as const;
-
-  static readonly INBOUND_JOB_PATHS = ["/jobs/", "/careers/", "/job/", "/position/"] as const;
-
   static readonly BROWSER_RUN_PROMPT =
     "Extract job listing details: title (string, required), company (string or null), location (string or null), salary (string or null, as stated), description (string or null, first 500 chars of job description), skills (array of strings, max 15 technical skills)" as const;
 
