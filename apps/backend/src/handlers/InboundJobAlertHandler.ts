@@ -4,6 +4,7 @@ import JobsDAL from "@/data-access-layer/JobsDAL";
 import CompaniesDAL from "@/data-access-layer/CompaniesDAL";
 import AppLogger from "@/providers/AppLogger";
 import Constants from "@/config/Constants";
+import EnvConfig from "@/config/EnvConfig";
 import * as Schemas from "@app/schemas";
 
 interface InboundJobAlertMessage {
@@ -53,8 +54,8 @@ export default class InboundJobAlertHandler {
   }
 
   static async scrapeJobUrl(url: string, env: Env): Promise<BrowserRunExtracted | null> {
-    const accountId = env.CLOUDFLARE_ACCOUNT_ID;
-    const token = env.CLOUDFLARE_TOKEN_ISOTOPE;
+    const accountId = EnvConfig.cloudflareAccountId(env);
+    const token = EnvConfig.cloudflareIsotopeToken(env);
     const apiUrl = Constants.BROWSER_RUN_URL.replace("{accountId}", accountId);
 
     AppLogger.info({
@@ -151,7 +152,7 @@ export default class InboundJobAlertHandler {
   }
 
   static async handle(batch: MessageBatch<unknown>, env: Env): Promise<void> {
-    const resend = new Resend(env.RESEND_API_KEY);
+    const resend = new Resend(EnvConfig.resendApiKey(env));
 
     for (const message of batch.messages) {
       const msg = message.body as InboundJobAlertMessage;

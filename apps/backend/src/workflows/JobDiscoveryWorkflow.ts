@@ -3,6 +3,7 @@ import FrameworksDAL from "@/data-access-layer/FrameworksDAL";
 import JobsDAL from "@/data-access-layer/JobsDAL";
 import { TavilySearchProvider, type WebSearchResult } from "@/providers/WebSearchProvider";
 import AppLogger from "@/providers/AppLogger";
+import EnvConfig from "@/config/EnvConfig";
 import * as Schemas from "@app/schemas";
 
 interface JobDiscoveryParams {
@@ -52,7 +53,7 @@ export class JobDiscoveryWorkflow extends WorkflowEntrypoint<Env, JobDiscoveryPa
         metadata: { createdBy, targetRoles: framework.targetRoles },
       });
 
-      const provider = new TavilySearchProvider(this.env.TAVILY_API_KEY);
+      const provider = new TavilySearchProvider(EnvConfig.tavilyApiKey(this.env));
 
       const timeRange =
         framework.recencyWindow <= 7

@@ -5,6 +5,7 @@ import { requestId } from "hono/request-id";
 import { configureLogger, disposeLogger, withRequestContext } from "@/providers/AppLogger";
 import * as Schemas from "@app/schemas";
 import Constants from "@/config/Constants";
+import EnvConfig from "@/config/EnvConfig";
 import UsersRoutes from "@/routes/UserRoutes";
 import NotesRoutes from "@/routes/NotesRoutes";
 import CompaniesRoutes from "@/routes/CompaniesRoutes";
@@ -24,7 +25,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use((c, next) =>
   cors({
     origin: (origin) => {
-      const allowed = c.env.ALLOWED_CORS_ORIGIN.split(",");
+      const allowed = EnvConfig.allowedCorsOrigins(c.env);
       return allowed.includes(origin) ? origin : null;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -61,6 +62,7 @@ app.route("/settings", SettingsRoutes);
 
 export default {
   fetch(req: Request, env: Env, ctx: ExecutionContext) {
+    EnvConfig.validate(env);
     ctx.waitUntil(disposeLogger());
     return app.fetch(req, env, ctx);
   },

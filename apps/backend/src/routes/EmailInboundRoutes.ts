@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { Resend } from "resend";
 import type { EmailReceivedEvent } from "resend";
 import type AppContext from "@/config/AppContext";
+import EnvConfig from "@/config/EnvConfig";
 import AppLogger from "@/providers/AppLogger";
 import * as Schemas from "@app/schemas";
 
@@ -9,7 +10,7 @@ const EmailInboundRoutes = new Hono<AppContext>();
 
 EmailInboundRoutes.post("/", async (c) => {
   const rawBody = await c.req.text();
-  const resend = new Resend(c.env.RESEND_API_KEY);
+  const resend = new Resend(EnvConfig.resendApiKey(c.env));
 
   let event: ReturnType<typeof resend.webhooks.verify>;
   try {
@@ -20,7 +21,7 @@ EmailInboundRoutes.post("/", async (c) => {
         timestamp: c.req.header("svix-timestamp") ?? "",
         signature: c.req.header("svix-signature") ?? "",
       },
-      webhookSecret: c.env.RESEND_WEBHOOK_SECRET,
+      webhookSecret: EnvConfig.resendWebhookSecret(c.env),
     });
   } catch (error) {
     AppLogger.error({
