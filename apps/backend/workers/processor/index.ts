@@ -1,5 +1,5 @@
 import { configureLogger, disposeLogger } from "@/providers/AppLogger";
-import { inboundJobAlertHandler } from "@/handlers/InboundJobAlertHandler";
+import InboundJobAlertHandler from "@/handlers/InboundJobAlertHandler";
 
 // DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests
 await configureLogger();
@@ -14,7 +14,7 @@ export default {
     const messageType = firstMessage?.type;
 
     if (messageType === "InboundJobAlert") {
-      await inboundJobAlertHandler(batch, env);
+      await InboundJobAlertHandler.handle(batch, env);
       return;
     }
 

@@ -319,6 +319,11 @@ All authenticated routes MUST be nested under the `_authenticated` route wrapper
 - Thin layer: maps API request shapes to DAL params, business logic lives here
 - If any function exceeds 50 lines, extract reusable private functions
 
+### Handlers
+
+- Always a `default export class <Feature>Handler` with `static` methods only — never bare exported functions
+- Entry point method named `handle(batch, env)`; helpers are private static methods on the same class
+
 ### Routes
 
 - `new Hono<AppContext>()`
@@ -417,21 +422,7 @@ If any item fails, fix it before outputting. Do not output and note the failure.
 - NEVER write a schema change without immediately emitting `db:generate` and `db:migrate`
 - NEVER leave `onError` absent or empty on a mutation
 - ALWAYS use `pnpm` — never `npm` or `yarn`
-
----
-
-## 9. COMMANDS
-
-```bash
-pnpm dev                              # run all apps
-pnpm --filter web dev
-pnpm --filter worker dev
-pnpm --filter web test
-pnpm --filter worker test
-pnpm --filter worker db:generate      # generate migration after schema change
-pnpm --filter worker db:migrate       # apply migration to remote
-pnpm --filter worker db:migrate:local # apply migration to local dev
-```
+- ALWAYS use Classes. NEVER use ba
 
 ---
 
