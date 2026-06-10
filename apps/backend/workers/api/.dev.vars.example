@@ -15,7 +15,7 @@ TAVILY_API_KEY=         # runtime-only
 RESEND_API_KEY=         # runtime-only
 RESEND_INBOUND_DOMAIN=  # runtime-only
 RESEND_WEBHOOK_SECRET=  # runtime-only
-CLOUDFLARE_TOKEN_ISOTOPE= # runtime-only
+
 
 CLOUDFLARE_TOKEN_CI=      # ci-required
 CLOUDFLARE_ACCOUNT_ID=    # ci-required

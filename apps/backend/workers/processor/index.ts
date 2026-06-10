@@ -9,7 +9,7 @@ type QueueMessage = { type?: string };
 
 export default {
   async queue(batch: MessageBatch<unknown>, env: Env, ctx: ExecutionContext): Promise<void> {
-    EnvConfig.validate(env);
+    EnvConfig.validateProcessor(env);
     ctx.waitUntil(disposeLogger());
 
     const firstMessage = batch.messages[0]?.body as QueueMessage | undefined;

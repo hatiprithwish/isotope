@@ -1,6 +1,6 @@
 export default class EnvConfig {
-  static validate(env: Env): void {
-    const required: (keyof Env)[] = [
+  static validateApi(env: Env): void {
+    EnvConfig.assertPresent(env, [
       "CLERK_PUBLISHABLE_KEY",
       "CLERK_SECRET_KEY",
       "ALLOWED_CORS_ORIGIN",
@@ -9,9 +9,19 @@ export default class EnvConfig {
       "RESEND_WEBHOOK_SECRET",
       "TAVILY_API_KEY",
       "CLOUDFLARE_ACCOUNT_ID",
+    ]);
+  }
+
+  static validateProcessor(env: Env): void {
+    EnvConfig.assertPresent(env, [
+      "RESEND_API_KEY",
+      "CLOUDFLARE_ACCOUNT_ID",
       "CLOUDFLARE_TOKEN_ISOTOPE",
-    ];
-    const missing = required.filter((key) => !env[key]);
+    ]);
+  }
+
+  private static assertPresent(env: Env, keys: (keyof Env)[]): void {
+    const missing = keys.filter((key) => !env[key]);
     if (missing.length > 0) {
       throw new Error(`Missing required env vars: ${missing.join(", ")}`);
     }

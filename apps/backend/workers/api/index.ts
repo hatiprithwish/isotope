@@ -62,7 +62,7 @@ app.route("/settings", SettingsRoutes);
 
 export default {
   fetch(req: Request, env: Env, ctx: ExecutionContext) {
-    EnvConfig.validate(env);
+    EnvConfig.validateApi(env);
     ctx.waitUntil(disposeLogger());
     return app.fetch(req, env, ctx);
   },
