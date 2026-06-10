@@ -9,6 +9,7 @@
 #   2. Add the secret value in GitHub → Settings → Environments → staging + production
 # ============================================================
 
-CLOUDFLARE_API_TOKEN=   # ci-required
-CLOUDFLARE_ACCOUNT_ID=  # ci-required
-RESEND_API_KEY=         # runtime-only
+CLOUDFLARE_TOKEN_CI=      # ci-required
+CLOUDFLARE_TOKEN_ISOTOPE= # runtime-only
+CLOUDFLARE_ACCOUNT_ID=    # ci-required
+RESEND_API_KEY=           # runtime-only

@@ -14,7 +14,8 @@ interface __BaseEnv_Env {
   RESEND_API_KEY: string;
   RESEND_INBOUND_DOMAIN: string;
   RESEND_WEBHOOK_SECRET: string;
-  CLOUDFLARE_API_TOKEN: string;
+  CLOUDFLARE_TOKEN_CI: string;
+  CLOUDFLARE_TOKEN_ISOTOPE: string;
   CLOUDFLARE_ACCOUNT_ID: string;
   JOB_DISCOVERY_WORKFLOW?: Workflow<
     Parameters<import("./workers/api/index").JobDiscoveryWorkflow["run"]>[0]["payload"]
@@ -35,7 +36,8 @@ declare namespace Cloudflare {
     RESEND_API_KEY: string;
     RESEND_INBOUND_DOMAIN: string;
     RESEND_WEBHOOK_SECRET: string;
-    CLOUDFLARE_API_TOKEN: string;
+    CLOUDFLARE_TOKEN_CI: string;
+    CLOUDFLARE_TOKEN_ISOTOPE: string;
     CLOUDFLARE_ACCOUNT_ID: string;
     JOB_DISCOVERY_WORKFLOW: Workflow<
       Parameters<import("./workers/api/index").JobDiscoveryWorkflow["run"]>[0]["payload"]
@@ -52,7 +54,8 @@ declare namespace Cloudflare {
     RESEND_API_KEY: string;
     RESEND_INBOUND_DOMAIN: string;
     RESEND_WEBHOOK_SECRET: string;
-    CLOUDFLARE_API_TOKEN: string;
+    CLOUDFLARE_TOKEN_CI: string;
+    CLOUDFLARE_TOKEN_ISOTOPE: string;
     CLOUDFLARE_ACCOUNT_ID: string;
     JOB_DISCOVERY_WORKFLOW: Workflow<
       Parameters<import("./workers/api/index").JobDiscoveryWorkflow["run"]>[0]["payload"]
@@ -75,7 +78,8 @@ declare namespace NodeJS {
       | "RESEND_API_KEY"
       | "RESEND_INBOUND_DOMAIN"
       | "RESEND_WEBHOOK_SECRET"
-      | "CLOUDFLARE_API_TOKEN"
+      | "CLOUDFLARE_TOKEN_CI"
+      | "CLOUDFLARE_TOKEN_ISOTOPE"
       | "CLOUDFLARE_ACCOUNT_ID"
     >
   > {}

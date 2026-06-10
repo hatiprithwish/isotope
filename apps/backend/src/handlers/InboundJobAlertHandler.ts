@@ -54,7 +54,7 @@ export default class InboundJobAlertHandler {
 
   static async scrapeJobUrl(url: string, env: Env): Promise<BrowserRunExtracted | null> {
     const accountId = env.CLOUDFLARE_ACCOUNT_ID;
-    const token = env.CLOUDFLARE_API_TOKEN;
+    const token = env.CLOUDFLARE_TOKEN_ISOTOPE;
     const apiUrl = Constants.BROWSER_RUN_URL.replace("{accountId}", accountId);
 
     AppLogger.info({
