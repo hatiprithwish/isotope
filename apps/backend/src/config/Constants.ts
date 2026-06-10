@@ -27,6 +27,36 @@ export default class Constants {
     recencyWindow: 7,
   } as const;
 
+  static readonly BROWSER_RUN_DELAY_MS = 150 as const;
+
+  static readonly INBOUND_BLOCKED_DOMAINS = [
+    "twitter.com",
+    "x.com",
+    "linkedin.com",
+    "facebook.com",
+    "instagram.com",
+    "youtube.com",
+    "mail.google.com",
+    "outlook.live.com",
+    "outlook.office.com",
+    "accounts.google.com",
+    "apple.com",
+    "support.google.com",
+  ] as const;
+
+  static readonly INBOUND_BLOCKED_PATHS = [
+    "/unsubscribe",
+    "/optout",
+    "/opt-out",
+    "/privacy",
+    "/terms",
+    "/legal",
+    "/help",
+    "/support",
+    "/contact",
+    "/about",
+  ] as const;
+
   static readonly BROWSER_RUN_URL =
     "https://api.cloudflare.com/client/v4/accounts/{accountId}/browser-run/json" as const;
 

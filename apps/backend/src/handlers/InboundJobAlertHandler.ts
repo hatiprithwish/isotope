@@ -24,6 +24,24 @@ interface BrowserRunExtracted {
 }
 
 export default class InboundJobAlertHandler {
+  static isBlockedUrl(rawUrl: string): boolean {
+    let parsed: URL;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      return true;
+    }
+    const host = parsed.hostname.replace(/^www\./, "");
+    for (const domain of Constants.INBOUND_BLOCKED_DOMAINS) {
+      if (host === domain || host.endsWith(`.${domain}`)) return true;
+    }
+    const pathname = parsed.pathname.toLowerCase();
+    for (const segment of Constants.INBOUND_BLOCKED_PATHS) {
+      if (pathname.startsWith(segment) || pathname.includes(`${segment}/`)) return true;
+    }
+    return false;
+  }
+
   static extractHttpsUrls(html: string): string[] {
     const seen = new Set<string>();
     const urls: string[] = [];
@@ -31,7 +49,11 @@ export default class InboundJobAlertHandler {
     let match: RegExpExecArray | null;
     while ((match = hrefRe.exec(html)) !== null) {
       const href = match[1] ?? "";
-      if (href.startsWith("https://") && !seen.has(href)) {
+      if (
+        href.startsWith("https://") &&
+        !seen.has(href) &&
+        !InboundJobAlertHandler.isBlockedUrl(href)
+      ) {
         seen.add(href);
         urls.push(href);
       }
@@ -213,7 +235,7 @@ export default class InboundJobAlertHandler {
       AppLogger.info({
         category: Schemas.LogCategory.Provider,
         action: Schemas.LogAction.InboundUrlExtracted,
-        message: `Extracted ${rawUrls.length} unique https URL(s) from email`,
+        message: `Extracted ${rawUrls.length} unique https URL(s) from email after blocklist filter`,
         metadata: { emailId, userId, count: rawUrls.length, urls: rawUrls },
       });
 
@@ -240,7 +262,9 @@ export default class InboundJobAlertHandler {
 
       const newUrls = dedupedUrls.filter((u) => !existingUrls.has(u));
 
-      for (const url of newUrls) {
+      for (let i = 0; i < newUrls.length; i++) {
+        if (i > 0) await new Promise((r) => setTimeout(r, Constants.BROWSER_RUN_DELAY_MS));
+        const url = newUrls[i]!;
         const extracted = await InboundJobAlertHandler.scrapeJobUrl(url, env);
         if (!extracted) continue;
 
