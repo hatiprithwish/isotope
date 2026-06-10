@@ -196,6 +196,23 @@ export async function inboundJobAlertHandler(
 
     const emailResult = await resend.emails.receiving.get(emailId);
     const emailData = emailResult.data as GetReceivingEmailResponseSuccess | null;
+
+    AppLogger.info({
+      category: Schemas.LogCategory.Provider,
+      action: Schemas.LogAction.InboundEmailReceived,
+      message: "Resend receiving.get result",
+      metadata: {
+        emailId,
+        userId,
+        hasError: !!emailResult.error,
+        errorDetail: emailResult.error ?? null,
+        hasHtml: !!emailData?.html,
+        htmlLength: emailData?.html?.length ?? 0,
+        subject: emailData?.subject ?? null,
+        from: emailData?.from ?? null,
+      },
+    });
+
     if (emailResult.error || !emailData?.html) {
       AppLogger.error({
         category: Schemas.LogCategory.Provider,
@@ -207,13 +224,27 @@ export async function inboundJobAlertHandler(
       continue;
     }
 
+    const allHrefs: string[] = [];
+    const hrefRe2 = /href=["']([^"']+)["']/gi;
+    let m: RegExpExecArray | null;
+    while ((m = hrefRe2.exec(emailData.html)) !== null) {
+      if (m[1]) allHrefs.push(m[1]);
+    }
+
+    AppLogger.info({
+      category: Schemas.LogCategory.Provider,
+      action: Schemas.LogAction.InboundUrlExtracted,
+      message: "All hrefs found in email HTML (pre-filter)",
+      metadata: { emailId, userId, totalHrefs: allHrefs.length, sample: allHrefs.slice(0, 10) },
+    });
+
     const rawUrls = extractJobUrls(emailData.html);
 
     AppLogger.info({
       category: Schemas.LogCategory.Provider,
       action: Schemas.LogAction.InboundUrlExtracted,
-      message: `Extracted ${rawUrls.length} job URL(s)`,
-      metadata: { emailId, userId, count: rawUrls.length },
+      message: `Extracted ${rawUrls.length} job URL(s) after ATS/path filter`,
+      metadata: { emailId, userId, count: rawUrls.length, urls: rawUrls },
     });
 
     const resolvedUrls = await Promise.all(rawUrls.map(resolveRedirect));
@@ -224,6 +255,19 @@ export async function inboundJobAlertHandler(
     const existingUrls = await jobsDAL.getExistingUrls({
       createdBy: userId,
       urls: dedupedUrls,
+    });
+
+    AppLogger.info({
+      category: Schemas.LogCategory.Provider,
+      action: Schemas.LogAction.InboundUrlExtracted,
+      message: "Dedup check complete",
+      metadata: {
+        emailId,
+        userId,
+        dedupedCount: dedupedUrls.length,
+        existingCount: existingUrls.size,
+        newCount: dedupedUrls.filter((u) => !existingUrls.has(u)).length,
+      },
     });
 
     const newUrls = dedupedUrls.filter((u) => !existingUrls.has(u));
