@@ -17,7 +17,7 @@ import EmailInboundRoutes from "@/routes/EmailInboundRoutes";
 import SettingsRoutes from "@/routes/SettingsRoutes";
 export { JobDiscoveryWorkflow } from "@/workflows/JobDiscoveryWorkflow";
 
-// DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests
+// DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests.
 await configureLogger();
 
 const app = new Hono<{ Bindings: Env }>();
