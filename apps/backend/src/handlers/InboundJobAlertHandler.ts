@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import type { GetReceivingEmailResponseSuccess } from "resend";
 import JobsDAL from "@/data-access-layer/JobsDAL";
 import CompaniesDAL from "@/data-access-layer/CompaniesDAL";
+import BrowserRunBudgetDAL from "@/data-access-layer/BrowserRunBudgetDAL";
 import AppLogger from "@/providers/AppLogger";
 import Constants from "@/config/Constants";
 import EnvConfig from "@/config/EnvConfig";
@@ -70,6 +71,22 @@ export default class InboundJobAlertHandler {
           .split("/")
           .pop() ?? "";
       return slug || parsed.hostname;
+    } catch {
+      return url;
+    }
+  }
+
+  static async resolveRedirectUrl(url: string): Promise<string> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10_000);
+      const res = await fetch(url, {
+        method: "HEAD",
+        redirect: "follow",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return res.url && res.url !== url ? res.url : url;
     } catch {
       return url;
     }
@@ -294,8 +311,50 @@ export default class InboundJobAlertHandler {
 
       for (let i = 0; i < newUrls.length; i++) {
         if (i > 0) await new Promise((r) => setTimeout(r, Constants.BROWSER_RUN_DELAY_MS));
-        const url = newUrls[i]!;
-        const extracted = await InboundJobAlertHandler.scrapeJobUrl(url, env);
+        const rawUrl = newUrls[i]!;
+
+        const resolvedUrl = await InboundJobAlertHandler.resolveRedirectUrl(rawUrl);
+
+        AppLogger.info({
+          category: Schemas.LogCategory.Provider,
+          action: Schemas.LogAction.InboundUrlExtracted,
+          message: "Resolved redirect URL",
+          metadata: { rawUrl, resolvedUrl, changed: resolvedUrl !== rawUrl },
+        });
+
+        if (InboundJobAlertHandler.isBlockedUrl(resolvedUrl)) {
+          AppLogger.info({
+            category: Schemas.LogCategory.Provider,
+            action: Schemas.LogAction.InboundUrlExtracted,
+            message: "Resolved URL blocked — skipping",
+            metadata: { rawUrl, resolvedUrl },
+          });
+          continue;
+        }
+
+        const budgetDAL = new BrowserRunBudgetDAL(env);
+        const isShutdown = await budgetDAL.isShutdown();
+
+        if (isShutdown) {
+          AppLogger.warn({
+            category: Schemas.LogCategory.Provider,
+            action: Schemas.LogAction.BrowserRunBudgetShutdown,
+            message: "Browser Run shut down — monthly threshold reached, skipping scrape",
+            metadata: {
+              resolvedUrl,
+              userId,
+              shutdownSeconds: Constants.BROWSER_RUN_SHUTDOWN_SECONDS,
+            },
+          });
+          continue;
+        }
+
+        const scrapeStart = Date.now();
+        const extracted = await InboundJobAlertHandler.scrapeJobUrl(resolvedUrl, env);
+        const elapsedSeconds = (Date.now() - scrapeStart) / 1_000;
+
+        await budgetDAL.recordUsage({ elapsedSeconds });
+
         if (!extracted) continue;
 
         const companyId = await InboundJobAlertHandler.resolveCompanyId(
@@ -304,11 +363,11 @@ export default class InboundJobAlertHandler {
           env,
         );
 
-        const title = extracted.title ?? InboundJobAlertHandler.titleFallback(url);
+        const title = extracted.title ?? InboundJobAlertHandler.titleFallback(resolvedUrl);
 
         const insertResult = await jobsDAL.createJob({
           title,
-          url,
+          url: resolvedUrl,
           companyId,
           location: extracted.location,
           salary: extracted.salary,
@@ -326,14 +385,14 @@ export default class InboundJobAlertHandler {
             category: Schemas.LogCategory.Provider,
             action: Schemas.LogAction.InboundJobInserted,
             message: "Inserted inbound job",
-            metadata: { url, userId, title },
+            metadata: { url: resolvedUrl, userId, title },
           });
         } else if (insertResult.message?.includes("UNIQUE constraint")) {
           AppLogger.info({
             category: Schemas.LogCategory.Provider,
             action: Schemas.LogAction.DuplicateJobBlocked,
             message: "Duplicate job skipped",
-            metadata: { url, userId },
+            metadata: { url: resolvedUrl, userId },
           });
         }
       }

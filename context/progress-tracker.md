@@ -131,6 +131,15 @@ change.
   - CI: `deploy-worker-staging.yml` + `deploy-worker-production.yml` updated — each now deploys both API worker and processor worker in sequence within the same job.
   - **Manual steps required**: Run `wrangler queues create isotope-queue` and `wrangler queues create isotope-queue-dlq` in Cloudflare dashboard or CLI before deploying. Run `pnpm generate-types:api` and `pnpm generate-types:processor` (from `apps/backend/`) to regenerate `worker-configuration.d.ts` for each worker.
 
+- **Browser Run redirect resolution + budget gate**:
+  - `InboundJobAlertHandler.resolveRedirectUrl`: `HEAD` fetch with `redirect: "follow"` resolves email tracking URLs (e.g. `awstrack.me`) to final destination before scraping. 10s timeout, falls back to original on error. Resolved URL re-checked against blocklist. DB stores the final URL, not the tracker URL — fixes null title/description bug where Browser Run was scraping the tracker redirect page instead of the job page.
+  - `BrowserRunBudgetDAL.ts`: `isShutdown()` reads single-row `browser_run_budget` table, auto-resets counter when `now >= reset_at` (lazy monthly reset — no cron needed), returns `true` when `used_seconds >= 28,800`. `recordUsage(elapsedSeconds)` atomically increments via SQL `used_seconds + ?`, inserts row on first call. Fails open on D1 error.
+  - `browser_run_budget` table added to `tables.ts`. Migration `0008_isotope.sql` generated and applied to remote D1.
+  - `packages/schemas/src/browserRunBudget/`: `BrowserRunBudgetCommon.ts` (types + `IncrementBrowserRunBudgetDALRequest`), `index.ts`. Exported from `packages/schemas/src/index.ts`.
+  - `LogAction`: Added `BrowserRunBudgetChecked`, `BrowserRunBudgetShutdown`, `BrowserRunBudgetRecorded`, `BrowserRunBudgetReset`.
+  - `Constants.ts`: Added `BROWSER_RUN_MONTHLY_BUDGET_SECONDS = 36_000`, `BROWSER_RUN_SHUTDOWN_THRESHOLD = 0.8`, `BROWSER_RUN_SHUTDOWN_SECONDS = 28_800`.
+  - Gate in `InboundJobAlertHandler`: `isShutdown()` checked before each `scrapeJobUrl` call — skips scrape + logs warn if shutdown. Wall-clock elapsed time measured and passed to `recordUsage()` after each call.
+
 - **Spec 05 — Email Job Ingestion**:
   - `LogAction`: Added `InboundEmailReceived`, `InboundEmailFetchFailed`, `InboundUrlExtracted`, `InboundScrapeStarted`, `InboundScrapeFailed`, `InboundJobInserted` to `packages/schemas/src/log.ts`.
   - `Constants.ts`: Added `BROWSER_RUN_URL`, `BROWSER_RUN_PROMPT`, `BROWSER_RUN_TIMEOUT_MS`. (Note: `INBOUND_ATS_DOMAINS` and `INBOUND_JOB_PATHS` were added then removed — see architecture decision below.)
@@ -169,6 +178,10 @@ change.
 - `--accent-bg` / `--accent-text` CSS tokens added to `styles.css` Block 4 — were referenced in ui-context.md but not yet defined.
 - `Constants.DEFAULT_COMPANY_RESEARCH_FRAMEWORK` — canonical Appendix A framework document stored as a markdown string constant in `apps/backend/src/config/Constants.ts`. Injected into the `generateCompanyFramework` system prompt as a reference template.
 - **Query route convention** — read-only endpoints that need a request body use `POST /jobs/query` sub-paths within the same resource router. All routes for a resource stay in one `<Feature>Routes.ts` file. `Constants.DEFAULT_PAGE_NO` and `Constants.DEFAULT_PAGE_SIZE` applied in Repo so routes and DAL stay decoupled from default business logic.
+
+- **Browser Run rate limiting storage choice** — KV rejected (eventual consistency → race condition: two concurrent queue batches both read stale count, both proceed past threshold). Durable Objects rejected (overengineered for ≤3,600 calls/month volume; idle GB-second cost). D1 chosen: serialized SQLite writes eliminate race conditions; 2 D1 ops/call costs $0 against the 75M free ops/month; ~5ms overhead is negligible against a 10s scrape call. Lazy monthly reset (checked on every `isShutdown()` read) eliminates need for a cron job.
+
+- **Browser Run redirect resolution** — Tracker/redirect URLs (e.g. `awstrack.me`, `click4.instahyre.com`) stored as source URL in DB caused Browser Run to scrape the redirect interstitial instead of the job page, resulting in null title/description. Fix: `HEAD` fetch with `redirect: "follow"` resolves to final URL before scraping and before storing in DB.
 
 - **Inbound email URL extraction strategy** — ATS domain + job-path filtering was dropped. Job alert emails (e.g. Instahyre) wrap every link in a tracking redirect domain (e.g. `click4.instahyre.com`) so the final ATS hostname is never visible pre-click. The new approach extracts all unique `https://` hrefs and passes them directly to Browser Run, which follows redirects natively and scrapes the final page. Non-job pages return null/partial data which is still stored (title falls back to URL path slug). This is simpler and handles all email providers without needing a domain allowlist.
 

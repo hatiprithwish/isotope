@@ -72,4 +72,10 @@ export enum LogAction {
   InboundScrapeStarted = "InboundScrapeStarted",
   InboundScrapeFailed = "InboundScrapeFailed",
   InboundJobInserted = "InboundJobInserted",
+
+  // Browser Run budget
+  BrowserRunBudgetChecked = "BrowserRunBudgetChecked",
+  BrowserRunBudgetShutdown = "BrowserRunBudgetShutdown",
+  BrowserRunBudgetRecorded = "BrowserRunBudgetRecorded",
+  BrowserRunBudgetReset = "BrowserRunBudgetReset",
 }

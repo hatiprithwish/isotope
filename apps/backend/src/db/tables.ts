@@ -169,3 +169,11 @@ export const notes = table(
   },
   (table) => [t.index("IDX_notes_created_by").on(table.createdBy)],
 );
+
+// Single-row global table — id is always 1
+export const browserRunBudget = table("browser_run_budget", {
+  id: t.int().primaryKey({ autoIncrement: true }),
+  usedSeconds: t.real("used_seconds").notNull().default(0),
+  resetAt: t.text("reset_at").notNull(),
+  updatedAt: t.text("updated_at"),
+});

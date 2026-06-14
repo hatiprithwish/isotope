@@ -64,4 +64,11 @@ export default class Constants {
     "Extract job listing details: title (string, required), company (string or null), location (string or null), salary (string or null, as stated), description (string or null, first 500 chars of job description), skills (array of strings, max 15 technical skills)" as const;
 
   static readonly BROWSER_RUN_TIMEOUT_MS = 30_000 as const;
+
+  // 10 hours included in Workers paid plan = 36,000 seconds
+  static readonly BROWSER_RUN_MONTHLY_BUDGET_SECONDS = 36_000 as const;
+  // Shut down at 80% to avoid overage charges
+  static readonly BROWSER_RUN_SHUTDOWN_THRESHOLD = 0.8 as const;
+  static readonly BROWSER_RUN_SHUTDOWN_SECONDS =
+    Constants.BROWSER_RUN_MONTHLY_BUDGET_SECONDS * Constants.BROWSER_RUN_SHUTDOWN_THRESHOLD; // 28,800
 }
