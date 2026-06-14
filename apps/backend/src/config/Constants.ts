@@ -69,6 +69,6 @@ export default class Constants {
   static readonly BROWSER_RUN_MONTHLY_BUDGET_SECONDS = 36_000 as const;
   // Shut down at 80% to avoid overage charges
   static readonly BROWSER_RUN_SHUTDOWN_THRESHOLD = 0.8 as const;
-  static readonly BROWSER_RUN_SHUTDOWN_SECONDS =
-    Constants.BROWSER_RUN_MONTHLY_BUDGET_SECONDS * Constants.BROWSER_RUN_SHUTDOWN_THRESHOLD; // 28,800
+  // 36_000 * 0.8 — literal to avoid static self-reference during class init
+  static readonly BROWSER_RUN_SHUTDOWN_SECONDS = 28_800 as const;
 }
