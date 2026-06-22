@@ -1,4 +1,5 @@
 export default class Utilities {
+  // test
   static getInitials(name: string): string {
     return name
       .trim()
