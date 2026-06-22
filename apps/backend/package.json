@@ -28,7 +28,7 @@
     "@logtape/redaction": "^2.0.0",
     "dayjs": "^1.0.0",
     "drizzle-orm": "^0.45.0",
-    "hono": "^4.0.0",
+    "hono": "^4.12.21",
     "zod": "^4.0.0",
     "resend": "^6.0.0"
   },
