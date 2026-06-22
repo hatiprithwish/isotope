@@ -69,6 +69,10 @@ export default class ContactsRepo {
     return await this.dal.deleteContact({ createdBy: params.userId, id: params.id });
   }
 
+  async bulkDeleteContacts(params: Schemas.BulkDeleteContactsApiRequest & { userId: string }) {
+    return await this.dal.bulkDeleteContacts({ ids: params.ids, createdBy: params.userId });
+  }
+
   async getContactHistory(params: { userId: string; contactId: number }) {
     return await this.dal.getContactHistory({
       createdBy: params.userId,

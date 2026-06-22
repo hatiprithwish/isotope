@@ -1,7 +1,7 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { apiClient } from "@/providers/apiClient";
-import type * as Schemas from "@app/schemas";
+import * as Schemas from "@app/schemas";
 import { toast } from "sonner";
 
 export class ContactsQueries {
@@ -91,6 +91,26 @@ export function useDeleteContact() {
     },
     onError: () => {
       toast.error("Failed to delete contact. Please try again.");
+    },
+  });
+}
+
+export function useBulkDeleteContacts() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: number[]) =>
+      apiClient<Schemas.BulkDeleteContactsApiResponse>("/contacts/bulk", getToken, {
+        method: "DELETE",
+        body: JSON.stringify({ ids }),
+      }),
+    onSuccess: async (_data, ids) => {
+      ids.forEach((id) => queryClient.removeQueries({ queryKey: ContactsQueries.keys.detail(id) }));
+      await queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.all() });
+    },
+    onError: () => {
+      toast.error("Failed to delete contacts. Please try again.");
     },
   });
 }

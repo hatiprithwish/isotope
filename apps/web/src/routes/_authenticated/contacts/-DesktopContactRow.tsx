@@ -1,13 +1,18 @@
+import { CheckSquareIcon, SquareIcon } from "@phosphor-icons/react";
 import type * as Schemas from "@app/schemas";
 import { StatusBadge } from "./-StatusBadge";
 
 function DesktopContactRow({
   contact,
   active,
+  selected,
+  onSelect,
   onClick,
 }: {
   contact: Schemas.Contact;
   active: boolean;
+  selected: boolean;
+  onSelect: (e: React.MouseEvent) => void;
   onClick: () => void;
 }) {
   return (
@@ -20,8 +25,21 @@ function DesktopContactRow({
         "grid items-center px-6 border-b border-border h-12.5 cursor-pointer transition-colors duration-100",
         active ? "bg-sidebar" : "bg-sidebar hover:bg-(--surface-raised)",
       ].join(" ")}
-      style={{ gridTemplateColumns: "2fr 1.4fr 1fr 1fr 110px 90px" }}
+      style={{ gridTemplateColumns: "32px 2fr 1.4fr 1fr 1fr 110px 90px" }}
     >
+      {/* Checkbox */}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex items-center justify-center text-muted-foreground hover:text-foreground"
+        aria-label={selected ? "Deselect row" : "Select row"}
+      >
+        {selected ? (
+          <CheckSquareIcon size={16} weight="fill" className="text-primary" />
+        ) : (
+          <SquareIcon size={16} />
+        )}
+      </button>
       {/* Name */}
       <div>
         <div className="text-[13px] font-medium text-foreground truncate">{contact.name}</div>

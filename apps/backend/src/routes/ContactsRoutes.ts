@@ -23,6 +23,21 @@ ContactsRoutes.post(
   },
 );
 
+ContactsRoutes.delete(
+  "/bulk",
+  checkAuth,
+  zValidator("json", Schemas.ZBulkDeleteContactsApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.bulkDeleteContacts({ ...body, userId });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
 ContactsRoutes.get("/", checkAuth, async (c) => {
   const userId = c.get("clerkUserId");
 

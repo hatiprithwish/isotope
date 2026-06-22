@@ -30,3 +30,7 @@ export interface UpdateContactHistoryApiResponse extends ApiResponse {
 }
 
 export interface DeleteContactHistoryApiResponse extends ApiResponse {}
+
+export interface BulkDeleteContactsApiResponse extends ApiResponse {
+  deletedCount?: number;
+}

@@ -51,4 +51,8 @@ export default class CompaniesRepo {
       id: params.id,
     });
   }
+
+  async bulkDeleteCompanies(params: Schemas.BulkDeleteCompaniesApiRequest & { userId: string }) {
+    return await this.dal.bulkDeleteCompanies({ ids: params.ids, createdBy: params.userId });
+  }
 }

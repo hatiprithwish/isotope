@@ -24,6 +24,21 @@ CompaniesRoutes.post(
   },
 );
 
+CompaniesRoutes.delete(
+  "/bulk",
+  checkAuth,
+  zValidator("json", Schemas.ZBulkDeleteCompaniesApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new CompaniesRepo(c.env);
+    const response = await repo.bulkDeleteCompanies({ ...body, userId });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
 CompaniesRoutes.get("/", checkAuth, async (c) => {
   const userId = c.get("clerkUserId");
 

@@ -282,6 +282,12 @@
   }
 }
 
+/* Sentry feedback widget — bottom-left, icon-only compact size */
+/* #sentry-feedback {
+  --inset: auto auto 0 0;
+  --font-size: 12px;
+} */
+
 @layer utilities {
   .text-xxs {
     font-size: 11px;

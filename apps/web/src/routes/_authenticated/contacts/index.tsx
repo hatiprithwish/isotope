@@ -3,7 +3,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
-import { ContactsQueries } from "./-data";
+import { toast } from "sonner";
+import { ContactsQueries, useBulkDeleteContacts } from "./-data";
 import AddOrEditContactModal from "./-AddOrEditContactModal";
 import { MobileContactsList } from "./-MobileContactsList";
 import { DesktopContactsTable } from "./-DesktopContactsTable";
@@ -22,6 +23,7 @@ function ContactsPage() {
   const { panel } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [showAddModal, setShowAddModal] = useState(false);
+  const bulkDeleteMutation = useBulkDeleteContacts();
 
   const { data, isPending, isError } = useQuery(ContactsQueries.list(getToken));
   const contacts = data?.contacts ?? [];
@@ -39,6 +41,14 @@ function ContactsPage() {
     navigate({ search: (prev) => ({ ...prev, panel: undefined }) });
   }
 
+  async function handleBulkDelete(ids: number[]) {
+    const response = await bulkDeleteMutation.mutateAsync(ids);
+    toast.success(`${response.deletedCount ?? ids.length} contact(s) deleted.`);
+    if (panel != null && ids.includes(panel)) {
+      void navigate({ search: (prev) => ({ ...prev, panel: undefined }) });
+    }
+  }
+
   return (
     <>
       <MobileContactsList contacts={contacts} />
@@ -49,6 +59,8 @@ function ContactsPage() {
         onOpenPanel={openPanel}
         onClosePanel={closePanel}
         onAddClick={() => setShowAddModal(true)}
+        onBulkDelete={(ids) => void handleBulkDelete(ids)}
+        isBulkPending={bulkDeleteMutation.isPending}
       />
 
       {showAddModal && <AddOrEditContactModal mode="add" onClose={() => setShowAddModal(false)} />}

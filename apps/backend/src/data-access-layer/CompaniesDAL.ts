@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, eq, like, sql } from "drizzle-orm";
+import { and, eq, inArray, like, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { companies, users } from "@/db/tables";
@@ -290,6 +290,39 @@ export default class CompaniesDAL {
       });
       return null;
     }
+  }
+
+  async bulkDeleteCompanies(params: { ids: number[]; createdBy: string }) {
+    const response: Schemas.BulkDeleteCompaniesApiResponse = { isSuccess: false };
+
+    try {
+      AppLogger.info({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkDeleteCompanies,
+        message: "Bulk deleting companies",
+        metadata: params,
+      });
+
+      await this.db
+        .delete(companies)
+        .where(and(inArray(companies.id, params.ids), eq(companies.createdBy, params.createdBy)));
+
+      response.isSuccess = true;
+      response.message = "Companies deleted successfully";
+      response.deletedCount = params.ids.length;
+    } catch (error) {
+      const message = "Unknown error in bulk deleting companies";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkDeleteCompanies,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
   }
 
   async deleteCompany(params: Schemas.FindCompanyDALRequest) {

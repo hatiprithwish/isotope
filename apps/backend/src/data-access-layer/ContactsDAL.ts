@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { contacts, contactHistory, companies } from "@/db/tables";
@@ -356,6 +356,39 @@ export default class ContactsDAL {
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
         action: Schemas.LogAction.UpdateContact,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async bulkDeleteContacts(params: { ids: number[]; createdBy: string }) {
+    const response: Schemas.BulkDeleteContactsApiResponse = { isSuccess: false };
+
+    try {
+      AppLogger.info({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkDeleteContacts,
+        message: "Bulk deleting contacts",
+        metadata: params,
+      });
+
+      await this.db
+        .delete(contacts)
+        .where(and(inArray(contacts.id, params.ids), eq(contacts.createdBy, params.createdBy)));
+
+      response.isSuccess = true;
+      response.message = "Contacts deleted successfully";
+      response.deletedCount = params.ids.length;
+    } catch (error) {
+      const message = "Unknown error in bulk deleting contacts";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkDeleteContacts,
         message,
         error,
         metadata: params,

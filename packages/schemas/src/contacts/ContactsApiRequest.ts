@@ -36,3 +36,8 @@ export const ZUpdateContactHistoryApiRequest = z.object({
   subject: z.string().nullable().optional(),
 });
 export type UpdateContactHistoryApiRequest = z.infer<typeof ZUpdateContactHistoryApiRequest>;
+
+export const ZBulkDeleteContactsApiRequest = z.object({
+  ids: z.array(z.number().int().positive()).min(1),
+});
+export type BulkDeleteContactsApiRequest = z.infer<typeof ZBulkDeleteContactsApiRequest>;

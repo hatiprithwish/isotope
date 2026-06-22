@@ -29,6 +29,7 @@ export enum LogAction {
   ListCompanies = "ListCompanies",
   UpdateCompany = "UpdateCompany",
   DeleteCompany = "DeleteCompany",
+  BulkDeleteCompanies = "BulkDeleteCompanies",
 
   // AI
   AiRun = "AiRun",
@@ -39,6 +40,7 @@ export enum LogAction {
   ListContacts = "ListContacts",
   UpdateContact = "UpdateContact",
   DeleteContact = "DeleteContact",
+  BulkDeleteContacts = "BulkDeleteContacts",
   GetContactHistory = "GetContactHistory",
   CreateContactHistory = "CreateContactHistory",
   UpdateContactHistory = "UpdateContactHistory",

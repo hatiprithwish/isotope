@@ -1,7 +1,7 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { apiClient } from "@/providers/apiClient";
-import type * as Schemas from "@app/schemas";
+import * as Schemas from "@app/schemas";
 import { toast } from "sonner";
 
 export class CompaniesQueries {
@@ -91,6 +91,28 @@ export function useDeleteCompany() {
     },
     onError: () => {
       toast.error("Failed to delete company. Please try again.");
+    },
+  });
+}
+
+export function useBulkDeleteCompanies() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: number[]) =>
+      apiClient<Schemas.BulkDeleteCompaniesApiResponse>("/companies/bulk", getToken, {
+        method: "DELETE",
+        body: JSON.stringify({ ids }),
+      }),
+    onSuccess: async (_data, ids) => {
+      ids.forEach((id) =>
+        queryClient.removeQueries({ queryKey: CompaniesQueries.keys.detail(id) }),
+      );
+      await queryClient.invalidateQueries({ queryKey: CompaniesQueries.keys.all() });
+    },
+    onError: () => {
+      toast.error("Failed to delete companies. Please try again.");
     },
   });
 }

@@ -16,3 +16,7 @@ export interface GetCompaniesApiResponse extends ApiResponse {
 export interface UpdateCompanyApiResponse extends ApiResponse {
   company?: Company;
 }
+
+export interface BulkDeleteCompaniesApiResponse extends ApiResponse {
+  deletedCount?: number;
+}

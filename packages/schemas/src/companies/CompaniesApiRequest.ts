@@ -10,3 +10,8 @@ export const ZUpdateCompanyApiRequest = z.object({
   company: ZCompanyBase.partial(),
 });
 export type UpdateCompanyApiRequest = z.infer<typeof ZUpdateCompanyApiRequest>;
+
+export const ZBulkDeleteCompaniesApiRequest = z.object({
+  ids: z.array(z.number().int().positive()).min(1),
+});
+export type BulkDeleteCompaniesApiRequest = z.infer<typeof ZBulkDeleteCompaniesApiRequest>;
