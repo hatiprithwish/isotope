@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "pnpm build:api && pnpm build:processor",
-    "dev:api": "wrangler dev --env staging --config workers/api/wrangler.jsonc",
-    "dev:processor": "wrangler dev --env staging --config workers/processor/wrangler.jsonc",
+    "dev:api": "wrangler dev --env staging --config workers/api/wrangler.jsonc --experimental-observability",
+    "dev:processor": "wrangler dev --env staging --config workers/processor/wrangler.jsonc --experimental-observability",
     "build:api": "wrangler deploy --dry-run --config workers/api/wrangler.jsonc",
     "build:processor": "wrangler deploy --dry-run --config workers/processor/wrangler.jsonc",
     "deploy:api": "wrangler deploy --config workers/api/wrangler.jsonc",
@@ -29,8 +29,8 @@
     "dayjs": "^1.0.0",
     "drizzle-orm": "^0.45.0",
     "hono": "^4.0.0",
-    "zod": "^4.0.0",
-    "resend": "^6.0.0"
+    "resend": "^6.0.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.0",

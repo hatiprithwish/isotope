@@ -18,8 +18,18 @@ export type GetContactHistoryDALRequest = { contactId: number; createdBy: string
 
 export type FindContactHistoryDALRequest = { id: number; createdBy: string };
 
+export type DeleteContactHistoryDALRequest = FindContactHistoryDALRequest & { contactId: number };
+
 export type UpdateContactHistoryDALRequest = FindContactHistoryDALRequest & {
   body?: string;
   sentAt?: string;
   subject?: string | null;
 };
+
+export type UpdateNextTouchDueAtDALRequest = {
+  id: number;
+  createdBy: string;
+  nextTouchDueAt: string | null;
+};
+
+export type GetLastSentHistoryDALRequest = { contactId: number; createdBy: string };

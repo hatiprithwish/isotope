@@ -104,6 +104,26 @@ export enum ContactHistoryChannelEnum {
 }
 export const ZContactHistoryChannelEnum = z.nativeEnum(ContactHistoryChannelEnum);
 
+// Single owner of the "<channel>_<direction>" history-type convention — build and match types only through these, never with string literals or LIKE patterns.
+export const CONTACT_HISTORY_SENT_SUFFIX = "_sent" as const;
+export const CONTACT_HISTORY_RECEIVED_SUFFIX = "_received" as const;
+
+export function buildContactHistoryType(
+  channel: ContactHistoryChannelEnum,
+  direction: ContactHistoryDirectionEnum,
+): string {
+  const suffix =
+    direction === ContactHistoryDirectionEnum.Me
+      ? CONTACT_HISTORY_SENT_SUFFIX
+      : CONTACT_HISTORY_RECEIVED_SUFFIX;
+  return `${channel}${suffix}`;
+}
+
+/** Exact outbound type values ("email_sent", "linkedin_sent", …) — use with inArray/includes instead of suffix pattern-matching. */
+export const CONTACT_HISTORY_SENT_TYPES: string[] = Object.values(ContactHistoryChannelEnum).map(
+  (channel) => `${channel}${CONTACT_HISTORY_SENT_SUFFIX}`,
+);
+
 export const ZContactHistoryBase = z.object({
   contactId: z.number(),
   type: z.string(),

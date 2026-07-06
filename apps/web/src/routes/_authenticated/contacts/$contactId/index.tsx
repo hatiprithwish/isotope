@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { ArrowLeftIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
+import { z } from "zod";
 import { Button } from "@/shadcn/ui/button";
 import { ContactsQueries, useUpdateContact, useDeleteContact } from "../-data";
 import { StatusBadge } from "../-StatusBadge";
@@ -12,20 +13,27 @@ import { AboutTab } from "../-AboutTab";
 import AddOrEditContactModal from "../-AddOrEditContactModal";
 import Utilities from "@/utils";
 
+type Tab = "draft" | "history" | "about";
+
+const searchSchema = z.object({
+  tab: z.enum(["draft", "history", "about"]).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/contacts/$contactId/")({
+  validateSearch: searchSchema,
   component: ContactDetailPage,
 });
 
-type Tab = "draft" | "history" | "about";
-
 function ContactDetailPage() {
   const { contactId } = Route.useParams();
+  const { tab: tabParam } = Route.useSearch();
   const { getToken } = useAuth();
   const router = useRouter();
-  const navigate = useNavigate();
+  const navigate = useNavigate({ from: Route.fullPath });
   const updateContact = useUpdateContact();
   const deleteContact = useDeleteContact();
-  const [activeTab, setActiveTab] = useState<Tab>("draft");
+  // Derived from the URL (Route.useSearch is reactive) so back/forward and deep links always render the right tab.
+  const activeTab: Tab = tabParam ?? "draft";
   const [showEditModal, setShowEditModal] = useState(false);
 
   const { data, isPending, isError } = useQuery(
@@ -127,7 +135,9 @@ function ContactDetailPage() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                void navigate({ search: (prev) => ({ ...prev, tab: tab.id }) });
+              }}
               className={[
                 "h-9.5 px-3.5 text-[12px] border-b-2 transition-colors -mb-px",
                 activeTab === tab.id

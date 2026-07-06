@@ -45,6 +45,8 @@ export enum LogAction {
   CreateContactHistory = "CreateContactHistory",
   UpdateContactHistory = "UpdateContactHistory",
   DeleteContactHistory = "DeleteContactHistory",
+  UpdateNextTouchDueAt = "UpdateNextTouchDueAt",
+  GetLastSentHistory = "GetLastSentHistory",
 
   // Frameworks
   SaveFramework = "SaveFramework",
@@ -80,4 +82,14 @@ export enum LogAction {
   BrowserRunBudgetShutdown = "BrowserRunBudgetShutdown",
   BrowserRunBudgetRecorded = "BrowserRunBudgetRecorded",
   BrowserRunBudgetReset = "BrowserRunBudgetReset",
+
+  // Tasks
+  GetTasksCalendar = "GetTasksCalendar",
+  GetTasksForDate = "GetTasksForDate",
+  GetPastTasks = "GetPastTasks",
+  SearchTasks = "SearchTasks",
+  UpdateTaskStatus = "UpdateTaskStatus",
+  SyncFollowUpTask = "SyncFollowUpTask",
+  DeletePendingFollowUpTask = "DeletePendingFollowUpTask",
+  SweepOverdueTasks = "SweepOverdueTasks",
 }

@@ -12,6 +12,9 @@
         "ALLOWED_CORS_ORIGIN": "http://localhost:3000,https://isotope-web-staging.hatiprithwish.workers.dev",
         "RESEND_INBOUND_DOMAIN": "ousteiulka.resend.app"
       },
+      "triggers": {
+        "crons": ["5 0 * * *"]
+      },
       "ai": {
         "binding": "AI",
         "remote": true
@@ -61,6 +64,9 @@
       "vars": {
         "ALLOWED_CORS_ORIGIN": "https://isotope-web.hatiprithwish.workers.dev",
         "RESEND_INBOUND_DOMAIN": "ousteiulka.resend.app"
+      },
+      "triggers": {
+        "crons": ["5 0 * * *"]
       },
       "ai": {
         "binding": "AI",

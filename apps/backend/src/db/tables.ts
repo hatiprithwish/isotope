@@ -170,6 +170,29 @@ export const notes = table(
   (table) => [t.index("IDX_notes_created_by").on(table.createdBy)],
 );
 
+export const tasks = table(
+  "tasks",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    contactId: t.int("contact_id"),
+    title: t.text().notNull(),
+    dueAt: t.text("due_at").notNull(),
+    status: t.integer().$type<Schemas.TaskStatusIntEnum>().notNull(),
+    note: t.text(),
+    completedAt: t.text("completed_at"),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [
+    // Composite: every hot read filters created_by AND due_at (day/calendar/past); the createdBy prefix still serves createdBy-only predicates.
+    t.index("IDX_tasks_created_by_due_at").on(table.createdBy, table.dueAt),
+    t.index("IDX_tasks_contact_id").on(table.contactId),
+    // Serves the cron sweep's (status, due_at) predicate, which has no created_by filter.
+    t.index("IDX_tasks_due_at").on(table.dueAt),
+  ],
+);
+
 // Single-row global table — id is always 1
 export const browserRunBudget = table("browser_run_budget", {
   id: t.int().primaryKey({ autoIncrement: true }),

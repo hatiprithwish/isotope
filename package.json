@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:worker": "pnpm --filter backend dev",
+    "dev:worker": "pnpm --filter backend dev:api",
+    "dev:processor": "pnpm --filter backend dev:processor",
     "dev:web": "pnpm --filter web dev",
     "build:worker": "pnpm --filter backend build",
     "build:web": "pnpm --filter web build",

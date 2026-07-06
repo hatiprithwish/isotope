@@ -31,6 +31,10 @@ export interface UpdateContactHistoryApiResponse extends ApiResponse {
 
 export interface DeleteContactHistoryApiResponse extends ApiResponse {}
 
+export interface GetLastSentHistoryApiResponse extends ApiResponse {
+  lastSentAt?: string | null;
+}
+
 export interface BulkDeleteContactsApiResponse extends ApiResponse {
   deletedCount?: number;
 }

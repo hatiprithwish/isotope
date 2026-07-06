@@ -112,7 +112,7 @@ ContactsRoutes.get(
 ContactsRoutes.post(
   "/:id/history",
   checkAuth,
-  zValidator("param", z.object({ id: z.string() })),
+  zValidator("param", z.object({ id: z.string().regex(/^\d+$/) })),
   zValidator("json", Schemas.ZLogContactHistoryApiRequest),
   async (c) => {
     const userId = c.get("clerkUserId");
@@ -133,16 +133,20 @@ ContactsRoutes.post(
 ContactsRoutes.patch(
   "/:id/history/:historyId",
   checkAuth,
-  zValidator("param", z.object({ id: z.string(), historyId: z.string() })),
+  zValidator(
+    "param",
+    z.object({ id: z.string().regex(/^\d+$/), historyId: z.string().regex(/^\d+$/) }),
+  ),
   zValidator("json", Schemas.ZUpdateContactHistoryApiRequest),
   async (c) => {
     const userId = c.get("clerkUserId");
-    const { historyId } = c.req.valid("param");
+    const { id, historyId } = c.req.valid("param");
     const body = c.req.valid("json");
 
     const repo = new ContactsRepo(c.env);
     const response = await repo.updateContactHistory({
       historyId: Number(historyId),
+      contactId: Number(id),
       userId,
       ...body,
     });
@@ -154,14 +158,18 @@ ContactsRoutes.patch(
 ContactsRoutes.delete(
   "/:id/history/:historyId",
   checkAuth,
-  zValidator("param", z.object({ id: z.string(), historyId: z.string() })),
+  zValidator(
+    "param",
+    z.object({ id: z.string().regex(/^\d+$/), historyId: z.string().regex(/^\d+$/) }),
+  ),
   async (c) => {
     const userId = c.get("clerkUserId");
-    const { historyId } = c.req.valid("param");
+    const { id, historyId } = c.req.valid("param");
 
     const repo = new ContactsRepo(c.env);
     const response = await repo.deleteContactHistory({
       historyId: Number(historyId),
+      contactId: Number(id),
       userId,
     });
 

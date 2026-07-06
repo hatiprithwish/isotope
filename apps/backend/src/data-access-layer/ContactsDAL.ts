@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { contacts, contactHistory, companies } from "@/db/tables";
@@ -457,11 +457,47 @@ export default class ContactsDAL {
     return response;
   }
 
+  /** Returns the sentAt of the most recent outbound message for the contact, or null if none remain. */
+  async getLastSentHistory(params: Schemas.GetLastSentHistoryDALRequest) {
+    const response: Schemas.GetLastSentHistoryApiResponse = { isSuccess: false };
+
+    try {
+      const [latest] = await this.db
+        .select({ sentAt: contactHistory.sentAt })
+        .from(contactHistory)
+        .where(
+          and(
+            eq(contactHistory.contactId, params.contactId),
+            eq(contactHistory.createdBy, params.createdBy),
+            inArray(contactHistory.type, Schemas.CONTACT_HISTORY_SENT_TYPES),
+          ),
+        )
+        .orderBy(desc(contactHistory.sentAt))
+        .limit(1);
+
+      response.isSuccess = true;
+      response.message = "Last sent history fetched successfully";
+      response.lastSentAt = latest?.sentAt ?? null;
+    } catch (error) {
+      const message = "Unknown error in fetching last sent history";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.GetLastSentHistory,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
   async createContactHistory(params: Schemas.CreateContactHistoryDALRequest) {
     const response: Schemas.CreateContactHistoryApiResponse = { isSuccess: false };
 
     try {
-      const isSent = params.type.endsWith("_sent");
+      const isSent = params.type.endsWith(Schemas.CONTACT_HISTORY_SENT_SUFFIX);
       let nextSequencePosition: number | null = null;
 
       if (isSent) {
@@ -565,15 +601,52 @@ export default class ContactsDAL {
     return response;
   }
 
-  async deleteContactHistory(params: Schemas.FindContactHistoryDALRequest) {
-    const response: Schemas.DeleteContactHistoryApiResponse = { isSuccess: false };
+  async updateNextTouchDueAt(params: Schemas.UpdateNextTouchDueAtDALRequest) {
+    const response: Schemas.ApiResponse = { isSuccess: false };
 
     try {
       await this.db
+        .update(contacts)
+        .set({ nextTouchDueAt: params.nextTouchDueAt, updatedAt: Utility.getCurrentISOTimestamp() })
+        .where(and(eq(contacts.id, params.id), eq(contacts.createdBy, params.createdBy)));
+
+      response.isSuccess = true;
+      response.message = "Next touch due date updated successfully";
+    } catch (error) {
+      const message = "Unknown error in updating next touch due date";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.UpdateNextTouchDueAt,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async deleteContactHistory(params: Schemas.DeleteContactHistoryDALRequest) {
+    const response: Schemas.DeleteContactHistoryApiResponse = { isSuccess: false };
+
+    try {
+      // Scoped to contactId so a mismatched URL contact can neither delete another contact's row nor resync the wrong contact.
+      const result = await this.db
         .delete(contactHistory)
         .where(
-          and(eq(contactHistory.id, params.id), eq(contactHistory.createdBy, params.createdBy)),
-        );
+          and(
+            eq(contactHistory.id, params.id),
+            eq(contactHistory.contactId, params.contactId),
+            eq(contactHistory.createdBy, params.createdBy),
+          ),
+        )
+        .run();
+
+      if ((result.meta.changes ?? 0) === 0) {
+        response.message = "History entry not found";
+        return response;
+      }
 
       response.isSuccess = true;
       response.message = "History entry deleted successfully";

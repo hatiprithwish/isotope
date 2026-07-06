@@ -28,11 +28,15 @@ Isotope is a multi-user, AI-first web application that helps software engineers 
 
 ## Features
 
-### Today Dashboard
+### Tasks (formerly "Today Dashboard")
 
-- 7 action sections: Needs your input, Needs attention, Drafts ready (with stalled inline), Stalled drafts, Companies to review, Jobs to review, Follow-ups due today
-- Desktop right column: AI Activity Card (overnight run stats) + Pipeline Glance Card (4 pipeline counters)
-- Desktop topbar: date/time, notification bell, "Preview digest" button
+- Replaces the placeholder Today screen — `/today` renamed to `/tasks`, sidebar nav item renamed "Today" → "Tasks".
+- Follow-up tasks are auto-created per contact: 7 days after a sent (`*_sent`) message is logged, a "Follow up with {name}" task is due. Checkbox toggles Pending ↔ Completed.
+- Week strip (Mon–Sun, navigable) shows a per-day dot: yellow if any task due that day is still Pending, green if only Completed tasks that day, nothing otherwise. Missed/overdue tasks never show on their original day — they roll forward onto Today (see below), so the strip never renders a red dot.
+- Day sections (Today, Tomorrow, then named weekdays) list that day's follow-ups. **Today's section additionally surfaces every overdue Pending/Missed task from earlier days**, tagged "Overdue by Nd" — that's the only place overdue items appear. Past days only ever show completed tasks (collapsed "Past tasks" section at the bottom).
+- Search box searches across task title, contact name, and company name.
+- Each row has a "View conversation" link to the contact's History tab (`/contacts/$id?tab=history`).
+- The other 6 sections from the original spec (Needs your input, Needs attention, Drafts ready, Stalled drafts, Companies to review, Jobs to review) were never implemented and are out of scope for this unit — only the Follow-ups concept was built, as its own dedicated page.
 
 ### Companies Pipeline
 

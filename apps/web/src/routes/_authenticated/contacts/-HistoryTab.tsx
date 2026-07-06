@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
-import type * as Schemas from "@app/schemas";
+import * as Schemas from "@app/schemas"; // runtime `import *`: consumes the history-type helpers alongside types.
 import { ContactsQueries, useDeleteContactHistory } from "./-data";
 import { AddOrEditContactHistoryForm } from "./-AddOrEditContactHistoryForm";
 import { Button } from "@/shadcn/ui/button";
@@ -18,8 +18,8 @@ export function HistoryTab({
   const [editingId, setEditingId] = useState<number | null>(null);
   const history = data?.history ?? [];
 
-  const replyCount = history.filter(
-    (h) => h.type === "email_received" || h.type === "linkedin_received",
+  const replyCount = history.filter((h) =>
+    h.type.endsWith(Schemas.CONTACT_HISTORY_RECEIVED_SUFFIX),
   ).length;
 
   if (isPending)
@@ -44,7 +44,7 @@ export function HistoryTab({
       )}
 
       {history.map((h) => {
-        const isSent = h.type === "email_sent" || h.type === "linkedin_sent";
+        const isSent = Schemas.CONTACT_HISTORY_SENT_TYPES.includes(h.type);
         const channelLabel = h.channel.charAt(0).toUpperCase() + h.channel.slice(1);
         const touchLabel =
           isSent && h.sequencePosition != null ? `Touch ${h.sequencePosition}` : null;

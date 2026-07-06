@@ -71,4 +71,10 @@ export default class Constants {
   static readonly BROWSER_RUN_SHUTDOWN_THRESHOLD = 0.8 as const;
   // 36_000 * 0.8 — literal to avoid static self-reference during class init
   static readonly BROWSER_RUN_SHUTDOWN_SECONDS = 28_800 as const;
+
+  static readonly TASK_FOLLOWUP_INTERVAL_DAYS = 7 as const;
+
+  // Workers always run in UTC, but task due dates are day-keyed in the user's timezone (IST).
+  // Single source of the app's day boundary — every "today" computation must go through Utility.getTodayDateKey().
+  static readonly APP_UTC_OFFSET_MINUTES = 330 as const;
 }

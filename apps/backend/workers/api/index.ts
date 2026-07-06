@@ -12,9 +12,11 @@ import CompaniesRoutes from "@/routes/CompaniesRoutes";
 import ContactsRoutes from "@/routes/ContactsRoutes";
 import FrameworksRoutes from "@/routes/FrameworksRoutes";
 import JobsRoutes from "@/routes/JobsRoutes";
+import TasksRoutes from "@/routes/TasksRoutes";
 import AuthRoutes from "@/routes/AuthRoutes";
 import EmailInboundRoutes from "@/routes/EmailInboundRoutes";
 import SettingsRoutes from "@/routes/SettingsRoutes";
+import TaskMissedSweepHandler from "@/handlers/TaskMissedSweepHandler";
 export { JobDiscoveryWorkflow } from "@/workflows/JobDiscoveryWorkflow";
 
 // DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests.
@@ -58,6 +60,7 @@ app.route("/companies", CompaniesRoutes);
 app.route("/contacts", ContactsRoutes);
 app.route("/frameworks", FrameworksRoutes);
 app.route("/jobs", JobsRoutes);
+app.route("/tasks", TasksRoutes);
 app.route("/settings", SettingsRoutes);
 
 export default {
@@ -65,5 +68,10 @@ export default {
     EnvConfig.validateApi(env);
     ctx.waitUntil(disposeLogger());
     return app.fetch(req, env, ctx);
+  },
+  scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext) {
+    EnvConfig.validateApi(env);
+    // Dispose only after the sweep settles — disposing concurrently resets logtape config mid-flight and drops the sweep's logs.
+    ctx.waitUntil(TaskMissedSweepHandler.handle(env).finally(() => disposeLogger()));
   },
 };
