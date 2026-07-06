@@ -6,6 +6,11 @@ import {
   ZContactHistoryChannelEnum,
 } from "./ContactsCommon";
 
+export const ZGetContactsApiRequest = z.object({
+  search: z.string().nullable().optional(),
+});
+export type GetContactsApiRequest = z.infer<typeof ZGetContactsApiRequest>;
+
 export const ZCreateContactApiRequest = z.object({
   contact: ZContactBase,
 });

@@ -25,4 +25,9 @@ export default class Utility {
   static getCurrentISOTimestamp() {
     return dayjs().toISOString();
   }
+
+  /** Escapes SQL LIKE wildcards (%, _) and the escape char itself so a raw search term matches literally. Pair with `LIKE ... ESCAPE '\'`. */
+  static escapeLikePattern(term: string): string {
+    return term.replace(/[\\%_]/g, (char) => `\\${char}`);
+  }
 }

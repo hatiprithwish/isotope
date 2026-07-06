@@ -1,21 +1,26 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { apiClient } from "@/providers/apiClient";
-import * as Schemas from "@app/schemas";
+import type * as Schemas from "@app/schemas";
 import { toast } from "sonner";
 
 export class CompaniesQueries {
   static readonly keys = {
     all: () => ["companies"] as const,
+    list: (search: string) => ["companies", "list", search] as const,
     detail: (id: number) => ["companies", id] as const,
     contacts: (id: number) => ["companies", id, "contacts"] as const,
   };
 
-  static list(getToken: () => Promise<string | null>) {
+  static list(params: Schemas.GetCompaniesApiRequest, getToken: () => Promise<string | null>) {
     return queryOptions({
-      queryKey: CompaniesQueries.keys.all(),
-      queryFn: ({ signal }) =>
-        apiClient<Schemas.GetCompaniesApiResponse>("/companies", getToken, { signal }),
+      queryKey: CompaniesQueries.keys.list(params.search ?? ""),
+      queryFn: ({ signal }) => {
+        const query = params.search ? `?search=${encodeURIComponent(params.search)}` : "";
+        return apiClient<Schemas.GetCompaniesApiResponse>(`/companies${query}`, getToken, {
+          signal,
+        });
+      },
     });
   }
 

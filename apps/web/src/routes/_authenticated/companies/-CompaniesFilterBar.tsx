@@ -46,6 +46,8 @@ interface Props {
   onStatusChange: (v: StatusFilter) => void;
   onFitChange: (v: FitFilter) => void;
   onClear: () => void;
+  /** Renders just the filter controls without the standalone bar wrapper — for embedding in another toolbar. */
+  inline?: boolean;
 }
 
 export function CompaniesFilterBar({
@@ -55,9 +57,10 @@ export function CompaniesFilterBar({
   onStatusChange,
   onFitChange,
   onClear,
+  inline,
 }: Props) {
-  return (
-    <div className="flex gap-2 items-center px-6 py-3.5 border-b border-border bg-background shrink-0">
+  const controls = (
+    <>
       <div className="relative">
         <select
           value={statusFilter}
@@ -95,6 +98,16 @@ export function CompaniesFilterBar({
           Clear
         </Button>
       )}
+    </>
+  );
+
+  if (inline) {
+    return <div className="flex gap-2 items-center">{controls}</div>;
+  }
+
+  return (
+    <div className="flex gap-2 items-center px-6 py-3.5 border-b border-border bg-background shrink-0">
+      {controls}
       <div className="flex-1" />
       <span className="text-[12px] font-medium text-(--text-secondary)">
         {filteredCount} {filteredCount === 1 ? "company" : "companies"}

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
 import { toast } from "sonner";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ContactsQueries, useBulkDeleteContacts } from "./-data";
 import AddOrEditContactModal from "./-AddOrEditContactModal";
 import { MobileContactsList } from "./-MobileContactsList";
@@ -23,15 +24,15 @@ function ContactsPage() {
   const { panel } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [showAddModal, setShowAddModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(searchQuery, 300);
   const bulkDeleteMutation = useBulkDeleteContacts();
 
-  const { data, isPending, isError } = useQuery(ContactsQueries.list(getToken));
+  const { data, isPending, isError } = useQuery(
+    ContactsQueries.list({ search: debouncedQuery || undefined }, getToken),
+  );
   const contacts = data?.contacts ?? [];
   const selectedContact = panel ? (contacts.find((c) => c.id === panel) ?? null) : null;
-
-  if (isPending) return <div className="p-6 text-(--text-secondary) text-sm">Loading...</div>;
-  if (isError)
-    return <div className="p-6 text-(--text-secondary) text-sm">Failed to load contacts.</div>;
 
   function openPanel(id: number) {
     navigate({ search: (prev) => ({ ...prev, panel: id }) });
@@ -51,16 +52,26 @@ function ContactsPage() {
 
   return (
     <>
-      <MobileContactsList contacts={contacts} />
+      <MobileContactsList
+        contacts={contacts}
+        isLoading={isPending}
+        isError={isError}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
       <DesktopContactsTable
         contacts={contacts}
+        isLoading={isPending}
+        isError={isError}
         selectedContact={selectedContact}
         onOpenPanel={openPanel}
         onClosePanel={closePanel}
         onAddClick={() => setShowAddModal(true)}
         onBulkDelete={(ids) => void handleBulkDelete(ids)}
         isBulkPending={bulkDeleteMutation.isPending}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       {showAddModal && <AddOrEditContactModal mode="add" onClose={() => setShowAddModal(false)} />}

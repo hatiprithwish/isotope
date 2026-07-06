@@ -1,21 +1,26 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { apiClient } from "@/providers/apiClient";
-import * as Schemas from "@app/schemas";
+import type * as Schemas from "@app/schemas";
 import { toast } from "sonner";
 
 export class ContactsQueries {
   static readonly keys = {
     all: () => ["contacts"] as const,
+    list: (search: string) => ["contacts", "list", search] as const,
     detail: (id: number) => ["contacts", id] as const,
     history: (id: number) => ["contacts", id, "history"] as const,
   };
 
-  static list(getToken: () => Promise<string | null>) {
+  static list(params: Schemas.GetContactsApiRequest, getToken: () => Promise<string | null>) {
     return queryOptions({
-      queryKey: ContactsQueries.keys.all(),
-      queryFn: ({ signal }) =>
-        apiClient<Schemas.GetContactsApiResponse>("/contacts", getToken, { signal }),
+      queryKey: ContactsQueries.keys.list(params.search ?? ""),
+      queryFn: ({ signal }) => {
+        const query = params.search ? `?search=${encodeURIComponent(params.search)}` : "";
+        return apiClient<Schemas.GetContactsApiResponse>(`/contacts${query}`, getToken, {
+          signal,
+        });
+      },
     });
   }
 

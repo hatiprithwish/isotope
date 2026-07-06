@@ -38,14 +38,20 @@ ContactsRoutes.delete(
   },
 );
 
-ContactsRoutes.get("/", checkAuth, async (c) => {
-  const userId = c.get("clerkUserId");
+ContactsRoutes.get(
+  "/",
+  checkAuth,
+  zValidator("query", Schemas.ZGetContactsApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { search } = c.req.valid("query");
 
-  const repo = new ContactsRepo(c.env);
-  const response = await repo.getContacts({ userId });
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.getContacts({ userId, search });
 
-  return c.json(response, response.isSuccess ? 200 : 500);
-});
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
 
 ContactsRoutes.get(
   "/:id",

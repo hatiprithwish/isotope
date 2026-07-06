@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { contacts, contactHistory, companies } from "@/db/tables";
@@ -173,6 +173,9 @@ export default class ContactsDAL {
     const response: Schemas.GetContactsApiResponse = { isSuccess: false };
 
     try {
+      const term = params.search?.trim();
+      const pattern = term ? `%${Utility.escapeLikePattern(term)}%` : undefined;
+
       const contactsResponse = await this.db
         .select({
           id: contacts.id,
@@ -210,7 +213,19 @@ export default class ContactsDAL {
         })
         .from(contacts)
         .leftJoin(companies, eq(contacts.companyId, companies.id))
-        .where(eq(contacts.createdBy, params.createdBy));
+        .where(
+          pattern
+            ? and(
+                eq(contacts.createdBy, params.createdBy),
+                or(
+                  sql`${contacts.name} LIKE ${pattern} ESCAPE '\\'`,
+                  sql`${contacts.email} LIKE ${pattern} ESCAPE '\\'`,
+                  sql`${contacts.designation} LIKE ${pattern} ESCAPE '\\'`,
+                  sql`${companies.name} LIKE ${pattern} ESCAPE '\\'`,
+                ),
+              )
+            : eq(contacts.createdBy, params.createdBy),
+        );
 
       response.isSuccess = true;
       response.message = "Contacts fetched successfully";

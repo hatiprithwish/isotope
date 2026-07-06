@@ -32,13 +32,6 @@ export const companyStatusIntToLabel: Record<CompanyStatusIntEnum, CompanyStatus
   [CompanyStatusIntEnum.Offer]: CompanyStatusLabelEnum.Offer,
 };
 
-export const companyFitBandIntToLabel: Record<CompanyFitBandIntEnum, CompanyFitBandLabelEnum> = {
-  [CompanyFitBandIntEnum.StrongFit]: CompanyFitBandLabelEnum.StrongFit,
-  [CompanyFitBandIntEnum.ConditionalFit]: CompanyFitBandLabelEnum.ConditionalFit,
-  [CompanyFitBandIntEnum.WeakFit]: CompanyFitBandLabelEnum.WeakFit,
-  [CompanyFitBandIntEnum.Disqualified]: CompanyFitBandLabelEnum.Disqualified,
-};
-
 export enum CompanyFitBandIntEnum {
   StrongFit = 1,
   ConditionalFit = 2,
@@ -54,6 +47,13 @@ export enum CompanyFitBandLabelEnum {
   Disqualified = "Disqualified",
 }
 export const ZCompanyFitBandLabelEnum = z.enum(CompanyFitBandLabelEnum);
+
+export const companyFitBandIntToLabel: Record<CompanyFitBandIntEnum, CompanyFitBandLabelEnum> = {
+  [CompanyFitBandIntEnum.StrongFit]: CompanyFitBandLabelEnum.StrongFit,
+  [CompanyFitBandIntEnum.ConditionalFit]: CompanyFitBandLabelEnum.ConditionalFit,
+  [CompanyFitBandIntEnum.WeakFit]: CompanyFitBandLabelEnum.WeakFit,
+  [CompanyFitBandIntEnum.Disqualified]: CompanyFitBandLabelEnum.Disqualified,
+};
 
 export const ZCompanyBase = z.object({
   name: z.string(),

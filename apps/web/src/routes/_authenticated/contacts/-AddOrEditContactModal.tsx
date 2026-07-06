@@ -34,7 +34,7 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
 
-  const { data: companiesData } = useQuery(CompaniesQueries.list(getToken));
+  const { data: companiesData } = useQuery(CompaniesQueries.list({}, getToken));
   const companies = companiesData?.companies ?? [];
 
   const isPending = mode === "add" ? createContact.isPending : updateContact.isPending;

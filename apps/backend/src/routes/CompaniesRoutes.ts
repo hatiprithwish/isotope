@@ -39,14 +39,20 @@ CompaniesRoutes.delete(
   },
 );
 
-CompaniesRoutes.get("/", checkAuth, async (c) => {
-  const userId = c.get("clerkUserId");
+CompaniesRoutes.get(
+  "/",
+  checkAuth,
+  zValidator("query", Schemas.ZGetCompaniesApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { search } = c.req.valid("query");
 
-  const repo = new CompaniesRepo(c.env);
-  const response = await repo.getCompanies({ userId });
+    const repo = new CompaniesRepo(c.env);
+    const response = await repo.getCompanies({ userId, search });
 
-  return c.json(response, response.isSuccess ? 200 : 500);
-});
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
 
 CompaniesRoutes.get(
   "/:id",

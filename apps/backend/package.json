@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "pnpm build:api && pnpm build:processor",
-    "dev:api": "wrangler dev --env staging --config workers/api/wrangler.jsonc --experimental-observability",
-    "dev:processor": "wrangler dev --env staging --config workers/processor/wrangler.jsonc --experimental-observability",
+    "dev:api": "wrangler dev --env staging --config workers/api/wrangler.jsonc",
+    "dev:processor": "wrangler dev --env staging --config workers/processor/wrangler.jsonc",
     "build:api": "wrangler deploy --dry-run --config workers/api/wrangler.jsonc",
     "build:processor": "wrangler deploy --dry-run --config workers/processor/wrangler.jsonc",
     "deploy:api": "wrangler deploy --config workers/api/wrangler.jsonc",

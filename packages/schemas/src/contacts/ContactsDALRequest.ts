@@ -5,7 +5,7 @@ export type CreateContactDALRequest = ContactBase & Pick<Contact, "createdBy">;
 
 export type FindContactDALRequest = Pick<Contact, "id" | "createdBy">;
 
-export type GetContactsDALRequest = Pick<Contact, "createdBy">;
+export type GetContactsDALRequest = Pick<Contact, "createdBy"> & { search: string | null };
 
 export type GetContactsByCompanyDALRequest = Pick<Contact, "createdBy"> & { companyId: number };
 

@@ -12,7 +12,7 @@ interface Props {
 
 export default function CompanySelect({ value, onChange, error }: Props) {
   const { getToken } = useAuth();
-  const { data } = useQuery(CompaniesQueries.list(getToken));
+  const { data } = useQuery(CompaniesQueries.list({}, getToken));
   const companies = data?.companies ?? [];
 
   const [open, setOpen] = useState(false);

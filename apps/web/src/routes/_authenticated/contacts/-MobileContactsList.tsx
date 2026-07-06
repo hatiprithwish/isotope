@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MagnifyingGlassIcon, FunnelIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
@@ -5,9 +6,27 @@ import MobileContactRow from "./-MobileContactRow";
 
 interface Props {
   contacts: Schemas.Contact[];
+  isLoading: boolean;
+  isError: boolean;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
 }
 
-export function MobileContactsList({ contacts }: Props) {
+export function MobileContactsList({
+  contacts,
+  isLoading,
+  isError,
+  searchQuery,
+  onSearchChange,
+}: Props) {
+  const [mobileSearch, setMobileSearch] = useState(false);
+
+  function toggleSearch() {
+    setMobileSearch((s) => {
+      if (s) onSearchChange("");
+      return !s;
+    });
+  }
   const draftReady = contacts.filter((c) => c.status === 2);
   const inPipeline = contacts.filter((c) => c.status === 3);
   const other = contacts.filter((c) => c.status !== 2 && c.status !== 3);
@@ -29,16 +48,35 @@ export function MobileContactsList({ contacts }: Props) {
 
   return (
     <div className="flex flex-col h-full md:hidden overflow-hidden">
-      <header className="h-13 px-4 flex items-center gap-2 bg-background border-b border-border shrink-0">
-        <span className="flex-1 text-[17px] font-semibold text-foreground tracking-tight">
-          Contacts
-        </span>
-        <Button type="button" variant="ghost" size="icon">
-          <MagnifyingGlassIcon size={18} />
-        </Button>
-        <Button type="button" variant="ghost" size="icon">
-          <FunnelIcon size={18} />
-        </Button>
+      <header className="px-4 pt-4 pb-0 bg-background shrink-0">
+        <div className="flex items-center gap-2 h-9">
+          <span className="flex-1 text-[17px] font-semibold text-foreground tracking-tight">
+            Contacts
+          </span>
+          <Button type="button" variant="ghost" size="icon" onClick={toggleSearch}>
+            <MagnifyingGlassIcon size={18} />
+          </Button>
+          <Button type="button" variant="ghost" size="icon">
+            <FunnelIcon size={18} />
+          </Button>
+        </div>
+
+        {mobileSearch && (
+          <div className="relative mt-3">
+            <MagnifyingGlassIcon
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            />
+            <input
+              autoFocus
+              type="search"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search contacts…"
+              className="w-full h-9 pl-8 pr-3 rounded-lg bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+            />
+          </div>
+        )}
       </header>
 
       <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-border bg-background shrink-0 no-scrollbar">
@@ -71,11 +109,20 @@ export function MobileContactsList({ contacts }: Props) {
       </div>
 
       <div className="flex-1 overflow-y-auto bg-sidebar">
-        {contacts.length === 0 ? (
+        {isLoading && (
+          <div className="px-4 py-8 text-center text-(--text-secondary) text-sm">Loading…</div>
+        )}
+        {!isLoading && isError && (
           <div className="px-4 py-8 text-center text-(--text-secondary) text-sm">
-            No contacts yet.
+            Failed to load contacts.
           </div>
-        ) : (
+        )}
+        {!isLoading && !isError && contacts.length === 0 && (
+          <div className="px-4 py-8 text-center text-(--text-secondary) text-sm">
+            {searchQuery.trim() ? "No contacts match your search." : "No contacts yet."}
+          </div>
+        )}
+        {!isLoading && !isError && contacts.length > 0 && (
           <>
             {draftReady.length > 0 && (
               <>

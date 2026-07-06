@@ -5,19 +5,22 @@ import {
   TrashIcon,
   CheckSquareIcon,
   SquareIcon,
+  WarningIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { AppTable } from "@/components/app-table";
 import type { AppTableColumn } from "@/components/app-table";
 import type * as Schemas from "@app/schemas";
 import { StatusBadge } from "./-StatusBadge";
-import { ContactDetailPanel } from "./-DesktopPanel";
+import { CompanyDetailPanel } from "./-DesktopPanel";
+import { CompaniesFilterBar, applyFilters } from "./-CompaniesFilterBar";
+import type { StatusFilter, FitFilter } from "./-CompaniesFilterBar";
 
 interface Props {
-  contacts: Schemas.Contact[];
+  companies: Schemas.Company[];
   isLoading: boolean;
   isError: boolean;
-  selectedContact: Schemas.Contact | null;
+  selectedCompany: Schemas.Company | null;
   onOpenPanel: (id: number) => void;
   onClosePanel: () => void;
   onAddClick: () => void;
@@ -27,11 +30,11 @@ interface Props {
   onSearchChange: (value: string) => void;
 }
 
-export function DesktopContactsTable({
-  contacts,
+export function DesktopCompaniesTable({
+  companies,
   isLoading,
   isError,
-  selectedContact,
+  selectedCompany,
   onOpenPanel,
   onClosePanel,
   onAddClick,
@@ -40,9 +43,12 @@ export function DesktopContactsTable({
   searchQuery,
   onSearchChange,
 }: Props) {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [fitFilter, setFitFilter] = useState<FitFilter>("all");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  const allPageIds = contacts.map((c) => c.id);
+  const filtered = applyFilters(companies, statusFilter, fitFilter);
+  const allPageIds = filtered.map((c) => c.id);
   const allSelected = allPageIds.length > 0 && allPageIds.every((id) => selectedIds.has(id));
   const someSelected = selectedIds.size > 0;
 
@@ -72,7 +78,7 @@ export function DesktopContactsTable({
     clearSelection();
   }
 
-  const COLUMNS: AppTableColumn<Schemas.Contact>[] = [
+  const COLUMNS: AppTableColumn<Schemas.Company>[] = [
     {
       key: "_select",
       header: "",
@@ -99,37 +105,48 @@ export function DesktopContactsTable({
       header: "Name",
       cell: (row) => (
         <div>
-          <div className="text-[13px] font-medium text-foreground truncate">{row.name}</div>
-          <div className="text-[11px] text-(--text-secondary) mt-0.5 truncate">
-            {row.designation}
+          <div className="flex items-center gap-1.5 text-[13px] font-medium text-foreground">
+            {row.name}
+            {row.isEthicsCompliant === false && (
+              <WarningIcon size={13} className="text-(--warning)" />
+            )}
           </div>
+          <div className="text-[11px] text-(--text-secondary) mt-0.5">{row.website}</div>
         </div>
       ),
     },
     {
-      key: "companyName",
-      header: "Company",
+      key: "industry",
+      header: "Industry",
       cell: (row) => (
-        <span className="text-[12px] font-medium text-(--text-secondary) truncate">
-          {row.companyName ?? "—"}
-        </span>
+        <div>
+          <div className="text-[12px] text-(--text-secondary)">{row.industry}</div>
+          <div className="text-[11px] text-(--text-secondary) mt-0.5 opacity-70">{row.size}</div>
+        </div>
       ),
     },
     {
-      key: "email",
-      header: "Email",
-      cell: (row) => (
-        <span className="text-[12px] text-(--text-secondary) truncate">{row.email ?? "—"}</span>
-      ),
+      key: "fitBand",
+      header: "Fit",
+      cell: (row) => (row.fitBand ? <StatusBadge fit={row.fitBand} sm /> : null),
     },
     {
-      key: "linkedinUrl",
-      header: "LinkedIn",
-      cell: (row) => (
-        <span className="text-[12px] text-(--text-secondary) truncate">
-          {row.linkedinUrl ?? "—"}
-        </span>
-      ),
+      key: "weightedScore",
+      header: "Score",
+      cell: (row) => {
+        const score = row.weightedScore ?? 0;
+        const max = 135;
+        const pct = max > 0 ? Math.round((score / max) * 100) : 0;
+        return (
+          <div>
+            <div className="text-[13px] font-semibold text-primary">
+              {score}
+              <span className="text-(--text-secondary) font-normal">/{max}</span>
+            </div>
+            <div className="text-[11px] text-(--text-secondary) mt-0.5">{pct}%</div>
+          </div>
+        );
+      },
     },
     {
       key: "status",
@@ -137,11 +154,15 @@ export function DesktopContactsTable({
       cell: (row) => (row.status ? <StatusBadge status={row.status} sm /> : null),
     },
     {
-      key: "nextTouchDueAt",
-      header: "Next",
+      key: "updatedAt",
+      header: "Updated",
       cell: (row) => (
         <span className="text-[11px] text-(--text-secondary)">
-          {row.nextTouchDueAt ? new Date(row.nextTouchDueAt).toLocaleDateString() : "—"}
+          {row.updatedAt
+            ? new Date(row.updatedAt).toLocaleDateString()
+            : row.createdAt
+              ? new Date(row.createdAt).toLocaleDateString()
+              : "—"}
         </span>
       ),
     },
@@ -184,6 +205,19 @@ export function DesktopContactsTable({
           <SquareIcon size={16} />
         )}
       </button>
+      <CompaniesFilterBar
+        companies={companies}
+        statusFilter={statusFilter}
+        fitFilter={fitFilter}
+        filteredCount={filtered.length}
+        onStatusChange={setStatusFilter}
+        onFitChange={setFitFilter}
+        onClear={() => {
+          setStatusFilter("all");
+          setFitFilter("all");
+        }}
+        inline
+      />
       <div className="relative w-56">
         <MagnifyingGlassIcon
           size={14}
@@ -193,7 +227,7 @@ export function DesktopContactsTable({
           type="search"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search contacts…"
+          placeholder="Search companies…"
           className="w-full h-6.5 pl-8 pr-3 rounded-md bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
         />
       </div>
@@ -202,32 +236,34 @@ export function DesktopContactsTable({
 
   return (
     <div className="hidden md:flex h-full overflow-hidden relative">
-      <div className="flex flex-col overflow-hidden flex-1">
+      <div className="flex flex-col overflow-hidden border-r border-border flex-1">
         <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
-          <span className="text-base font-semibold text-foreground tracking-tight">Contacts</span>
+          <span className="text-base font-semibold text-foreground tracking-tight">Companies</span>
           <div className="ml-auto flex gap-2 items-center">
             <Button type="button" variant="outline" size="lg" onClick={onAddClick}>
               <PlusIcon size={13} />
-              Add manually
+              Add company
             </Button>
           </div>
         </header>
 
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <AppTable<Schemas.Contact>
+          <AppTable<Schemas.Company>
             columns={COLUMNS}
-            data={contacts}
+            data={filtered}
             keyExtractor={(row) => String(row.id)}
             isLoading={isLoading}
             skeletonRows={5}
-            errorMsg={isError ? "Failed to load contacts. Please refresh." : undefined}
+            errorMsg={isError ? "Failed to load companies. Please refresh." : undefined}
             onRowClick={(row) =>
-              selectedContact?.id === row.id ? onClosePanel() : onOpenPanel(row.id)
+              selectedCompany?.id === row.id ? onClosePanel() : onOpenPanel(row.id)
             }
             getRowClassName={(row) =>
-              row.id === selectedContact?.id ? "bg-sidebar" : "hover:bg-(--surface-raised)"
+              row.id === selectedCompany?.id ? "bg-sidebar" : "hover:bg-(--surface-raised)"
             }
-            emptyState="No contacts yet."
+            emptyState={
+              companies.length === 0 ? "No companies yet." : "No companies match this filter."
+            }
             stickyHeader
             flush
             toolbarLeft={toolbarLeft}
@@ -235,9 +271,9 @@ export function DesktopContactsTable({
         </div>
       </div>
 
-      <ContactDetailPanel
-        contactId={selectedContact?.id ?? null}
-        contact={selectedContact}
+      <CompanyDetailPanel
+        companyId={selectedCompany?.id ?? null}
+        company={selectedCompany}
         onClose={onClosePanel}
       />
     </div>

@@ -24,8 +24,8 @@ export default class ContactsRepo {
     return await this.dal.getContactDetails({ createdBy: params.userId, id: params.id });
   }
 
-  async getContacts(params: { userId: string }) {
-    return await this.dal.getContacts({ createdBy: params.userId });
+  async getContacts(params: Schemas.GetContactsApiRequest & { userId: string }) {
+    return await this.dal.getContacts({ createdBy: params.userId, search: params.search ?? null });
   }
 
   async getContactsByCompany(params: { userId: string; companyId: number }) {

@@ -19,8 +19,11 @@ export default class CompaniesRepo {
     return await this.dal.getCompanyDetails({ createdBy: params.userId, id: params.id });
   }
 
-  async getCompanies(params: { userId: string }) {
-    return await this.dal.getCompanies({ createdBy: params.userId });
+  async getCompanies(params: Schemas.GetCompaniesApiRequest & { userId: string }) {
+    return await this.dal.getCompanies({
+      createdBy: params.userId,
+      search: params.search ?? null,
+    });
   }
 
   async updateCompany(params: Schemas.UpdateCompanyApiRequest & { userId: string; id: number }) {

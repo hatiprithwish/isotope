@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { ZCompanyBase } from "./CompaniesCommon";
 
+export const ZGetCompaniesApiRequest = z.object({
+  search: z.string().nullable().optional(),
+});
+export type GetCompaniesApiRequest = z.infer<typeof ZGetCompaniesApiRequest>;
+
 export const ZCreateCompanyApiRequest = z.object({
   company: ZCompanyBase,
 });

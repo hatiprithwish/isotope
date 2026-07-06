@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, eq, inArray, like, sql } from "drizzle-orm";
+import { and, eq, inArray, like, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { companies, users } from "@/db/tables";
@@ -148,6 +148,9 @@ export default class CompaniesDAL {
     const response: Schemas.GetCompaniesApiResponse = { isSuccess: false };
 
     try {
+      const term = params.search?.trim();
+      const pattern = term ? `%${Utility.escapeLikePattern(term)}%` : undefined;
+
       const companiesResponse = await this.db
         .select({
           id: companies.id,
@@ -181,7 +184,18 @@ export default class CompaniesDAL {
         })
         .from(companies)
         .innerJoin(users, eq(companies.createdBy, users.clerkId))
-        .where(eq(companies.createdBy, params.createdBy));
+        .where(
+          pattern
+            ? and(
+                eq(companies.createdBy, params.createdBy),
+                or(
+                  sql`${companies.name} LIKE ${pattern} ESCAPE '\\'`,
+                  sql`${companies.industry} LIKE ${pattern} ESCAPE '\\'`,
+                  sql`${companies.location} LIKE ${pattern} ESCAPE '\\'`,
+                ),
+              )
+            : eq(companies.createdBy, params.createdBy),
+        );
 
       response.isSuccess = true;
       response.message = "Companies fetched successfully";

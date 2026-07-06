@@ -31,10 +31,30 @@ function applyMobileFilter(companies: Schemas.Company[], filter: MobileFilter): 
 
 interface Props {
   companies: Schemas.Company[];
+  isLoading: boolean;
+  isError: boolean;
   onAddClick: () => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
 }
 
-export function MobileCompaniesList({ companies, onAddClick }: Props) {
+export function MobileCompaniesList({
+  companies,
+  isLoading,
+  isError,
+  onAddClick,
+  searchQuery,
+  onSearchChange,
+}: Props) {
+  const [mobileSearch, setMobileSearch] = useState(false);
+
+  function toggleSearch() {
+    setMobileSearch((s) => {
+      if (s) onSearchChange("");
+      return !s;
+    });
+  }
+
   const chips: { label: string; filter: MobileFilter }[] = [
     { label: "All", filter: "all" },
     { label: "Needs review", filter: "needs_review" },
@@ -52,13 +72,32 @@ export function MobileCompaniesList({ companies, onAddClick }: Props) {
 
   return (
     <div className="flex flex-col h-full md:hidden overflow-hidden">
-      <header className="h-13 px-4 flex items-center gap-2 bg-background border-b border-border shrink-0">
-        <span className="flex-1 text-[17px] font-semibold text-foreground tracking-tight">
-          Companies
-        </span>
-        <Button type="button" variant="ghost" size="icon">
-          <MagnifyingGlassIcon size={18} />
-        </Button>
+      <header className="px-4 pt-4 pb-0 bg-background shrink-0">
+        <div className="flex items-center gap-2 h-9">
+          <span className="flex-1 text-[17px] font-semibold text-foreground tracking-tight">
+            Companies
+          </span>
+          <Button type="button" variant="ghost" size="icon" onClick={toggleSearch}>
+            <MagnifyingGlassIcon size={18} />
+          </Button>
+        </div>
+
+        {mobileSearch && (
+          <div className="relative mt-3">
+            <MagnifyingGlassIcon
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            />
+            <input
+              autoFocus
+              type="search"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search companies…"
+              className="w-full h-9 pl-8 pr-3 rounded-lg bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+            />
+          </div>
+        )}
       </header>
 
       <button
@@ -106,11 +145,22 @@ export function MobileCompaniesList({ companies, onAddClick }: Props) {
       </div>
 
       <div className="flex-1 overflow-y-auto bg-sidebar">
-        {filtered.length === 0 ? (
+        {isLoading && (
+          <div className="px-4 py-8 text-center text-(--text-secondary) text-sm">Loading…</div>
+        )}
+        {!isLoading && isError && (
           <div className="px-4 py-8 text-center text-(--text-secondary) text-sm">
-            No companies match this filter.
+            Failed to load companies.
           </div>
-        ) : (
+        )}
+        {!isLoading && !isError && filtered.length === 0 && (
+          <div className="px-4 py-8 text-center text-(--text-secondary) text-sm">
+            {searchQuery.trim()
+              ? "No companies match your search."
+              : "No companies match this filter."}
+          </div>
+        )}
+        {!isLoading && !isError && filtered.length > 0 && (
           <>
             {needsReview.length > 0 && (
               <>
