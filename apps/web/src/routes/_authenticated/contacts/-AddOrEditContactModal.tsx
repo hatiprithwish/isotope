@@ -1,12 +1,10 @@
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { XIcon } from "@phosphor-icons/react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/tanstack-react-start";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
+import CompanySelect from "@/shared/fields/CompanySelect";
 import { useCreateContact, useUpdateContact } from "./-data";
-import { CompaniesQueries } from "../companies/-data";
 import { ContactStatusIntEnum, ContactSourceIntEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
 
@@ -30,12 +28,8 @@ const inputCls =
 const labelCls = "text-[12px] font-semibold text-(--text-secondary)";
 
 export default function AddOrEditContactModal({ mode, contact, onClose }: Props) {
-  const { getToken } = useAuth();
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
-
-  const { data: companiesData } = useQuery(CompaniesQueries.list({}, getToken));
-  const companies = companiesData?.companies ?? [];
 
   const isPending = mode === "add" ? createContact.isPending : updateContact.isPending;
 
@@ -134,22 +128,12 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
                   <FieldLabel htmlFor={field.name} className={labelCls}>
                     Company <span className="text-destructive">*</span>
                   </FieldLabel>
-                  <select
-                    id={field.name}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                  <CompanySelect
+                    value={field.state.value ? Number(field.state.value) : null}
+                    onChange={(id) => field.handleChange(id != null ? String(id) : "")}
                     onBlur={field.handleBlur}
-                    aria-invalid={isInvalid}
-                    className={inputCls}
-                  >
-                    <option value="">Select company…</option>
-                    {companies.map((co) => (
-                      <option key={co.id} value={co.id}>
-                        {co.name}
-                      </option>
-                    ))}
-                  </select>
-                  {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                    error={isInvalid ? field.state.meta.errors[0]?.message : undefined}
+                  />
                 </Field>
               );
             }}

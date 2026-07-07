@@ -7,10 +7,11 @@ import { CompaniesQueries } from "@/routes/_authenticated/companies/-data";
 interface Props {
   value: number | null;
   onChange: (companyId: number | null) => void;
+  onBlur?: () => void;
   error?: string;
 }
 
-export default function CompanySelect({ value, onChange, error }: Props) {
+export default function CompanySelect({ value, onChange, onBlur, error }: Props) {
   const { getToken } = useAuth();
   const { data } = useQuery(CompaniesQueries.list({}, getToken));
   const companies = data?.companies ?? [];
@@ -28,21 +29,24 @@ export default function CompanySelect({ value, onChange, error }: Props) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
         setSearch("");
+        onBlur?.();
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [onBlur]);
 
   function handleSelect(id: number) {
     onChange(id);
     setOpen(false);
     setSearch("");
+    onBlur?.();
   }
 
   function handleClear(e: React.MouseEvent) {
     e.stopPropagation();
     onChange(null);
+    onBlur?.();
   }
 
   return (

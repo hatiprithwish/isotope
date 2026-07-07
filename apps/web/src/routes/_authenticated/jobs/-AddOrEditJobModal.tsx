@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { XIcon } from "@phosphor-icons/react";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
-import CompanySelect from "./-CompanySelect";
+import CompanySelect from "@/shared/fields/CompanySelect";
 import { useCreateJob, useUpdateJob } from "./-data";
 import type * as Schemas from "@app/schemas";
 
