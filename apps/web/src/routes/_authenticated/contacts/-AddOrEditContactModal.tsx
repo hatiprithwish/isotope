@@ -1,9 +1,11 @@
+import { useRef } from "react";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { XIcon } from "@phosphor-icons/react";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import CompanySelect from "@/shared/fields/CompanySelect";
+import Utilities from "@/utils";
 import { useCreateContact, useUpdateContact } from "./-data";
 import { ContactStatusIntEnum, ContactSourceIntEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
@@ -11,6 +13,35 @@ import type * as Schemas from "@app/schemas";
 type AddMode = { mode: "add"; contact?: never };
 type EditMode = { mode: "edit"; contact: Schemas.Contact };
 type Props = (AddMode | EditMode) & { onClose: () => void };
+
+const LAST_CONTACT_DEFAULTS_KEY = "isotope:lastContactDefaults";
+
+interface LastContactDefaults {
+  companyId: string;
+  designation: string;
+}
+
+function readLastContactDefaults(): LastContactDefaults {
+  try {
+    const raw = localStorage.getItem(LAST_CONTACT_DEFAULTS_KEY);
+    if (!raw) return { companyId: "", designation: "" };
+    const parsed = JSON.parse(raw) as Partial<LastContactDefaults>;
+    return {
+      companyId: parsed.companyId ?? "",
+      designation: parsed.designation ?? "",
+    };
+  } catch {
+    return { companyId: "", designation: "" };
+  }
+}
+
+function writeLastContactDefaults(defaults: LastContactDefaults): void {
+  try {
+    localStorage.setItem(LAST_CONTACT_DEFAULTS_KEY, JSON.stringify(defaults));
+  } catch {
+    // localStorage unavailable (e.g. private browsing) — safe to ignore
+  }
+}
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required."),
@@ -32,12 +63,16 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
   const updateContact = useUpdateContact();
 
   const isPending = mode === "add" ? createContact.isPending : updateContact.isPending;
+  const lastAutofilledName = useRef("");
+
+  const lastDefaults = mode === "add" ? readLastContactDefaults() : null;
 
   const form = useForm({
     defaultValues: {
       name: contact?.name ?? "",
-      companyId: contact?.companyId != null ? String(contact.companyId) : "",
-      designation: contact?.designation ?? "",
+      companyId:
+        contact?.companyId != null ? String(contact.companyId) : (lastDefaults?.companyId ?? ""),
+      designation: contact?.designation ?? lastDefaults?.designation ?? "",
       email: contact?.email ?? "",
       linkedinUrl: contact?.linkedinUrl ?? "",
     },
@@ -62,13 +97,32 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
               source: ContactSourceIntEnum.Manual,
             },
           },
-          { onSuccess: onClose },
+          {
+            onSuccess: () => {
+              writeLastContactDefaults({
+                companyId: value.companyId,
+                designation: value.designation.trim(),
+              });
+              onClose();
+            },
+          },
         );
       } else {
         updateContact.mutate({ id: contact.id, body: { contact: fields } }, { onSuccess: onClose });
       }
     },
   });
+
+  const maybeAutofillName = (email: string, linkedinUrl: string) => {
+    const currentName = form.getFieldValue("name").trim();
+    if (currentName && currentName !== lastAutofilledName.current) return;
+
+    const guess = Utilities.guessNameFromEmailOrLinkedin(email, linkedinUrl);
+    if (guess) {
+      lastAutofilledName.current = guess;
+      form.setFieldValue("name", guess);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -173,8 +227,14 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
                       id={field.name}
                       type="email"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
+                      onChange={(e) => {
+                        field.handleChange(e.target.value);
+                        maybeAutofillName(e.target.value, form.getFieldValue("linkedinUrl"));
+                      }}
+                      onBlur={(e) => {
+                        field.handleBlur();
+                        maybeAutofillName(e.target.value, form.getFieldValue("linkedinUrl"));
+                      }}
                       placeholder="priya@example.com"
                       aria-invalid={isInvalid}
                       className={inputCls}
@@ -195,8 +255,14 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
                     id={field.name}
                     type="text"
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
+                    onChange={(e) => {
+                      field.handleChange(e.target.value);
+                      maybeAutofillName(form.getFieldValue("email"), e.target.value);
+                    }}
+                    onBlur={(e) => {
+                      field.handleBlur();
+                      maybeAutofillName(form.getFieldValue("email"), e.target.value);
+                    }}
                     placeholder="linkedin.com/in/…"
                     className={inputCls}
                   />

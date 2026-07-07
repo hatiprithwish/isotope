@@ -20,4 +20,31 @@ export default class Utilities {
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
   }
+
+  private static titleCaseTokens(raw: string): string {
+    return raw
+      .split(/[._\-+]+/)
+      .filter(Boolean)
+      .filter((token) => !/^\d+$/.test(token))
+      .map((token) => token[0]?.toUpperCase() + token.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  static guessNameFromEmailOrLinkedin(email: string, linkedinUrl: string): string {
+    const localPart = email.trim().split("@")[0];
+    if (localPart) {
+      const guess = Utilities.titleCaseTokens(localPart);
+      if (guess) return guess;
+    }
+
+    const slugMatch = linkedinUrl.trim().match(/linkedin\.com\/in\/([^/?#]+)/i);
+    const slug = slugMatch?.[1];
+    if (slug) {
+      const withoutTrailingId = slug.replace(/-[a-z0-9]{6,}$/i, "");
+      const guess = Utilities.titleCaseTokens(withoutTrailingId);
+      if (guess) return guess;
+    }
+
+    return "";
+  }
 }
