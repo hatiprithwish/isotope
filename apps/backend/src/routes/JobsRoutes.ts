@@ -28,7 +28,7 @@ JobsRoutes.post("/", checkAuth, zValidator("json", Schemas.ZCreateJobApiRequest)
   const body = c.req.valid("json");
 
   const repo = new JobsRepo(c.env);
-  const response = await repo.createJob({ ...body, userId: clerkUserId });
+  const response = await repo.createJob({ job: body.job, userId: clerkUserId });
 
   return c.json(response, response.isSuccess ? 201 : 500);
 });
@@ -64,7 +64,11 @@ JobsRoutes.patch(
     const body = c.req.valid("json");
 
     const repo = new JobsRepo(c.env);
-    const response = await repo.updateJob({ ...body, id: Number(id), userId: clerkUserId });
+    const response = await repo.updateJob({
+      job: body.job,
+      id: Number(id),
+      userId: clerkUserId,
+    });
 
     return c.json(response, response.isSuccess ? 200 : 500);
   },

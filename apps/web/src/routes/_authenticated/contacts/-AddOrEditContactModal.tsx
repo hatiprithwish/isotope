@@ -7,7 +7,7 @@ import { Button } from "@/shadcn/ui/button";
 import CompanySelect from "@/shared/fields/CompanySelect";
 import Utilities from "@/utils";
 import { useCreateContact, useUpdateContact } from "./-data";
-import { ContactStatusIntEnum, ContactSourceIntEnum } from "@app/schemas";
+import { ContactStatusIntEnum, ContactStatusLabelEnum, ContactSourceIntEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
 
 type AddMode = { mode: "add"; contact?: never };
@@ -51,7 +51,19 @@ const formSchema = z.object({
     message: "Must be a valid email.",
   }),
   linkedinUrl: z.string(),
+  status: z.enum(ContactStatusIntEnum),
 });
+
+const STATUS_OPTIONS: { value: ContactStatusIntEnum; label: string }[] = [
+  { value: ContactStatusIntEnum.NotStarted, label: ContactStatusLabelEnum.NotStarted },
+  { value: ContactStatusIntEnum.DraftReady, label: ContactStatusLabelEnum.DraftReady },
+  { value: ContactStatusIntEnum.InPipeline, label: ContactStatusLabelEnum.InPipeline },
+  { value: ContactStatusIntEnum.Replied, label: ContactStatusLabelEnum.Replied },
+  { value: ContactStatusIntEnum.Closed, label: ContactStatusLabelEnum.Closed },
+  { value: ContactStatusIntEnum.Dead, label: ContactStatusLabelEnum.Dead },
+  { value: ContactStatusIntEnum.ReEngage, label: ContactStatusLabelEnum.ReEngage },
+  { value: ContactStatusIntEnum.Failed, label: ContactStatusLabelEnum.Failed },
+];
 
 const inputCls =
   "h-9 px-3 rounded-lg bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors w-full group-data-[invalid=true]/field:border-destructive";
@@ -75,6 +87,7 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
       designation: contact?.designation ?? lastDefaults?.designation ?? "",
       email: contact?.email ?? "",
       linkedinUrl: contact?.linkedinUrl ?? "",
+      status: contact?.status ?? ContactStatusIntEnum.NotStarted,
     },
     validators: {
       onSubmit: formSchema,
@@ -108,7 +121,10 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
           },
         );
       } else {
-        updateContact.mutate({ id: contact.id, body: { contact: fields } }, { onSuccess: onClose });
+        updateContact.mutate(
+          { id: contact.id, body: { contact: { ...fields, status: value.status } } },
+          { onSuccess: onClose },
+        );
       }
     },
   });
@@ -270,6 +286,34 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
               )}
             </form.Field>
           </div>
+
+          {/* Status */}
+          {mode === "edit" && (
+            <form.Field name="status">
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name} className={labelCls}>
+                    Status
+                  </FieldLabel>
+                  <select
+                    id={field.name}
+                    value={field.state.value}
+                    onChange={(e) =>
+                      field.handleChange(Number(e.target.value) as Schemas.ContactStatusIntEnum)
+                    }
+                    onBlur={field.handleBlur}
+                    className={inputCls}
+                  >
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
+            </form.Field>
+          )}
 
           {/* Actions */}
           <div className="flex gap-2 pt-1">

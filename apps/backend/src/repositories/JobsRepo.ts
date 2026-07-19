@@ -18,19 +18,19 @@ export default class JobsRepo {
       category: Schemas.LogCategory.Repo,
       action: Schemas.LogAction.CreateJob,
       message: "Creating job",
-      metadata: { userId: params.userId, title: params.title },
+      metadata: { userId: params.userId, title: params.job.title },
     });
 
     return await this.dal.createJob({
-      title: params.title,
-      status: params.status ?? Schemas.JobStatusIntEnum.NotStarted,
+      title: params.job.title,
+      status: params.job.status ?? Schemas.JobStatusIntEnum.NotStarted,
       type: Schemas.JobTypeIntEnum.Manual,
-      companyId: params.companyId ?? null,
-      url: params.url,
-      location: params.location ?? null,
-      salary: params.salary ?? null,
-      source: params.source ?? null,
-      description: params.description ?? null,
+      companyId: params.job.companyId ?? null,
+      url: params.job.url,
+      location: params.job.location ?? null,
+      salary: params.job.salary ?? null,
+      source: params.job.source ?? null,
+      description: params.job.description ?? null,
       skills: null,
       matchScore: null,
       createdBy: params.userId,
@@ -45,21 +45,22 @@ export default class JobsRepo {
       metadata: { userId: params.userId, id: params.id },
     });
 
+    const { job } = params;
     const dalParams: Schemas.UpdateJobDALRequest = {
       id: params.id,
       createdBy: params.userId,
     };
-    if (params.title !== undefined) dalParams.title = params.title;
-    if (params.companyId !== undefined) dalParams.companyId = params.companyId ?? null;
-    if (params.url !== undefined) dalParams.url = params.url;
-    if (params.description !== undefined) dalParams.description = params.description ?? null;
-    if (params.location !== undefined) dalParams.location = params.location ?? null;
-    if (params.salary !== undefined) dalParams.salary = params.salary ?? null;
-    if (params.source !== undefined) dalParams.source = params.source ?? null;
-    if (params.status !== undefined) dalParams.status = params.status;
-    if (params.type !== undefined) dalParams.type = params.type;
-    if (params.skills !== undefined) dalParams.skills = params.skills ?? null;
-    if (params.matchScore !== undefined) dalParams.matchScore = params.matchScore ?? null;
+    if (job.title !== undefined) dalParams.title = job.title;
+    if (job.companyId !== undefined) dalParams.companyId = job.companyId ?? null;
+    if (job.url !== undefined) dalParams.url = job.url ?? null;
+    if (job.description !== undefined) dalParams.description = job.description ?? null;
+    if (job.location !== undefined) dalParams.location = job.location ?? null;
+    if (job.salary !== undefined) dalParams.salary = job.salary ?? null;
+    if (job.source !== undefined) dalParams.source = job.source ?? null;
+    if (job.status !== undefined) dalParams.status = job.status;
+    if (job.type !== undefined) dalParams.type = job.type;
+    if (job.skills !== undefined) dalParams.skills = job.skills ?? null;
+    if (job.matchScore !== undefined) dalParams.matchScore = job.matchScore ?? null;
 
     return await this.dal.updateJob(dalParams);
   }

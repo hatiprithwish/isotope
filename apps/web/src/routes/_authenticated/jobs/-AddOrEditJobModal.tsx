@@ -6,6 +6,7 @@ import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import CompanySelect from "@/shared/fields/CompanySelect";
 import { useCreateJob, useUpdateJob } from "./-data";
+import { JobStatusIntEnum, JobStatusLabelEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
 
 type AddMode = { mode: "add"; job?: never };
@@ -30,7 +31,19 @@ const formSchema = z.object({
   location: z.string(),
   salary: z.string(),
   source: z.string(),
+  status: z.enum(JobStatusIntEnum),
 });
+
+const STATUS_OPTIONS: { value: JobStatusIntEnum; label: string }[] = [
+  { value: JobStatusIntEnum.NotStarted, label: JobStatusLabelEnum.NotStarted },
+  { value: JobStatusIntEnum.WaitingForHuman, label: JobStatusLabelEnum.WaitingForHuman },
+  { value: JobStatusIntEnum.Accepted, label: JobStatusLabelEnum.Accepted },
+  { value: JobStatusIntEnum.Applied, label: JobStatusLabelEnum.Applied },
+  { value: JobStatusIntEnum.CompanyAdded, label: JobStatusLabelEnum.CompanyAdded },
+  { value: JobStatusIntEnum.Interviewing, label: JobStatusLabelEnum.Interviewing },
+  { value: JobStatusIntEnum.Offer, label: JobStatusLabelEnum.Offer },
+  { value: JobStatusIntEnum.Rejected, label: JobStatusLabelEnum.Rejected },
+];
 
 const inputCls =
   "w-full h-9 px-3 rounded-lg bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors group-data-[invalid=true]/field:border-destructive";
@@ -51,21 +64,23 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
       location: job?.location ?? "",
       salary: job?.salary ?? "",
       source: job?.source ?? "",
+      status: job?.status ?? JobStatusIntEnum.NotStarted,
     },
     validators: { onSubmit: formSchema },
     onSubmit: ({ value }) => {
       if (mode === "edit") {
-        const body: Schemas.UpdateJobApiRequest = {};
-        if (value.title) body.title = value.title;
-        if (value.url) body.url = value.url;
-        body.companyId = value.companyId;
-        body.description = value.description || null;
-        body.location = value.location || null;
-        body.salary = value.salary || null;
-        body.source = value.source || null;
+        const jobFields: Schemas.UpdateJobApiRequest["job"] = {};
+        if (value.title) jobFields.title = value.title;
+        if (value.url) jobFields.url = value.url;
+        jobFields.companyId = value.companyId;
+        jobFields.description = value.description || null;
+        jobFields.location = value.location || null;
+        jobFields.salary = value.salary || null;
+        jobFields.source = value.source || null;
+        jobFields.status = value.status;
 
         updateJob.mutate(
-          { id: job.id, body },
+          { id: job.id, body: { job: jobFields } },
           {
             onSuccess: () => {
               toast.success("Job updated.");
@@ -75,13 +90,15 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
         );
       } else {
         const body: Schemas.CreateJobApiRequest = {
-          title: value.title,
-          url: value.url,
-          companyId: value.companyId,
-          description: value.description || null,
-          location: value.location || null,
-          salary: value.salary || null,
-          source: value.source || null,
+          job: {
+            title: value.title,
+            url: value.url,
+            companyId: value.companyId,
+            description: value.description || null,
+            location: value.location || null,
+            salary: value.salary || null,
+            source: value.source || null,
+          },
         };
         createJob.mutate(body, {
           onSuccess: () => {
@@ -181,6 +198,34 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
                 </Field>
               )}
             </form.Field>
+
+            {/* Status */}
+            {mode === "edit" && (
+              <form.Field name="status">
+                {(field) => (
+                  <Field>
+                    <FieldLabel htmlFor={field.name} className={labelCls}>
+                      Status
+                    </FieldLabel>
+                    <select
+                      id={field.name}
+                      value={field.state.value}
+                      onChange={(e) =>
+                        field.handleChange(Number(e.target.value) as Schemas.JobStatusIntEnum)
+                      }
+                      onBlur={field.handleBlur}
+                      className={inputCls}
+                    >
+                      {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+              </form.Field>
+            )}
 
             {/* Location + Salary */}
             <div className="flex gap-3">

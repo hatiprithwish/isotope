@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ZJobStatusIntEnum, ZJobTypeIntEnum, ZJobSortColumn } from "./JobsCommon";
+import { ZJobStatusIntEnum, ZJobBase, ZJobSortColumn } from "./JobsCommon";
 import { ZSortDirection } from "../common";
 
 export const ZGetJobsApiRequest = z.object({
@@ -12,30 +12,16 @@ export const ZGetJobsApiRequest = z.object({
 export type GetJobsApiRequest = z.infer<typeof ZGetJobsApiRequest>;
 
 export const ZCreateJobApiRequest = z.object({
-  title: z.string().min(1),
-  companyId: z.number().nullable().optional(),
-  url: z.url(),
-  description: z.string().nullable().optional(),
-  location: z.string().nullable().optional(),
-  salary: z.string().nullable().optional(),
-  source: z.string().nullable().optional(),
-  status: ZJobStatusIntEnum.optional(),
-  type: ZJobTypeIntEnum.optional(),
+  job: ZJobBase.omit({ status: true, url: true, type: true }).extend({
+    status: ZJobStatusIntEnum.optional(),
+    type: ZJobBase.shape.type.optional(),
+    url: z.url(),
+  }),
 });
 export type CreateJobApiRequest = z.infer<typeof ZCreateJobApiRequest>;
 
 export const ZUpdateJobApiRequest = z.object({
-  title: z.string().min(1).optional(),
-  companyId: z.number().nullable().optional(),
-  url: z.url().optional(),
-  description: z.string().nullable().optional(),
-  location: z.string().nullable().optional(),
-  salary: z.string().nullable().optional(),
-  source: z.string().nullable().optional(),
-  status: ZJobStatusIntEnum.optional(),
-  type: ZJobTypeIntEnum.optional(),
-  skills: z.array(z.string()).nullable().optional(),
-  matchScore: z.number().nullable().optional(),
+  job: ZJobBase.omit({ url: true }).partial().extend({ url: z.url().nullable().optional() }),
 });
 export type UpdateJobApiRequest = z.infer<typeof ZUpdateJobApiRequest>;
 
