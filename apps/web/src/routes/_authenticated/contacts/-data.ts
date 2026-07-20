@@ -7,19 +7,28 @@ import { toast } from "sonner";
 export class ContactsQueries {
   static readonly keys = {
     all: () => ["contacts"] as const,
-    list: (search: string) => ["contacts", "list", search] as const,
+    list: (search: string, pageNo: number, pageSize: number) =>
+      ["contacts", "list", search, pageNo, pageSize] as const,
     detail: (id: number) => ["contacts", id] as const,
     history: (id: number) => ["contacts", id, "history"] as const,
   };
 
   static list(params: Schemas.GetContactsApiRequest, getToken: () => Promise<string | null>) {
+    const pageNo = params.pageNo ?? 1;
+    const pageSize = params.pageSize ?? 20;
+
     return queryOptions({
-      queryKey: ContactsQueries.keys.list(params.search ?? ""),
+      queryKey: ContactsQueries.keys.list(params.search ?? "", pageNo, pageSize),
       queryFn: ({ signal }) => {
-        const query = params.search ? `?search=${encodeURIComponent(params.search)}` : "";
-        return apiClient<Schemas.GetContactsApiResponse>(`/contacts${query}`, getToken, {
-          signal,
-        });
+        const query = new URLSearchParams();
+        if (params.search) query.set("search", params.search);
+        query.set("pageNo", String(pageNo));
+        query.set("pageSize", String(pageSize));
+        return apiClient<Schemas.GetContactsApiResponse>(
+          `/contacts?${query.toString()}`,
+          getToken,
+          { signal },
+        );
       },
     });
   }
@@ -116,6 +125,25 @@ export function useBulkDeleteContacts() {
     },
     onError: () => {
       toast.error("Failed to delete contacts. Please try again.");
+    },
+  });
+}
+
+export function useBulkUpdateContacts() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Schemas.BulkUpdateContactsApiRequest) =>
+      apiClient<Schemas.BulkUpdateContactsApiResponse>("/contacts/bulk", getToken, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.all() });
+    },
+    onError: () => {
+      toast.error("Failed to update selected contacts. Please try again.");
     },
   });
 }

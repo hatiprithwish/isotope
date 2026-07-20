@@ -11,6 +11,7 @@ export interface GetContactApiResponse extends ApiResponse {
 
 export interface GetContactsApiResponse extends ApiResponse {
   contacts?: Contact[];
+  totalCount?: number;
 }
 
 export interface UpdateContactApiResponse extends ApiResponse {
@@ -37,4 +38,8 @@ export interface GetLastSentHistoryApiResponse extends ApiResponse {
 
 export interface BulkDeleteContactsApiResponse extends ApiResponse {
   deletedCount?: number;
+}
+
+export interface BulkUpdateContactsApiResponse extends ApiResponse {
+  updatedCount?: number;
 }

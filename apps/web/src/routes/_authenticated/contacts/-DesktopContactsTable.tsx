@@ -7,11 +7,22 @@ import {
   SquareIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
-import { AppTable } from "@/components/app-table";
-import type { AppTableColumn } from "@/components/app-table";
+import { AppTable, AppTablePagination } from "@/components/app-table";
+import type { AppTableColumn, AppTablePaginationProps } from "@/components/app-table";
 import type * as Schemas from "@app/schemas";
+import { ContactSourceIntEnum, ContactSourceLabelEnum } from "@app/schemas";
 import { StatusBadge } from "./-StatusBadge";
 import { ContactDetailPanel } from "./-DesktopPanel";
+import { STATUS_OPTIONS } from "./-AddOrEditContactModal";
+import CompanySelect from "@/shared/fields/CompanySelect";
+import JobSelect from "@/shared/fields/JobSelect";
+
+type BulkField = "" | "status" | "companyId" | "source" | "jobId";
+
+const SOURCE_OPTIONS: { value: ContactSourceIntEnum; label: string }[] = [
+  { value: ContactSourceIntEnum.Apollo, label: ContactSourceLabelEnum.Apollo },
+  { value: ContactSourceIntEnum.Manual, label: ContactSourceLabelEnum.Manual },
+];
 
 interface Props {
   contacts: Schemas.Contact[];
@@ -21,10 +32,15 @@ interface Props {
   onOpenPanel: (id: number) => void;
   onClosePanel: () => void;
   onAddClick: () => void;
-  onBulkDelete: (ids: number[]) => void;
+  onBulkDelete: (ids: number[]) => Promise<unknown>;
+  onBulkUpdate: (
+    ids: number[],
+    updates: Schemas.BulkUpdateContactsApiRequest["updates"],
+  ) => Promise<unknown>;
   isBulkPending: boolean;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  pagination: AppTablePaginationProps;
 }
 
 export function DesktopContactsTable({
@@ -36,11 +52,15 @@ export function DesktopContactsTable({
   onClosePanel,
   onAddClick,
   onBulkDelete,
+  onBulkUpdate,
   isBulkPending,
   searchQuery,
   onSearchChange,
+  pagination,
 }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkField, setBulkField] = useState<BulkField>("");
+  const [bulkValue, setBulkValue] = useState<number | null>(null);
 
   const allPageIds = contacts.map((c) => c.id);
   const allSelected = allPageIds.length > 0 && allPageIds.every((id) => selectedIds.has(id));
@@ -65,11 +85,33 @@ export function DesktopContactsTable({
 
   function clearSelection() {
     setSelectedIds(new Set());
+    setBulkField("");
+    setBulkValue(null);
   }
 
-  function handleBulkDelete() {
-    onBulkDelete(Array.from(selectedIds));
-    clearSelection();
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds);
+    try {
+      await onBulkDelete(ids);
+      clearSelection();
+    } catch {
+      // error toast already shown by the mutation's onError — keep selection so the user can retry
+    }
+  }
+
+  function handleBulkFieldChange(field: BulkField) {
+    setBulkField(field);
+    setBulkValue(null);
+  }
+
+  async function handleBulkApply() {
+    if (!bulkField || bulkValue == null) return;
+    try {
+      await onBulkUpdate(Array.from(selectedIds), { [bulkField]: bulkValue });
+      clearSelection();
+    } catch {
+      // error toast already shown by the mutation's onError — keep selection so the user can retry
+    }
   }
 
   const COLUMNS: AppTableColumn<Schemas.Contact>[] = [
@@ -150,12 +192,79 @@ export function DesktopContactsTable({
   const toolbarLeft = someSelected ? (
     <div className="flex items-center gap-2 flex-wrap">
       <span className="text-[12px] font-medium text-foreground">{selectedIds.size} selected</span>
+      <div className="flex items-center gap-1.5">
+        <select
+          value={bulkField}
+          onChange={(e) => handleBulkFieldChange(e.target.value as BulkField)}
+          className="h-6.5 px-2 rounded-md border border-border bg-background text-[12px] text-foreground focus:outline-none focus:border-primary"
+        >
+          <option value="">Bulk edit…</option>
+          <option value="status">Status</option>
+          <option value="companyId">Company</option>
+          <option value="source">Source</option>
+          <option value="jobId">Job</option>
+        </select>
+
+        {bulkField === "status" && (
+          <select
+            value={bulkValue ?? ""}
+            onChange={(e) => setBulkValue(e.target.value ? Number(e.target.value) : null)}
+            className="h-6.5 px-2 rounded-md border border-border bg-background text-[12px] text-foreground focus:outline-none focus:border-primary"
+          >
+            <option value="">Select status…</option>
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {bulkField === "source" && (
+          <select
+            value={bulkValue ?? ""}
+            onChange={(e) => setBulkValue(e.target.value ? Number(e.target.value) : null)}
+            className="h-6.5 px-2 rounded-md border border-border bg-background text-[12px] text-foreground focus:outline-none focus:border-primary"
+          >
+            <option value="">Select source…</option>
+            {SOURCE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {bulkField === "companyId" && (
+          <div className="w-48">
+            <CompanySelect value={bulkValue} onChange={setBulkValue} />
+          </div>
+        )}
+
+        {bulkField === "jobId" && (
+          <div className="w-48">
+            <JobSelect value={bulkValue} onChange={setBulkValue} />
+          </div>
+        )}
+
+        {bulkField && (
+          <Button
+            type="button"
+            size="xs"
+            variant="outline"
+            disabled={bulkValue == null || isBulkPending}
+            onClick={() => void handleBulkApply()}
+          >
+            Apply
+          </Button>
+        )}
+      </div>
       <Button
         type="button"
         size="xs"
         variant="outline"
         disabled={isBulkPending}
-        onClick={handleBulkDelete}
+        onClick={() => void handleBulkDelete()}
         className="text-destructive border-destructive/40 hover:bg-destructive/10"
       >
         <TrashIcon size={12} />
@@ -233,6 +342,8 @@ export function DesktopContactsTable({
             toolbarLeft={toolbarLeft}
           />
         </div>
+
+        <AppTablePagination {...pagination} />
       </div>
 
       <ContactDetailPanel

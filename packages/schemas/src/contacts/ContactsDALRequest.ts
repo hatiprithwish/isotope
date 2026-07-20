@@ -5,7 +5,11 @@ export type CreateContactDALRequest = ContactBase & Pick<Contact, "createdBy">;
 
 export type FindContactDALRequest = Pick<Contact, "id" | "createdBy">;
 
-export type GetContactsDALRequest = Pick<Contact, "createdBy"> & { search: string | null };
+export type GetContactsDALRequest = Pick<Contact, "createdBy"> & {
+  search: string | null;
+  pageNo: number;
+  pageSize: number;
+};
 
 export type GetContactsByCompanyDALRequest = Pick<Contact, "createdBy"> & { companyId: number };
 
@@ -33,3 +37,11 @@ export type UpdateNextTouchDueAtDALRequest = {
 };
 
 export type GetLastSentHistoryDALRequest = { contactId: number; createdBy: string };
+
+export type BulkDeleteContactsDALRequest = { ids: number[]; createdBy: string };
+
+export type BulkUpdateContactsDALRequest = {
+  ids: number[];
+  createdBy: string;
+  updates: Partial<Omit<ContactBase, "name">>;
+};

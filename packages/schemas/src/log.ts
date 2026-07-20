@@ -41,6 +41,7 @@ export enum LogAction {
   UpdateContact = "UpdateContact",
   DeleteContact = "DeleteContact",
   BulkDeleteContacts = "BulkDeleteContacts",
+  BulkUpdateContacts = "BulkUpdateContacts",
   GetContactHistory = "GetContactHistory",
   CreateContactHistory = "CreateContactHistory",
   UpdateContactHistory = "UpdateContactHistory",

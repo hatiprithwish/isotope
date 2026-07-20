@@ -44,10 +44,25 @@ ContactsRoutes.get(
   zValidator("query", Schemas.ZGetContactsApiRequest),
   async (c) => {
     const userId = c.get("clerkUserId");
-    const { search } = c.req.valid("query");
+    const { search, pageNo, pageSize } = c.req.valid("query");
 
     const repo = new ContactsRepo(c.env);
-    const response = await repo.getContacts({ userId, search });
+    const response = await repo.getContacts({ userId, search, pageNo, pageSize });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
+ContactsRoutes.patch(
+  "/bulk",
+  checkAuth,
+  zValidator("json", Schemas.ZBulkUpdateContactsApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.bulkUpdateContacts({ ...body, userId });
 
     return c.json(response, response.isSuccess ? 200 : 500);
   },

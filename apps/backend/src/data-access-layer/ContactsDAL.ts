@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { contacts, contactHistory, companies } from "@/db/tables";
@@ -176,6 +176,26 @@ export default class ContactsDAL {
       const term = params.search?.trim();
       const pattern = term ? `%${Utility.escapeLikePattern(term)}%` : undefined;
 
+      const whereClause = pattern
+        ? and(
+            eq(contacts.createdBy, params.createdBy),
+            or(
+              sql`${contacts.name} LIKE ${pattern} ESCAPE '\\'`,
+              sql`${contacts.email} LIKE ${pattern} ESCAPE '\\'`,
+              sql`${contacts.designation} LIKE ${pattern} ESCAPE '\\'`,
+              sql`${companies.name} LIKE ${pattern} ESCAPE '\\'`,
+            ),
+          )
+        : eq(contacts.createdBy, params.createdBy);
+
+      const [countRow] = await this.db
+        .select({ count: count() })
+        .from(contacts)
+        .leftJoin(companies, eq(contacts.companyId, companies.id))
+        .where(whereClause);
+
+      const offset = (params.pageNo - 1) * params.pageSize;
+
       const contactsResponse = await this.db
         .select({
           id: contacts.id,
@@ -213,23 +233,15 @@ export default class ContactsDAL {
         })
         .from(contacts)
         .leftJoin(companies, eq(contacts.companyId, companies.id))
-        .where(
-          pattern
-            ? and(
-                eq(contacts.createdBy, params.createdBy),
-                or(
-                  sql`${contacts.name} LIKE ${pattern} ESCAPE '\\'`,
-                  sql`${contacts.email} LIKE ${pattern} ESCAPE '\\'`,
-                  sql`${contacts.designation} LIKE ${pattern} ESCAPE '\\'`,
-                  sql`${companies.name} LIKE ${pattern} ESCAPE '\\'`,
-                ),
-              )
-            : eq(contacts.createdBy, params.createdBy),
-        );
+        .where(whereClause)
+        .orderBy(desc(contacts.createdAt))
+        .limit(params.pageSize)
+        .offset(offset);
 
       response.isSuccess = true;
       response.message = "Contacts fetched successfully";
       response.contacts = contactsResponse;
+      response.totalCount = countRow?.count ?? 0;
     } catch (error) {
       const message = "Unknown error in listing contacts";
       AppLogger.error({
@@ -381,7 +393,7 @@ export default class ContactsDAL {
     return response;
   }
 
-  async bulkDeleteContacts(params: { ids: number[]; createdBy: string }) {
+  async bulkDeleteContacts(params: Schemas.BulkDeleteContactsDALRequest) {
     const response: Schemas.BulkDeleteContactsApiResponse = { isSuccess: false };
 
     try {
@@ -404,6 +416,41 @@ export default class ContactsDAL {
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
         action: Schemas.LogAction.BulkDeleteContacts,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  async bulkUpdateContacts(params: Schemas.BulkUpdateContactsDALRequest) {
+    const response: Schemas.BulkUpdateContactsApiResponse = { isSuccess: false };
+
+    try {
+      AppLogger.info({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkUpdateContacts,
+        message: "Bulk updating contacts",
+        metadata: { count: params.ids.length, createdBy: params.createdBy },
+      });
+
+      const result = await this.db
+        .update(contacts)
+        .set({ ...params.updates, updatedAt: Utility.getCurrentISOTimestamp() })
+        .where(and(eq(contacts.createdBy, params.createdBy), inArray(contacts.id, params.ids)))
+        .returning({ id: contacts.id });
+
+      response.isSuccess = true;
+      response.message = `${result.length} contact(s) updated`;
+      response.updatedCount = result.length;
+    } catch (error) {
+      const message = "Unknown error in bulk updating contacts";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.BulkUpdateContacts,
         message,
         error,
         metadata: params,

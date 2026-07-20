@@ -54,7 +54,7 @@ const formSchema = z.object({
   status: z.enum(ContactStatusIntEnum),
 });
 
-const STATUS_OPTIONS: { value: ContactStatusIntEnum; label: string }[] = [
+export const STATUS_OPTIONS: { value: ContactStatusIntEnum; label: string }[] = [
   { value: ContactStatusIntEnum.NotStarted, label: ContactStatusLabelEnum.NotStarted },
   { value: ContactStatusIntEnum.DraftReady, label: ContactStatusLabelEnum.DraftReady },
   { value: ContactStatusIntEnum.InPipeline, label: ContactStatusLabelEnum.InPipeline },

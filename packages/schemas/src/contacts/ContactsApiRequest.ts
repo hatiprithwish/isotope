@@ -8,6 +8,8 @@ import {
 
 export const ZGetContactsApiRequest = z.object({
   search: z.string().nullable().optional(),
+  pageNo: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().max(100).optional(),
 });
 export type GetContactsApiRequest = z.infer<typeof ZGetContactsApiRequest>;
 
@@ -46,3 +48,13 @@ export const ZBulkDeleteContactsApiRequest = z.object({
   ids: z.array(z.number().int().positive()).min(1),
 });
 export type BulkDeleteContactsApiRequest = z.infer<typeof ZBulkDeleteContactsApiRequest>;
+
+export const ZBulkUpdateContactsApiRequest = z.object({
+  ids: z.array(z.number().int().positive()).min(1),
+  updates: ZContactBase.omit({ name: true })
+    .partial()
+    .refine((obj) => Object.keys(obj).length > 0, {
+      message: "At least one field must be provided",
+    }),
+});
+export type BulkUpdateContactsApiRequest = z.infer<typeof ZBulkUpdateContactsApiRequest>;

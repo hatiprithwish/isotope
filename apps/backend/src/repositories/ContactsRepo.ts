@@ -25,7 +25,12 @@ export default class ContactsRepo {
   }
 
   async getContacts(params: Schemas.GetContactsApiRequest & { userId: string }) {
-    return await this.dal.getContacts({ createdBy: params.userId, search: params.search ?? null });
+    return await this.dal.getContacts({
+      createdBy: params.userId,
+      search: params.search ?? null,
+      pageNo: params.pageNo ?? Constants.DEFAULT_PAGE_NO,
+      pageSize: params.pageSize ?? Constants.DEFAULT_PAGE_SIZE,
+    });
   }
 
   async getContactsByCompany(params: { userId: string; companyId: number }) {
@@ -76,6 +81,14 @@ export default class ContactsRepo {
 
   async bulkDeleteContacts(params: Schemas.BulkDeleteContactsApiRequest & { userId: string }) {
     return await this.dal.bulkDeleteContacts({ ids: params.ids, createdBy: params.userId });
+  }
+
+  async bulkUpdateContacts(params: Schemas.BulkUpdateContactsApiRequest & { userId: string }) {
+    return await this.dal.bulkUpdateContacts({
+      ids: params.ids,
+      createdBy: params.userId,
+      updates: params.updates,
+    });
   }
 
   async getContactHistory(params: { userId: string; contactId: number }) {
