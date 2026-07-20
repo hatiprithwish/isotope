@@ -101,7 +101,7 @@ export function JobPanelDetails({ job }: Props) {
               }),
             ],
             ["Salary", job.salary ?? "—"],
-            ["Location", job.location ?? "—"],
+            ["Location", job.companyLocation ?? "—"],
             ["Source", job.source ?? "—"],
           ].map(([label, value]) => (
             <div key={label}>

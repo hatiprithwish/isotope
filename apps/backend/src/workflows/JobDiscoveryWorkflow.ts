@@ -14,7 +14,6 @@ interface ExtractedJob {
   title: string;
   url: string;
   companyName: string | null;
-  location: string | null;
   salary: string | null;
   description: string;
   skills: string[];
@@ -130,7 +129,7 @@ export class JobDiscoveryWorkflow extends WorkflowEntrypoint<Env, JobDiscoveryPa
       const systemPrompt = `You are a job listing extractor. Given a list of web search result snippets, identify which ones are actual job postings and extract structured data from each.
 
 Return ONLY a JSON array. Each element must have exactly these fields:
-{"title":"string","url":"string","companyName":"string or null","location":"string or null","salary":"string or null","description":"string","skills":["array","of","strings"]}
+{"title":"string","url":"string","companyName":"string or null","salary":"string or null","description":"string","skills":["array","of","strings"]}
 
 Only include genuine job postings. Skip non-job snippets. No explanation, no markdown, no code fences — raw JSON array only.`;
 
@@ -285,7 +284,6 @@ Only include genuine job postings. Skip non-job snippets. No explanation, no mar
         type: Schemas.JobTypeIntEnum.LLM,
         companyId: null,
         url: job.url,
-        location: job.location,
         salary: job.salary,
         source: "tavily",
         description: job.description,

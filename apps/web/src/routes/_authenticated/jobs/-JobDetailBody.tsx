@@ -20,7 +20,7 @@ export function JobDetailBody({ job }: Props) {
       <div>
         <h1 className="text-xl font-semibold text-foreground leading-snug">{job.title}</h1>
         <p className="text-[14px] text-(--text-secondary) mt-1">
-          {job.location ?? "—"}
+          {job.companyLocation ?? "—"}
           {job.salary ? ` · ${job.salary}` : ""}
         </p>
         <div className="flex gap-2 items-center mt-3 flex-wrap">
@@ -119,7 +119,7 @@ export function JobDetailBody({ job }: Props) {
               }),
             ],
             ["Salary", job.salary ?? "—"],
-            ["Location", job.location ?? "—"],
+            ["Location", job.companyLocation ?? "—"],
             ["Source", job.source ?? "—"],
           ].map(([label, value]) => (
             <div key={label}>

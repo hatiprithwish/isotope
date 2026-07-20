@@ -215,7 +215,7 @@ export function MobileJobsList({
                         {job.title}
                       </div>
                       <div className="text-[12px] text-(--text-secondary) mt-0.5 truncate">
-                        {[job.companyName, job.location].filter(Boolean).join(" · ") || "—"}
+                        {[job.companyName, job.companyLocation].filter(Boolean).join(" · ") || "—"}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

@@ -28,7 +28,6 @@ const formSchema = z.object({
     }, "Must be a valid URL."),
   companyId: z.number().nullable(),
   description: z.string(),
-  location: z.string(),
   salary: z.string(),
   source: z.string(),
   status: z.enum(JobStatusIntEnum),
@@ -61,7 +60,6 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
       url: job?.url ?? "",
       companyId: job?.companyId ?? null,
       description: job?.description ?? "",
-      location: job?.location ?? "",
       salary: job?.salary ?? "",
       source: job?.source ?? "",
       status: job?.status ?? JobStatusIntEnum.NotStarted,
@@ -74,7 +72,6 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
         if (value.url) jobFields.url = value.url;
         jobFields.companyId = value.companyId;
         jobFields.description = value.description || null;
-        jobFields.location = value.location || null;
         jobFields.salary = value.salary || null;
         jobFields.source = value.source || null;
         jobFields.status = value.status;
@@ -95,7 +92,6 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
             url: value.url,
             companyId: value.companyId,
             description: value.description || null,
-            location: value.location || null,
             salary: value.salary || null,
             source: value.source || null,
           },
@@ -227,44 +223,24 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
               </form.Field>
             )}
 
-            {/* Location + Salary */}
-            <div className="flex gap-3">
-              <form.Field name="location">
-                {(field) => (
-                  <Field className="flex-1">
-                    <FieldLabel htmlFor={field.name} className={labelCls}>
-                      Location
-                    </FieldLabel>
-                    <input
-                      id={field.name}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      placeholder="e.g. Remote, Bengaluru"
-                      className={inputCls}
-                    />
-                  </Field>
-                )}
-              </form.Field>
-
-              <form.Field name="salary">
-                {(field) => (
-                  <Field className="flex-1">
-                    <FieldLabel htmlFor={field.name} className={labelCls}>
-                      Salary
-                    </FieldLabel>
-                    <input
-                      id={field.name}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      placeholder="e.g. ₹40–60 LPA"
-                      className={inputCls}
-                    />
-                  </Field>
-                )}
-              </form.Field>
-            </div>
+            {/* Salary */}
+            <form.Field name="salary">
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name} className={labelCls}>
+                    Salary
+                  </FieldLabel>
+                  <input
+                    id={field.name}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    placeholder="e.g. ₹40–60 LPA"
+                    className={inputCls}
+                  />
+                </Field>
+              )}
+            </form.Field>
 
             {/* Source */}
             <form.Field name="source">

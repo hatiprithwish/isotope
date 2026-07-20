@@ -44,7 +44,7 @@ export function JobPanelContent({ jobId, onClose, onEdit, onDelete }: Props) {
               </div>
             )}
             <div className="text-[13px] text-(--text-secondary) mt-0.5">
-              {job?.location ?? "—"}
+              {job?.companyLocation ?? "—"}
               {job?.salary ? ` · ${job.salary}` : ""}
             </div>
           </div>

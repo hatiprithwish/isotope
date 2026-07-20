@@ -117,7 +117,6 @@ export const jobs = table(
     title: t.text().notNull(),
     companyId: t.int("company_id"),
     url: t.text(),
-    location: t.text(),
     salary: t.text(),
     source: t.text(),
     type: t.integer().$type<Schemas.JobTypeIntEnum>().notNull(),

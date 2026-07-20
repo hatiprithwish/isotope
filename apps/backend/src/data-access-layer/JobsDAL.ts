@@ -32,7 +32,6 @@ export default class JobsDAL {
           type: params.type,
           companyId: params.companyId,
           url: params.url,
-          location: params.location,
           salary: params.salary,
           source: params.source,
           description: params.description,
@@ -86,7 +85,6 @@ export default class JobsDAL {
         type,
         companyId,
         url,
-        location,
         salary,
         source,
         description,
@@ -103,7 +101,6 @@ export default class JobsDAL {
       if (type !== undefined) setValues.type = type;
       if (companyId !== undefined) setValues.companyId = companyId;
       if (url !== undefined) setValues.url = url;
-      if (location !== undefined) setValues.location = location;
       if (salary !== undefined) setValues.salary = salary;
       if (source !== undefined) setValues.source = source;
       if (description !== undefined) setValues.description = description;
@@ -166,10 +163,10 @@ export default class JobsDAL {
           companyId: jobs.companyId,
           companyName: companies.name,
           companyIndustry: companies.industry,
+          companyLocation: companies.location,
           companyStatus: companies.status,
           companyFitBand: companies.fitBand,
           url: jobs.url,
-          location: jobs.location,
           salary: jobs.salary,
           source: jobs.source,
           description: jobs.description,
@@ -262,7 +259,6 @@ export default class JobsDAL {
           type: job.type,
           companyId: job.companyId,
           url: job.url,
-          location: job.location,
           salary: job.salary,
           source: job.source,
           description: job.description,
@@ -432,7 +428,7 @@ export default class JobsDAL {
                 eq(jobs.createdBy, params.createdBy),
                 or(
                   like(jobs.title, pattern),
-                  like(jobs.location, pattern),
+                  like(companies.location, pattern),
                   like(jobs.salary, pattern),
                   like(companies.name, pattern),
                 ),
@@ -491,8 +487,8 @@ export default class JobsDAL {
           type: jobs.type,
           companyId: jobs.companyId,
           companyName: companies.name,
+          companyLocation: companies.location,
           url: jobs.url,
-          location: jobs.location,
           salary: jobs.salary,
           source: jobs.source,
           description: jobs.description,
@@ -509,7 +505,7 @@ export default class JobsDAL {
                 eq(jobs.createdBy, params.createdBy),
                 or(
                   like(jobs.title, pattern),
-                  like(jobs.location, pattern),
+                  like(companies.location, pattern),
                   like(jobs.salary, pattern),
                   like(companies.name, pattern),
                 ),

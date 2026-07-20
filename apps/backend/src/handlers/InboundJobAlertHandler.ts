@@ -18,7 +18,6 @@ interface InboundJobAlertMessage {
 interface BrowserRunExtracted {
   title: string | null;
   company: string | null;
-  location: string | null;
   salary: string | null;
   description: string | null;
   skills: string[];
@@ -166,7 +165,6 @@ export default class InboundJobAlertHandler {
       return {
         title: extracted?.title ?? null,
         company: extracted?.company ?? null,
-        location: extracted?.location ?? null,
         salary: extracted?.salary ?? null,
         description: extracted?.description ?? null,
         skills: Array.isArray(extracted?.skills) ? extracted.skills : [],
@@ -369,7 +367,6 @@ export default class InboundJobAlertHandler {
           title,
           url: resolvedUrl,
           companyId,
-          location: extracted.location,
           salary: extracted.salary,
           description: extracted.description,
           skills: extracted.skills.length > 0 ? extracted.skills : [],

@@ -134,7 +134,7 @@ export function JobsTable({
       key: "location",
       header: "Location",
       cell: (row) => (
-        <span className="text-[13px] text-(--text-secondary)">{row.location ?? "—"}</span>
+        <span className="text-[13px] text-(--text-secondary)">{row.companyLocation ?? "—"}</span>
       ),
     },
     {

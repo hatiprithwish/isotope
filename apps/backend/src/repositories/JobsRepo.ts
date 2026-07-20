@@ -27,7 +27,6 @@ export default class JobsRepo {
       type: Schemas.JobTypeIntEnum.Manual,
       companyId: params.job.companyId ?? null,
       url: params.job.url,
-      location: params.job.location ?? null,
       salary: params.job.salary ?? null,
       source: params.job.source ?? null,
       description: params.job.description ?? null,
@@ -54,7 +53,6 @@ export default class JobsRepo {
     if (job.companyId !== undefined) dalParams.companyId = job.companyId ?? null;
     if (job.url !== undefined) dalParams.url = job.url ?? null;
     if (job.description !== undefined) dalParams.description = job.description ?? null;
-    if (job.location !== undefined) dalParams.location = job.location ?? null;
     if (job.salary !== undefined) dalParams.salary = job.salary ?? null;
     if (job.source !== undefined) dalParams.source = job.source ?? null;
     if (job.status !== undefined) dalParams.status = job.status;

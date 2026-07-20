@@ -12,7 +12,7 @@ export const ZGetJobsApiRequest = z.object({
 export type GetJobsApiRequest = z.infer<typeof ZGetJobsApiRequest>;
 
 export const ZCreateJobApiRequest = z.object({
-  job: ZJobBase.omit({ status: true, url: true, type: true }).extend({
+  job: ZJobBase.omit({ status: true, url: true, type: true, companyLocation: true }).extend({
     status: ZJobStatusIntEnum.optional(),
     type: ZJobBase.shape.type.optional(),
     url: z.url(),
@@ -21,7 +21,9 @@ export const ZCreateJobApiRequest = z.object({
 export type CreateJobApiRequest = z.infer<typeof ZCreateJobApiRequest>;
 
 export const ZUpdateJobApiRequest = z.object({
-  job: ZJobBase.omit({ url: true }).partial().extend({ url: z.url().nullable().optional() }),
+  job: ZJobBase.omit({ url: true, companyLocation: true })
+    .partial()
+    .extend({ url: z.url().nullable().optional() }),
 });
 export type UpdateJobApiRequest = z.infer<typeof ZUpdateJobApiRequest>;
 
