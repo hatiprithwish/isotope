@@ -9,7 +9,6 @@ import {
   useJobs,
   useJobsCount,
   useDiscoverJobs,
-  useDeleteJob,
   useBulkDeleteJobs,
   useBulkUpdateJobs,
 } from "./-data";
@@ -19,10 +18,11 @@ import { JobsTable } from "./-JobsTable";
 import { JobDetailPanel } from "./-JobDetailDrawer";
 import AddOrEditJobModal from "./-AddOrEditJobModal";
 import { MobileJobsList } from "./-MobileJobsList";
+import { useAddShortcut } from "@/hooks/useAddShortcut";
 import { SparkleIcon, PlusIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
-import { JobStatusIntEnum } from "@app/schemas";
+import { type JobStatusIntEnum } from "@app/schemas";
 
 const PAGE_SIZE = 20;
 
@@ -45,7 +45,6 @@ function JobsPage() {
   const frameworkQuery = useQuery(FrameworkQueries.latest(getToken));
   const hasFramework = Boolean(frameworkQuery.data?.framework?.isCustomized);
   const discoverMutation = useDiscoverJobs();
-  const deleteJobMutation = useDeleteJob();
   const bulkDeleteMutation = useBulkDeleteJobs();
   const bulkUpdateMutation = useBulkUpdateJobs();
 
@@ -92,6 +91,8 @@ function JobsPage() {
   async function handleRefresh() {
     await queryClient.invalidateQueries({ queryKey: JobsQueries.keys.all() });
   }
+
+  useAddShortcut(() => setFormMode((mode) => mode ?? "create"));
 
   function handleFormSuccess() {
     setFormMode(null);

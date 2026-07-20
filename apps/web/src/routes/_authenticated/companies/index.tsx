@@ -5,6 +5,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useAddShortcut } from "@/hooks/useAddShortcut";
 import { CompaniesQueries, useBulkDeleteCompanies } from "./-data";
 import AddOrEditCompanyModal from "./-AddOrEditCompanyModal";
 import { MobileCompaniesList } from "./-MobileCompaniesList";
@@ -27,6 +28,8 @@ function CompaniesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebouncedValue(searchQuery, 300);
   const bulkDeleteMutation = useBulkDeleteCompanies();
+
+  useAddShortcut(() => setShowAddModal(true));
 
   const { data, isPending, isError } = useQuery(
     CompaniesQueries.list({ search: debouncedQuery || undefined }, getToken),
