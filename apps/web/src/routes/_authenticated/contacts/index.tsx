@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useAddShortcut } from "@/hooks/useAddShortcut";
 import { ContactsQueries, useBulkDeleteContacts, useBulkUpdateContacts } from "./-data";
 import AddOrEditContactModal from "./-AddOrEditContactModal";
 import { MobileContactsList } from "./-MobileContactsList";
@@ -33,6 +34,8 @@ function ContactsPage() {
   const debouncedQuery = useDebouncedValue(searchQuery, 300);
   const bulkDeleteMutation = useBulkDeleteContacts();
   const bulkUpdateMutation = useBulkUpdateContacts();
+
+  useAddShortcut(() => setShowAddModal(true));
 
   const { data, isPending, isError } = useQuery(
     ContactsQueries.list(
