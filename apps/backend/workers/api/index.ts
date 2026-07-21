@@ -13,6 +13,7 @@ import ContactsRoutes from "@/routes/ContactsRoutes";
 import FrameworksRoutes from "@/routes/FrameworksRoutes";
 import JobsRoutes from "@/routes/JobsRoutes";
 import TasksRoutes from "@/routes/TasksRoutes";
+import SearchRoutes from "@/routes/SearchRoutes";
 import AuthRoutes from "@/routes/AuthRoutes";
 import EmailInboundRoutes from "@/routes/EmailInboundRoutes";
 import SettingsRoutes from "@/routes/SettingsRoutes";
@@ -61,6 +62,7 @@ app.route("/contacts", ContactsRoutes);
 app.route("/frameworks", FrameworksRoutes);
 app.route("/jobs", JobsRoutes);
 app.route("/tasks", TasksRoutes);
+app.route("/search", SearchRoutes);
 app.route("/settings", SettingsRoutes);
 
 export default {

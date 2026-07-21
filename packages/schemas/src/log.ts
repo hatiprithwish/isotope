@@ -93,4 +93,7 @@ export enum LogAction {
   SyncFollowUpTask = "SyncFollowUpTask",
   DeletePendingFollowUpTask = "DeletePendingFollowUpTask",
   SweepOverdueTasks = "SweepOverdueTasks",
+
+  // Search
+  GlobalSearch = "GlobalSearch",
 }

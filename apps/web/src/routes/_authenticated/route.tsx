@@ -5,6 +5,7 @@ import { Button } from "@/shadcn/ui/button";
 import { apiClient } from "@/providers/apiClient";
 import { DesktopSidebar } from "./-DesktopSidebar";
 import { MobileTabBar } from "./-MobileTabBar";
+import { GlobalSearchPalette } from "./-GlobalSearchPalette";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -37,6 +38,8 @@ function AuthenticatedLayout() {
 
   return (
     <div className="flex h-dvh w-screen overflow-hidden bg-background">
+      <GlobalSearchPalette />
+
       {/* Desktop sidebar — hidden on mobile */}
       <div className="hidden md:flex">
         <DesktopSidebar />
