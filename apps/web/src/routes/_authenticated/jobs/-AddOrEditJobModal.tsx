@@ -1,10 +1,14 @@
+import { useEffect, useRef } from "react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
 import { toast } from "sonner";
 import { XIcon } from "@phosphor-icons/react";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import CompanySelect from "@/shared/fields/CompanySelect";
+import { CompaniesQueries } from "@/routes/_authenticated/companies/-data";
 import { useCreateJob, useUpdateJob } from "./-data";
 import { JobStatusIntEnum, JobStatusLabelEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
@@ -50,9 +54,12 @@ const inputCls =
 const labelCls = "text-[12px] font-semibold text-(--text-secondary)";
 
 export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Props) {
+  const { getToken } = useAuth();
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const isPending = createJob.isPending || updateJob.isPending;
+  const { data: companiesData } = useQuery(CompaniesQueries.list({}, getToken));
+  const hasAppliedLatestCompany = useRef(false);
 
   const form = useForm({
     defaultValues: {
@@ -105,6 +112,16 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
       }
     },
   });
+
+  useEffect(() => {
+    if (mode !== "add" || hasAppliedLatestCompany.current) return;
+    const latestCompanyId = companiesData?.companies?.[0]?.id;
+    if (latestCompanyId == null) return;
+    hasAppliedLatestCompany.current = true;
+    if (form.getFieldValue("companyId") == null) {
+      form.setFieldValue("companyId", latestCompanyId);
+    }
+  }, [mode, companiesData, form]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">

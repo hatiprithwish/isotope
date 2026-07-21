@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, eq, inArray, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { companies, users } from "@/db/tables";
@@ -195,7 +195,8 @@ export default class CompaniesDAL {
                 ),
               )
             : eq(companies.createdBy, params.createdBy),
-        );
+        )
+        .orderBy(desc(companies.createdAt));
 
       response.isSuccess = true;
       response.message = "Companies fetched successfully";
