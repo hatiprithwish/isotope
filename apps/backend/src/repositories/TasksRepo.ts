@@ -91,17 +91,39 @@ export default class TasksRepo {
   }
 
   /** Invoked from ContactsRepo after a sent message is logged — keeps the follow-up task in sync with the contact's next touch date. */
-  async syncFollowUpForContact(params: { userId: string; contactId: number; dueAt: string }) {
+  async syncFollowUpForContact(params: {
+    userId: string;
+    contactId: number;
+    dueAt: string;
+    stepNumber: number;
+  }) {
     return await this.dal.syncFollowUpForContact({
       createdBy: params.userId,
       contactId: params.contactId,
       dueAt: params.dueAt,
+      stepNumber: params.stepNumber,
     });
   }
 
-  /** Invoked from ContactsRepo after a history change leaves no remaining sent messages — removes the now-orphaned pending follow-up task. */
-  async deletePendingFollowUp(params: { userId: string; contactId: number }) {
-    return await this.dal.deletePendingFollowUp({
+  /** Invoked from ContactsRepo when an inbound reply is logged — pauses the contact's active Pending follow-up, if any. */
+  async pauseFollowUpForContact(params: { userId: string; contactId: number }) {
+    return await this.dal.pauseFollowUpForContact({
+      createdBy: params.userId,
+      contactId: params.contactId,
+    });
+  }
+
+  /** Shifts a Paused follow-up's dueAt forward by the paused duration. Implemented but not yet wired into the automatic flow (see followup-sequences-plan.md §5). */
+  async resumeFollowUpForContact(params: { userId: string; contactId: number }) {
+    return await this.dal.resumeFollowUpForContact({
+      createdBy: params.userId,
+      contactId: params.contactId,
+    });
+  }
+
+  /** Invoked from ContactsRepo when no sent messages remain, the sequence completes, or the contact is marked Dead — removes the contact's active Pending/Paused follow-up task. */
+  async deleteFollowUpTasks(params: { userId: string; contactId: number }) {
+    return await this.dal.deleteFollowUpTasks({
       createdBy: params.userId,
       contactId: params.contactId,
     });

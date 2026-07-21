@@ -13,6 +13,8 @@ const taskSelection = {
   title: tasks.title,
   dueAt: tasks.dueAt,
   status: tasks.status,
+  stepNumber: tasks.stepNumber,
+  pausedAt: tasks.pausedAt,
   note: tasks.note,
   completedAt: tasks.completedAt,
   contactName: contacts.name,
@@ -57,10 +59,12 @@ export default class TasksDAL {
           hasPending: false,
           hasCompleted: false,
           hasMissed: false,
+          hasPaused: false,
         };
         if (row.status === Schemas.TaskStatusIntEnum.Pending) existing.hasPending = true;
         if (row.status === Schemas.TaskStatusIntEnum.Completed) existing.hasCompleted = true;
         if (row.status === Schemas.TaskStatusIntEnum.Missed) existing.hasMissed = true;
+        if (row.status === Schemas.TaskStatusIntEnum.Paused) existing.hasPaused = true;
         byDate.set(row.dueAt, existing);
       }
 
@@ -100,13 +104,17 @@ export default class TasksDAL {
               ? or(
                   and(
                     eq(tasks.dueAt, params.date),
-                    eq(tasks.status, Schemas.TaskStatusIntEnum.Pending),
+                    inArray(tasks.status, [
+                      Schemas.TaskStatusIntEnum.Pending,
+                      Schemas.TaskStatusIntEnum.Paused,
+                    ]),
                   ),
                   and(
                     lt(tasks.dueAt, params.date),
                     inArray(tasks.status, [
                       Schemas.TaskStatusIntEnum.Pending,
                       Schemas.TaskStatusIntEnum.Missed,
+                      Schemas.TaskStatusIntEnum.Paused,
                     ]),
                   ),
                 )
@@ -264,6 +272,8 @@ export default class TasksDAL {
     const response: Schemas.ApiResponse = { isSuccess: false };
 
     try {
+      // Matches Pending AND Paused rows — Advance must unconditionally supersede a Paused row left
+      // over from an inbound reply (see followup-sequences-plan.md §5), not just a Pending one.
       const [existing] = await this.db
         .select({ id: tasks.id })
         .from(tasks)
@@ -271,7 +281,10 @@ export default class TasksDAL {
           and(
             eq(tasks.createdBy, params.createdBy),
             eq(tasks.contactId, params.contactId),
-            eq(tasks.status, Schemas.TaskStatusIntEnum.Pending),
+            inArray(tasks.status, [
+              Schemas.TaskStatusIntEnum.Pending,
+              Schemas.TaskStatusIntEnum.Paused,
+            ]),
           ),
         )
         .limit(1);
@@ -279,7 +292,13 @@ export default class TasksDAL {
       if (existing) {
         await this.db
           .update(tasks)
-          .set({ dueAt: params.dueAt, updatedAt: Utility.getCurrentISOTimestamp() })
+          .set({
+            dueAt: params.dueAt,
+            stepNumber: params.stepNumber,
+            status: Schemas.TaskStatusIntEnum.Pending,
+            pausedAt: null,
+            updatedAt: Utility.getCurrentISOTimestamp(),
+          })
           .where(eq(tasks.id, existing.id));
 
         response.isSuccess = true;
@@ -312,6 +331,8 @@ export default class TasksDAL {
         title: `Follow up with ${contact.name}`,
         dueAt: params.dueAt,
         status: Schemas.TaskStatusIntEnum.Pending,
+        stepNumber: params.stepNumber,
+        pausedAt: null,
         note: null,
         completedAt: null,
         createdAt: Utility.getCurrentISOTimestamp(),
@@ -335,13 +356,18 @@ export default class TasksDAL {
     return response;
   }
 
-  /** Removes the pending follow-up task for a contact — used when the contact has no remaining outbound messages. */
-  async deletePendingFollowUp(params: Schemas.DeletePendingFollowUpDALRequest) {
+  /** Pauses the contact's active Pending follow-up task — no-op (still success) if none exists. */
+  async pauseFollowUpForContact(params: Schemas.PauseFollowUpDALRequest) {
     const response: Schemas.ApiResponse = { isSuccess: false };
 
     try {
       await this.db
-        .delete(tasks)
+        .update(tasks)
+        .set({
+          status: Schemas.TaskStatusIntEnum.Paused,
+          pausedAt: Utility.getCurrentISOTimestamp(),
+          updatedAt: Utility.getCurrentISOTimestamp(),
+        })
         .where(
           and(
             eq(tasks.createdBy, params.createdBy),
@@ -351,12 +377,100 @@ export default class TasksDAL {
         );
 
       response.isSuccess = true;
-      response.message = "Pending follow-up task deleted successfully";
+      response.message = "Follow-up task paused successfully";
     } catch (error) {
-      const message = "Unknown error in deleting pending follow-up task for contact";
+      const message = "Unknown error in pausing follow-up task for contact";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.DeletePendingFollowUpTask,
+        action: Schemas.LogAction.PauseFollowUpTask,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  /** Resumes a Paused follow-up task by shifting its dueAt forward by the paused duration — no-op (still success) if none is Paused. Implemented but not yet wired into the automatic flow (see followup-sequences-plan.md §5). */
+  async resumeFollowUpForContact(params: Schemas.ResumeFollowUpDALRequest) {
+    const response: Schemas.ApiResponse = { isSuccess: false };
+
+    try {
+      const [paused] = await this.db
+        .select({ id: tasks.id, dueAt: tasks.dueAt, pausedAt: tasks.pausedAt })
+        .from(tasks)
+        .where(
+          and(
+            eq(tasks.createdBy, params.createdBy),
+            eq(tasks.contactId, params.contactId),
+            eq(tasks.status, Schemas.TaskStatusIntEnum.Paused),
+          ),
+        )
+        .limit(1);
+
+      if (!paused || !paused.pausedAt) {
+        response.isSuccess = true;
+        response.message = "No paused follow-up task to resume";
+        return response;
+      }
+
+      const pausedDurationMs = Date.now() - Date.parse(paused.pausedAt);
+      const newDueAt = Utility.getDateKey(new Date(Date.parse(paused.dueAt) + pausedDurationMs));
+
+      await this.db
+        .update(tasks)
+        .set({
+          status: Schemas.TaskStatusIntEnum.Pending,
+          pausedAt: null,
+          dueAt: newDueAt,
+          updatedAt: Utility.getCurrentISOTimestamp(),
+        })
+        .where(eq(tasks.id, paused.id));
+
+      response.isSuccess = true;
+      response.message = "Follow-up task resumed successfully";
+    } catch (error) {
+      const message = "Unknown error in resuming follow-up task for contact";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.ResumeFollowUpTask,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  /** Removes the contact's active Pending or Paused follow-up task — used when there are no remaining outbound messages, the sequence completes, or the contact is marked Dead. */
+  async deleteFollowUpTasks(params: Schemas.DeleteFollowUpTasksDALRequest) {
+    const response: Schemas.ApiResponse = { isSuccess: false };
+
+    try {
+      await this.db
+        .delete(tasks)
+        .where(
+          and(
+            eq(tasks.createdBy, params.createdBy),
+            eq(tasks.contactId, params.contactId),
+            inArray(tasks.status, [
+              Schemas.TaskStatusIntEnum.Pending,
+              Schemas.TaskStatusIntEnum.Paused,
+            ]),
+          ),
+        );
+
+      response.isSuccess = true;
+      response.message = "Follow-up task(s) deleted successfully";
+    } catch (error) {
+      const message = "Unknown error in deleting follow-up task(s) for contact";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.DeleteFollowUpTasks,
         message,
         error,
         metadata: params,

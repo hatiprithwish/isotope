@@ -48,6 +48,7 @@ export enum LogAction {
   DeleteContactHistory = "DeleteContactHistory",
   UpdateNextTouchDueAt = "UpdateNextTouchDueAt",
   GetLastSentHistory = "GetLastSentHistory",
+  GetSentMessageCount = "GetSentMessageCount",
 
   // Frameworks
   SaveFramework = "SaveFramework",
@@ -91,8 +92,14 @@ export enum LogAction {
   SearchTasks = "SearchTasks",
   UpdateTaskStatus = "UpdateTaskStatus",
   SyncFollowUpTask = "SyncFollowUpTask",
-  DeletePendingFollowUpTask = "DeletePendingFollowUpTask",
+  DeleteFollowUpTasks = "DeleteFollowUpTasks",
+  PauseFollowUpTask = "PauseFollowUpTask",
+  ResumeFollowUpTask = "ResumeFollowUpTask",
   SweepOverdueTasks = "SweepOverdueTasks",
+
+  // Follow-up settings
+  GetFollowUpSettings = "GetFollowUpSettings",
+  SaveFollowUpSettings = "SaveFollowUpSettings",
 
   // Search
   GlobalSearch = "GlobalSearch",

@@ -8,6 +8,7 @@ export enum TaskStatusIntEnum {
   Pending = 1,
   Completed = 2,
   Missed = 3,
+  Paused = 4,
 }
 export const ZTaskStatusIntEnum = z.nativeEnum(TaskStatusIntEnum);
 
@@ -15,6 +16,7 @@ export enum TaskStatusLabelEnum {
   Pending = "Pending",
   Completed = "Completed",
   Missed = "Missed",
+  Paused = "Paused",
 }
 export const ZTaskStatusLabelEnum = z.nativeEnum(TaskStatusLabelEnum);
 
@@ -22,6 +24,7 @@ export const taskStatusIntToLabel: Record<TaskStatusIntEnum, TaskStatusLabelEnum
   [TaskStatusIntEnum.Pending]: TaskStatusLabelEnum.Pending,
   [TaskStatusIntEnum.Completed]: TaskStatusLabelEnum.Completed,
   [TaskStatusIntEnum.Missed]: TaskStatusLabelEnum.Missed,
+  [TaskStatusIntEnum.Paused]: TaskStatusLabelEnum.Paused,
 };
 
 export const ZTaskBase = z.object({
@@ -37,6 +40,8 @@ export const ZTaskRecord = ZTaskBase.extend({
   id: z.number(),
   createdBy: z.string(),
   status: ZTaskStatusIntEnum,
+  stepNumber: z.number().int().nullable().optional(),
+  pausedAt: z.string().nullable().optional(),
   completedAt: z.string().nullable().optional(),
   contactName: z.string().nullable().optional(),
   companyName: z.string().nullable().optional(),
@@ -61,5 +66,6 @@ export const ZTaskCalendarDay = z.object({
   hasPending: z.boolean(),
   hasCompleted: z.boolean(),
   hasMissed: z.boolean(),
+  hasPaused: z.boolean(),
 });
 export type TaskCalendarDay = z.infer<typeof ZTaskCalendarDay>;

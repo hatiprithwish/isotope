@@ -38,6 +38,8 @@ export type UpdateNextTouchDueAtDALRequest = {
 
 export type GetLastSentHistoryDALRequest = { contactId: number; createdBy: string };
 
+export type GetSentMessageCountDALRequest = { contactId: number; createdBy: string };
+
 export type BulkDeleteContactsDALRequest = { ids: number[]; createdBy: string };
 
 export type BulkUpdateContactsDALRequest = {

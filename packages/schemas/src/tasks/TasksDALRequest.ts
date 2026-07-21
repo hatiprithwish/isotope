@@ -19,11 +19,16 @@ export type SyncFollowUpDALRequest = {
   createdBy: string;
   contactId: number;
   dueAt: string;
+  stepNumber: number;
 };
 
 export type SweepOverdueDALRequest = { today: string };
 
-export type DeletePendingFollowUpDALRequest = { createdBy: string; contactId: number };
+export type PauseFollowUpDALRequest = { createdBy: string; contactId: number };
+
+export type ResumeFollowUpDALRequest = { createdBy: string; contactId: number };
+
+export type DeleteFollowUpTasksDALRequest = { createdBy: string; contactId: number };
 
 // DAL response shapes — raw TaskRecord rows (status int only); the Repo maps int → label and derives overdueByDays.
 

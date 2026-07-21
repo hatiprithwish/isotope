@@ -177,6 +177,8 @@ export const tasks = table(
     title: t.text().notNull(),
     dueAt: t.text("due_at").notNull(),
     status: t.integer().$type<Schemas.TaskStatusIntEnum>().notNull(),
+    stepNumber: t.integer("step_number"),
+    pausedAt: t.text("paused_at"),
     note: t.text(),
     completedAt: t.text("completed_at"),
     createdAt: t.text("created_at").notNull(),
@@ -189,6 +191,20 @@ export const tasks = table(
     // Serves the cron sweep's (status, due_at) predicate, which has no created_by filter.
     t.index("IDX_tasks_due_at").on(table.dueAt),
   ],
+);
+
+export const followUpSettings = table(
+  "followup_settings",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    stepOffsetDays: t.text("step_offset_days").notNull().default("[]"),
+    version: t.integer().notNull().default(1),
+    isCustomized: t.integer("is_customized", { mode: "boolean" }).notNull().default(false),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [t.index("idx_followup_settings_user").on(table.createdBy, table.version)],
 );
 
 // Single-row global table — id is always 1

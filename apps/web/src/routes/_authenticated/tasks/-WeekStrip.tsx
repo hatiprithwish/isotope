@@ -56,9 +56,11 @@ export function WeekStrip({
             ? "bg-(--warning)"
             : dots?.hasMissed
               ? "bg-(--danger)"
-              : dots?.hasCompleted
-                ? "bg-(--success)"
-                : null;
+              : dots?.hasPaused
+                ? "bg-(--text-secondary)"
+                : dots?.hasCompleted
+                  ? "bg-(--success)"
+                  : null;
 
           return (
             <button

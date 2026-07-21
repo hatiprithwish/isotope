@@ -5,12 +5,14 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CopyIcon, CheckIcon } from "@phosphor-icons/react";
-import type { FrameworkInput } from "@app/schemas";
+import type { FrameworkInput, FollowUpSettingsInput } from "@app/schemas";
 import JobSearchFrameworkForm from "@/shared/forms/JobSearchFrameworkForm";
 import {
   FrameworkQueries,
   useSaveFramework,
 } from "../../_without_nav/onboarding/job-search-framework/-data";
+import { FollowUpSettingsQueries, useSaveFollowUpSettings } from "./-data";
+import FollowUpSettingsForm from "./-FollowUpSettingsForm";
 import Utilities from "@/utils";
 import { apiClient } from "@/providers/apiClient";
 
@@ -18,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/settings/")({
   component: SettingsFrameworksPage,
 });
 
-type Tab = "job-search" | "company-research" | "account";
+type Tab = "job-search" | "followups" | "company-research" | "account";
 
 function useInboundAddress(getToken: () => Promise<string | null>) {
   return useQuery(
@@ -79,6 +81,61 @@ function AccountTab({ getToken }: { getToken: () => Promise<string | null> }) {
   );
 }
 
+function FollowUpSettingsTab({ getToken }: { getToken: () => Promise<string | null> }) {
+  const [submitError, setSubmitError] = useState<string | undefined>();
+  const settingsQuery = useQuery(FollowUpSettingsQueries.latest(getToken));
+  const saveMutation = useSaveFollowUpSettings();
+
+  const settings = settingsQuery.data?.settings;
+
+  async function handleSubmit(values: FollowUpSettingsInput) {
+    setSubmitError(undefined);
+    try {
+      await saveMutation.mutateAsync(values);
+      toast.success("Follow-up settings updated", { duration: 3000 });
+    } catch {
+      setSubmitError("Failed to save. Please try again.");
+    }
+  }
+
+  if (settingsQuery.isPending) {
+    return (
+      <div className="px-6 py-10 max-w-2xl mx-auto space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-9 rounded-lg bg-(--surface-raised) animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (settingsQuery.isError) {
+    return (
+      <div className="px-6 py-10 max-w-2xl mx-auto">
+        <div className="text-[13px] text-destructive">Failed to load follow-up settings.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-6 py-10 max-w-2xl mx-auto">
+      <h2 className="text-[15px] font-semibold text-foreground mb-1.5">Follow-up cadence</h2>
+      <p className="text-[13px] text-(--text-secondary) mb-8">
+        Configure how many automatic follow-up reminders each contact gets after a sent message, and
+        how many days to wait before each one.
+      </p>
+
+      <FollowUpSettingsForm
+        key={settings?.version ?? 0}
+        initialValues={{ stepOffsetDays: settings?.stepOffsetDays ?? [] }}
+        onSubmit={handleSubmit}
+        submitLabel="Save cadence"
+        isSubmitting={saveMutation.isPending}
+        submitError={submitError}
+      />
+    </div>
+  );
+}
+
 function SettingsFrameworksPage() {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("job-search");
@@ -104,6 +161,7 @@ function SettingsFrameworksPage() {
 
   const TABS: { key: Tab; label: string }[] = [
     { key: "job-search", label: "Job Search" },
+    { key: "followups", label: "Follow-ups" },
     { key: "company-research", label: "Company Research" },
     { key: "account", label: "Account" },
   ];
@@ -116,7 +174,7 @@ function SettingsFrameworksPage() {
       </header>
 
       {/* tabs */}
-      <div className="px-6 pt-0 flex gap-1 border-b border-border bg-background shrink-0">
+      <div className="px-6 pt-0 flex gap-6 border-b border-border bg-background shrink-0">
         {TABS.map((tab) => {
           const active = activeTab === tab.key;
           return (
@@ -125,7 +183,7 @@ function SettingsFrameworksPage() {
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={[
-                "h-9 px-4 text-[12px] font-medium border-b-2 -mb-px transition-colors",
+                "h-14 text-[13px] font-medium border-b-2 -mb-px transition-colors",
                 active
                   ? "border-primary text-primary"
                   : "border-transparent text-(--text-secondary) hover:text-foreground",
@@ -185,6 +243,8 @@ function SettingsFrameworksPage() {
             )}
           </div>
         )}
+
+        {activeTab === "followups" && <FollowUpSettingsTab getToken={getToken} />}
 
         {activeTab === "company-research" && (
           <div className="flex items-center justify-center h-64">

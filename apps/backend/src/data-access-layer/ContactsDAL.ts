@@ -553,6 +553,40 @@ export default class ContactsDAL {
     return response;
   }
 
+  /** Count of outbound (_sent) history rows for the contact — doubles as "latest Touch N". */
+  async getSentMessageCount(params: Schemas.GetSentMessageCountDALRequest) {
+    const response: Schemas.GetSentMessageCountApiResponse = { isSuccess: false };
+
+    try {
+      const [row] = await this.db
+        .select({ count: count() })
+        .from(contactHistory)
+        .where(
+          and(
+            eq(contactHistory.contactId, params.contactId),
+            eq(contactHistory.createdBy, params.createdBy),
+            inArray(contactHistory.type, Schemas.CONTACT_HISTORY_SENT_TYPES),
+          ),
+        );
+
+      response.isSuccess = true;
+      response.message = "Sent message count fetched successfully";
+      response.count = row?.count ?? 0;
+    } catch (error) {
+      const message = "Unknown error in fetching sent message count";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.GetSentMessageCount,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
   async createContactHistory(params: Schemas.CreateContactHistoryDALRequest) {
     const response: Schemas.CreateContactHistoryApiResponse = { isSuccess: false };
 

@@ -11,7 +11,8 @@ interface TaskRowProps {
 export function TaskRow({ task, onToggle, isUpdating }: TaskRowProps) {
   const navigate = useNavigate();
   const isCompleted = task.status === Schemas.TaskStatusIntEnum.Completed;
-  const isOverdue = task.overdueByDays > 0 && !isCompleted;
+  const isPaused = task.status === Schemas.TaskStatusIntEnum.Paused;
+  const isOverdue = task.overdueByDays > 0 && !isCompleted && !isPaused;
   const metaLine = [task.companyName, task.designation].filter(Boolean).join(" · ");
 
   return (
@@ -32,6 +33,16 @@ export function TaskRow({ task, onToggle, isUpdating }: TaskRowProps) {
         </p>
         {metaLine && <p className="text-xs text-(--text-secondary) truncate mt-0.5">{metaLine}</p>}
       </div>
+      {task.stepNumber != null && (
+        <span className="shrink-0 inline-flex items-center gap-1 h-5 px-1.75 rounded-md text-[11px] font-semibold bg-(--surface-raised) text-(--text-secondary)">
+          Follow-up {task.stepNumber}
+        </span>
+      )}
+      {isPaused && (
+        <span className="shrink-0 inline-flex items-center gap-1 h-5 px-1.75 rounded-md text-[11px] font-semibold bg-(--surface-raised) text-(--text-secondary)">
+          Paused
+        </span>
+      )}
       {isOverdue && (
         <span className="shrink-0 inline-flex items-center gap-1 h-5 px-1.75 rounded-md text-[11px] font-semibold bg-(--danger-bg) text-(--danger-text)">
           Overdue {task.overdueByDays}d
