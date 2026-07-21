@@ -1,6 +1,7 @@
 import type * as Schemas from "@app/schemas";
 import Utilities from "@/utils";
 import { Button } from "@/shadcn/ui/button";
+import { CompanyContext } from "./-CompanyContext";
 
 function Avatar({ name }: { name: string }) {
   return (
@@ -137,6 +138,8 @@ export function AboutTab({
           rows={3}
         />
       </div>
+
+      <CompanyContext companyId={contact.companyId} contactId={contact.id} />
 
       <div className="px-5 py-4.5">
         <Button

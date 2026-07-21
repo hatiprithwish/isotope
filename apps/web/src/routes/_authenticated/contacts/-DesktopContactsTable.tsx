@@ -15,9 +15,8 @@ import { StatusBadge } from "./-StatusBadge";
 import { ContactDetailPanel } from "./-DesktopPanel";
 import { STATUS_OPTIONS } from "./-AddOrEditContactModal";
 import CompanySelect from "@/shared/fields/CompanySelect";
-import JobSelect from "@/shared/fields/JobSelect";
 
-type BulkField = "" | "status" | "companyId" | "source" | "jobId";
+type BulkField = "" | "status" | "companyId" | "source";
 
 const SOURCE_OPTIONS: { value: ContactSourceIntEnum; label: string }[] = [
   { value: ContactSourceIntEnum.Apollo, label: ContactSourceLabelEnum.Apollo },
@@ -202,7 +201,6 @@ export function DesktopContactsTable({
           <option value="status">Status</option>
           <option value="companyId">Company</option>
           <option value="source">Source</option>
-          <option value="jobId">Job</option>
         </select>
 
         {bulkField === "status" && (
@@ -238,12 +236,6 @@ export function DesktopContactsTable({
         {bulkField === "companyId" && (
           <div className="w-48">
             <CompanySelect value={bulkValue} onChange={setBulkValue} />
-          </div>
-        )}
-
-        {bulkField === "jobId" && (
-          <div className="w-48">
-            <JobSelect value={bulkValue} onChange={setBulkValue} />
           </div>
         )}
 

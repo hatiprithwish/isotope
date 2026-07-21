@@ -40,10 +40,17 @@ export function LinkedContacts({ companyId }: Props) {
       ) : (
         <div className="flex flex-col gap-0">
           {linkedContacts.map((contact, i) => (
-            <div
+            <button
               key={contact.id}
+              type="button"
+              onClick={() =>
+                navigate({
+                  to: "/contacts/$contactId",
+                  params: { contactId: String(contact.id) },
+                })
+              }
               className={[
-                "flex items-center gap-2.5 py-2",
+                "flex items-center gap-2.5 py-2 w-full text-left hover:bg-(--surface-raised) -mx-1 px-1 rounded-md transition-colors",
                 i < linkedContacts.length - 1 ? "border-b border-border" : "",
               ].join(" ")}
             >
@@ -74,7 +81,7 @@ export function LinkedContacts({ companyId }: Props) {
               >
                 {contact.statusLabel}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       )}

@@ -11,6 +11,7 @@ export class JobsQueries {
     list: (searchText: string) => ["jobs", "list", searchText] as const,
     count: (searchText: string) => ["jobs", "count", searchText] as const,
     detail: (id: number) => ["jobs", id] as const,
+    byCompany: (companyId: number) => ["jobs", "company", companyId] as const,
   };
 
   static list(params: Schemas.GetJobsApiRequest, getToken: () => Promise<string | null>) {
@@ -44,6 +45,16 @@ export class JobsQueries {
       queryKey: JobsQueries.keys.detail(id),
       queryFn: ({ signal }) =>
         apiClient<Schemas.GetJobApiResponse>(`/jobs/${id}`, getToken, { signal }),
+    });
+  }
+
+  static byCompany(companyId: number, getToken: () => Promise<string | null>) {
+    return queryOptions({
+      queryKey: JobsQueries.keys.byCompany(companyId),
+      queryFn: ({ signal }) =>
+        apiClient<Schemas.GetJobsApiResponse>(`/companies/${companyId}/jobs`, getToken, {
+          signal,
+        }),
     });
   }
 }

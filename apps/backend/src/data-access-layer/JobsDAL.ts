@@ -538,4 +538,57 @@ export default class JobsDAL {
 
     return response;
   }
+
+  async getJobsByCompany(params: Schemas.GetJobsByCompanyDALRequest) {
+    const response: Schemas.GetJobsApiResponse = { isSuccess: false };
+
+    try {
+      const rows = await this.db
+        .select({
+          id: jobs.id,
+          createdBy: jobs.createdBy,
+          title: jobs.title,
+          status: jobs.status,
+          type: jobs.type,
+          companyId: jobs.companyId,
+          companyName: companies.name,
+          companyLocation: companies.location,
+          url: jobs.url,
+          salary: jobs.salary,
+          source: jobs.source,
+          description: jobs.description,
+          skills: jobs.skills,
+          matchScore: jobs.matchScore,
+          createdAt: jobs.createdAt,
+          updatedAt: jobs.updatedAt,
+        })
+        .from(jobs)
+        .leftJoin(companies, eq(jobs.companyId, companies.id))
+        .where(and(eq(jobs.createdBy, params.createdBy), eq(jobs.companyId, params.companyId)))
+        .orderBy(desc(jobs.createdAt))
+        // TODO: paginate — capped at 20 until the company-context UI supports pagination.
+        .limit(20);
+
+      response.isSuccess = true;
+      response.message = "Jobs fetched successfully";
+      response.jobs = rows.map((row) => ({
+        ...row,
+        skills: row.skills ? (JSON.parse(row.skills) as string[]) : null,
+        statusLabel: Schemas.jobStatusIntToLabel[row.status],
+        typeLabel: Schemas.jobTypeIntToLabel[row.type],
+      }));
+    } catch (error) {
+      const message = "Unknown error in listing jobs by company";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.ListJobs,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
 }

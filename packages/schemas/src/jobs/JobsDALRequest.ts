@@ -18,6 +18,8 @@ export type GetJobsCountDALRequest = Pick<Job, "createdBy"> & {
   searchText: string | null;
 };
 
+export type GetJobsByCompanyDALRequest = Pick<Job, "createdBy"> & { companyId: number };
+
 export type UpdateJobDALRequest = FindJobDetailsDALRequest &
   Partial<
     NullableDALFields<Omit<Job, "id" | "createdBy" | "createdAt" | "statusLabel" | "typeLabel">>

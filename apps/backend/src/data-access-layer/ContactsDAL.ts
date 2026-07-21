@@ -35,7 +35,6 @@ export default class ContactsDAL {
         .values({
           createdBy: params.createdBy,
           companyId: params.companyId,
-          jobId: params.jobId ?? null,
           name: params.name,
           designation: params.designation ?? null,
           email: params.email ?? null,
@@ -108,7 +107,6 @@ export default class ContactsDAL {
           linkedinUrl: contacts.linkedinUrl,
           linkedinConnected: contacts.linkedinConnected,
           companyId: contacts.companyId,
-          jobId: contacts.jobId,
           sequencePosition: contacts.sequencePosition,
           lastTouchAt: contacts.lastTouchAt,
           nextTouchDueAt: contacts.nextTouchDueAt,
@@ -205,7 +203,6 @@ export default class ContactsDAL {
           linkedinUrl: contacts.linkedinUrl,
           linkedinConnected: contacts.linkedinConnected,
           companyId: contacts.companyId,
-          jobId: contacts.jobId,
           sequencePosition: contacts.sequencePosition,
           lastTouchAt: contacts.lastTouchAt,
           nextTouchDueAt: contacts.nextTouchDueAt,
@@ -270,7 +267,6 @@ export default class ContactsDAL {
           linkedinUrl: contacts.linkedinUrl,
           linkedinConnected: contacts.linkedinConnected,
           companyId: contacts.companyId,
-          jobId: contacts.jobId,
           sequencePosition: contacts.sequencePosition,
           lastTouchAt: contacts.lastTouchAt,
           nextTouchDueAt: contacts.nextTouchDueAt,
@@ -300,7 +296,10 @@ export default class ContactsDAL {
         .leftJoin(companies, eq(contacts.companyId, companies.id))
         .where(
           and(eq(contacts.createdBy, params.createdBy), eq(contacts.companyId, params.companyId)),
-        );
+        )
+        .orderBy(desc(contacts.createdAt))
+        // TODO: paginate — capped at 20 until the company-context UI supports pagination.
+        .limit(20);
 
       response.isSuccess = true;
       response.message = "Contacts fetched successfully";
@@ -333,7 +332,6 @@ export default class ContactsDAL {
           linkedinUrl: params.linkedinUrl,
           linkedinConnected: params.linkedinConnected,
           companyId: params.companyId ?? undefined,
-          jobId: params.jobId,
           sequencePosition: params.sequencePosition,
           lastTouchAt: params.lastTouchAt,
           nextTouchDueAt: params.nextTouchDueAt,

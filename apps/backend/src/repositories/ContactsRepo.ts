@@ -50,7 +50,6 @@ export default class ContactsRepo {
       linkedinUrl: params.contact.linkedinUrl ?? null,
       linkedinConnected: params.contact.linkedinConnected ?? null,
       companyId: params.contact.companyId ?? null,
-      jobId: params.contact.jobId ?? null,
       sequencePosition: params.contact.sequencePosition ?? null,
       lastTouchAt: params.contact.lastTouchAt ?? null,
       nextTouchDueAt: params.contact.nextTouchDueAt ?? null,

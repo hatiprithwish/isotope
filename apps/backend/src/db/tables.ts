@@ -54,7 +54,6 @@ export const contacts = table(
     id: t.int().primaryKey({ autoIncrement: true }),
     createdBy: t.text("created_by").notNull(),
     companyId: t.int("company_id").notNull(),
-    jobId: t.int("job_id"),
     name: t.text().notNull(),
     designation: t.text(),
     email: t.text(),

@@ -171,4 +171,18 @@ export default class JobsRepo {
       sortDirection: params.sortDirection ?? Schemas.SortDirection.Desc,
     });
   }
+
+  async getJobsByCompany(params: { userId: string; companyId: number }) {
+    AppLogger.info({
+      category: Schemas.LogCategory.Repo,
+      action: Schemas.LogAction.ListJobs,
+      message: "Listing jobs by company",
+      metadata: params,
+    });
+
+    return await this.dal.getJobsByCompany({
+      createdBy: params.userId,
+      companyId: params.companyId,
+    });
+  }
 }

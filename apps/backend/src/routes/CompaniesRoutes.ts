@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import CompaniesRepo from "@/repositories/CompaniesRepo";
 import ContactsRepo from "@/repositories/ContactsRepo";
+import JobsRepo from "@/repositories/JobsRepo";
 import checkAuth from "@/middlewares/AuthMiddleware";
 import type AppContext from "@/config/AppContext";
 import * as Schemas from "@app/schemas";
@@ -111,6 +112,24 @@ CompaniesRoutes.get(
 
     const repo = new ContactsRepo(c.env);
     const response = await repo.getContactsByCompany({
+      userId,
+      companyId: Number(id),
+    });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
+CompaniesRoutes.get(
+  "/:id/jobs",
+  checkAuth,
+  zValidator("param", z.object({ id: z.string() })),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { id } = c.req.valid("param");
+
+    const repo = new JobsRepo(c.env);
+    const response = await repo.getJobsByCompany({
       userId,
       companyId: Number(id),
     });

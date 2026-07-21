@@ -56,7 +56,6 @@ export const ZContactBase = z.object({
   name: z.string(),
   status: ZContactStatusIntEnum,
   companyId: z.number(),
-  jobId: z.number().nullable().optional(),
   designation: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   linkedinUrl: z.string().nullable().optional(),
