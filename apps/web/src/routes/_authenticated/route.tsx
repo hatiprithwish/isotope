@@ -26,7 +26,7 @@ function AuthenticatedLayout() {
 
   if (!isSignedIn) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div className="flex flex-col items-center justify-center min-h-dvh gap-4">
         <p className="text-lg text-muted-foreground">Please sign in to see this page.</p>
         <Button asChild>
           <Link to="/auth/sign-in">Sign in</Link>
@@ -36,7 +36,7 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
+    <div className="flex h-dvh w-screen overflow-hidden bg-background">
       {/* Desktop sidebar — hidden on mobile */}
       <div className="hidden md:flex">
         <DesktopSidebar />

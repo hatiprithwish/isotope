@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { StatusBadge } from "./-StatusBadge";
-import { useUpdateContact, useDeleteContact } from "./-data";
+import { useDeleteContact } from "./-data";
 import Utilities from "@/utils";
 import { DraftTab } from "./-DraftTab";
 import { HistoryTab } from "./-HistoryTab";
@@ -58,19 +58,7 @@ export function ContactDetailContent({
   onDeleted,
 }: ContactDetailContentProps) {
   const [showEditModal, setShowEditModal] = useState(false);
-  const updateContact = useUpdateContact();
   const deleteContact = useDeleteContact();
-
-  function handleMarkSent() {
-    updateContact.mutate({ id: contact.id, body: { contact: { status: 3 } } });
-  }
-
-  function handleMarkDead() {
-    updateContact.mutate({
-      id: contact.id,
-      body: { contact: { status: 6, deadAt: new Date().toISOString() } },
-    });
-  }
 
   function handleDelete() {
     deleteContact.mutateAsync(contact.id).then(onDeleted);
@@ -194,29 +182,7 @@ export function ContactDetailContent({
         <div className="flex-1 overflow-y-auto">
           {activeTab === "draft" && <DraftTab contact={contact} />}
           {activeTab === "history" && <HistoryTab contact={contact} getToken={getToken} />}
-          {activeTab === "about" && <AboutTab contact={contact} onMarkDead={handleMarkDead} />}
-        </div>
-
-        <div className="px-5 py-3.5 border-t border-border bg-card flex gap-2 shrink-0">
-          <div className="flex-1" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            onClick={handleMarkDead}
-            disabled={updateContact.isPending}
-            className="text-(--danger) hover:bg-(--danger-bg) hover:text-(--danger)"
-          >
-            Mark dead
-          </Button>
-          <Button
-            type="button"
-            size="lg"
-            onClick={handleMarkSent}
-            disabled={updateContact.isPending}
-          >
-            Mark as sent
-          </Button>
+          {activeTab === "about" && <AboutTab contact={contact} />}
         </div>
       </div>
     </>

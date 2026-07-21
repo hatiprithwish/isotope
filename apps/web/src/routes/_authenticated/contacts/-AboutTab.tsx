@@ -11,13 +11,7 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-export function AboutTab({
-  contact,
-  onMarkDead,
-}: {
-  contact: Schemas.Contact;
-  onMarkDead: () => void;
-}) {
+export function AboutTab({ contact }: { contact: Schemas.Contact }) {
   return (
     <div className="flex flex-col">
       <div className="px-5 py-4.5 border-b border-border">
@@ -140,18 +134,6 @@ export function AboutTab({
       </div>
 
       <CompanyContext companyId={contact.companyId} contactId={contact.id} />
-
-      <div className="px-5 py-4.5">
-        <Button
-          type="button"
-          variant="ghost"
-          size="lg"
-          onClick={onMarkDead}
-          className="w-full text-(--danger) hover:bg-(--danger-bg) hover:text-(--danger)"
-        >
-          Mark as dead
-        </Button>
-      </div>
     </div>
   );
 }
