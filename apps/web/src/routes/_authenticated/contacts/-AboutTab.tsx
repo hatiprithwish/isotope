@@ -1,6 +1,6 @@
 import type * as Schemas from "@app/schemas";
+import { useState } from "react";
 import Utilities from "@/utils";
-import { Button } from "@/shadcn/ui/button";
 import { CompanyContext } from "./-CompanyContext";
 
 function Avatar({ name }: { name: string }) {
@@ -12,6 +12,15 @@ function Avatar({ name }: { name: string }) {
 }
 
 export function AboutTab({ contact }: { contact: Schemas.Contact }) {
+  const [emailCopied, setEmailCopied] = useState(false);
+
+  const copyEmail = () => {
+    if (!contact.email) return;
+    void navigator.clipboard.writeText(contact.email);
+    setEmailCopied(true);
+    setTimeout(() => setEmailCopied(false), 2000);
+  };
+
   return (
     <div className="flex flex-col">
       <div className="px-5 py-4.5 border-b border-border">
@@ -30,19 +39,20 @@ export function AboutTab({ contact }: { contact: Schemas.Contact }) {
 
       <div className="border-b border-border overflow-hidden">
         {contact.email && (
-          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border">
+          <button
+            type="button"
+            onClick={copyEmail}
+            className="w-full flex items-center gap-3 px-5 py-3.5 border-b border-border hover:bg-(--surface-raised) transition-colors text-left"
+          >
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-medium text-foreground truncate">
                 {contact.email}
               </div>
-              <div className="text-[11px] text-(--text-secondary) mt-0.5">Work email</div>
+              <div className="text-[11px] text-(--text-secondary) mt-0.5">
+                {emailCopied ? "Copied successfully" : "Work email"}
+              </div>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => navigator.clipboard.writeText(contact.email ?? "")}
-            >
+            <span className="w-7 h-7 flex items-center justify-center rounded-md text-(--text-secondary) shrink-0">
               <svg
                 width={14}
                 height={14}
@@ -56,8 +66,8 @@ export function AboutTab({ contact }: { contact: Schemas.Contact }) {
                 <path d="M9 9m0 2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2z" />
                 <path d="M5 15h-1a2 2 0 0 1 -2 -2v-7a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v1" />
               </svg>
-            </Button>
-          </div>
+            </span>
+          </button>
         )}
         {contact.linkedinUrl && (
           <a
