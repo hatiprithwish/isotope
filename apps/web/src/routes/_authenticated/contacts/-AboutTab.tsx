@@ -60,7 +60,12 @@ export function AboutTab({ contact }: { contact: Schemas.Contact }) {
           </div>
         )}
         {contact.linkedinUrl && (
-          <div className="flex items-center gap-3 px-5 py-3.5">
+          <a
+            href={Utilities.toHref(contact.linkedinUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-5 py-3.5 hover:bg-(--surface-raised) transition-colors"
+          >
             <div className="flex-1 min-w-0">
               <div className="text-[13px] font-medium text-foreground truncate">
                 {contact.linkedinUrl}
@@ -72,12 +77,7 @@ export function AboutTab({ contact }: { contact: Schemas.Contact }) {
                 </div>
               )}
             </div>
-            <a
-              href={`https://${contact.linkedinUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-7 h-7 flex items-center justify-center rounded-md text-(--text-secondary) hover:bg-(--surface-raised) transition-colors"
-            >
+            <span className="w-7 h-7 flex items-center justify-center rounded-md text-(--text-secondary) shrink-0">
               <svg
                 width={14}
                 height={14}
@@ -91,8 +91,8 @@ export function AboutTab({ contact }: { contact: Schemas.Contact }) {
                 <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
                 <path d="M11 13l9 -9M15 4h5v5" />
               </svg>
-            </a>
-          </div>
+            </span>
+          </a>
         )}
       </div>
 

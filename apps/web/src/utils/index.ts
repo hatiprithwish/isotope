@@ -30,6 +30,11 @@ export default class Utilities {
       .join(" ");
   }
 
+  static toHref(url: string): string {
+    const trimmed = url.trim();
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  }
+
   static guessNameFromEmailOrLinkedin(email: string, linkedinUrl: string): string {
     const localPart = email.trim().split("@")[0];
     if (localPart) {
