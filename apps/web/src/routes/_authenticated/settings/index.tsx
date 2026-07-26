@@ -35,6 +35,7 @@ import Utilities from "@/utils";
 import { apiClient } from "@/providers/apiClient";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
+  head: () => ({ meta: [{ title: "Settings · Isotope" }] }),
   component: SettingsFrameworksPage,
 });
 

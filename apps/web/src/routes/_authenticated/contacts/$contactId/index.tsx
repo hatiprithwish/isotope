@@ -11,6 +11,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId/")({
   validateSearch: searchSchema,
+  head: () => ({ meta: [{ title: "Contact details · Isotope" }] }),
   component: ContactDetailPage,
 });
 

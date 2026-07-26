@@ -19,6 +19,7 @@ import {
 } from "./-utils";
 
 export const Route = createFileRoute("/_authenticated/tasks/")({
+  head: () => ({ meta: [{ title: "Tasks · Isotope" }] }),
   component: TasksPage,
 });
 
@@ -59,7 +60,7 @@ function TasksPage() {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto bg-background">
-      <div className="max-w-[1280px] w-full mx-auto p-6 flex flex-col gap-5">
+      <div className="max-w-7xl w-full mx-auto p-6 flex flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-base font-semibold text-foreground">Tasks</h1>

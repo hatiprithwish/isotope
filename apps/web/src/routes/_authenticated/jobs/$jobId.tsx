@@ -9,6 +9,7 @@ import { JobDetailBody } from "./-JobDetailBody";
 import AddOrEditJobModal from "./-AddOrEditJobModal";
 
 export const Route = createFileRoute("/_authenticated/jobs/$jobId")({
+  head: () => ({ meta: [{ title: "Job details · Isotope" }] }),
   component: JobDetailPage,
 });
 

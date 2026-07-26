@@ -6,6 +6,7 @@ import { Button } from "@/shadcn/ui/button";
 import NoteCard from "./-NoteCard";
 
 export const Route = createFileRoute("/_authenticated/notes/")({
+  head: () => ({ meta: [{ title: "Notes · Isotope" }] }),
   component: NotesPage,
 });
 

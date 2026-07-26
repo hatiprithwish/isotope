@@ -33,6 +33,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/jobs/")({
   validateSearch: searchSchema,
+  head: () => ({ meta: [{ title: "Jobs · Isotope" }] }),
   component: JobsPage,
 });
 
