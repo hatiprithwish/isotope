@@ -36,6 +36,7 @@ export default class JobsDAL {
           source: params.source,
           description: params.description,
           skills: params.skills ? JSON.stringify(params.skills) : null,
+          roleType: params.roleType,
           matchScore: params.matchScore,
           createdBy: params.createdBy,
           createdAt: Utility.getCurrentISOTimestamp(),
@@ -89,6 +90,7 @@ export default class JobsDAL {
         source,
         description,
         skills,
+        roleType,
         matchScore,
         updatedAt,
       } = params;
@@ -105,6 +107,7 @@ export default class JobsDAL {
       if (source !== undefined) setValues.source = source;
       if (description !== undefined) setValues.description = description;
       if (skills !== undefined) setValues.skills = skills ? JSON.stringify(skills) : null;
+      if (roleType !== undefined) setValues.roleType = roleType;
       if (matchScore !== undefined) setValues.matchScore = matchScore;
 
       const row = await this.db
@@ -171,6 +174,7 @@ export default class JobsDAL {
           source: jobs.source,
           description: jobs.description,
           skills: jobs.skills,
+          roleType: jobs.roleType,
           matchScore: jobs.matchScore,
           createdAt: jobs.createdAt,
           updatedAt: jobs.updatedAt,
@@ -493,6 +497,7 @@ export default class JobsDAL {
           source: jobs.source,
           description: jobs.description,
           skills: jobs.skills,
+          roleType: jobs.roleType,
           matchScore: jobs.matchScore,
           createdAt: jobs.createdAt,
           updatedAt: jobs.updatedAt,
@@ -558,6 +563,7 @@ export default class JobsDAL {
           source: jobs.source,
           description: jobs.description,
           skills: jobs.skills,
+          roleType: jobs.roleType,
           matchScore: jobs.matchScore,
           createdAt: jobs.createdAt,
           updatedAt: jobs.updatedAt,

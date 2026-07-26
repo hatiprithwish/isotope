@@ -106,6 +106,15 @@ export enum LogAction {
   GetContactRolePills = "GetContactRolePills",
   SaveContactRolePills = "SaveContactRolePills",
 
+  // Role types
+  GetRoleTypes = "GetRoleTypes",
+  SaveRoleTypes = "SaveRoleTypes",
+
+  // Message template
+  GetMessageTemplates = "GetMessageTemplates",
+  SaveMessageTemplate = "SaveMessageTemplate",
+  ResolveMessageTemplate = "ResolveMessageTemplate",
+
   // Search
   GlobalSearch = "GlobalSearch",
 }

@@ -112,7 +112,12 @@ export function HistoryTab({
         );
       })}
 
-      <AddOrEditContactHistoryForm mode="add" contactId={contact.id} onSaved={() => {}} />
+      <AddOrEditContactHistoryForm
+        mode="add"
+        contactId={contact.id}
+        getToken={getToken}
+        onSaved={() => {}}
+      />
     </div>
   );
 }

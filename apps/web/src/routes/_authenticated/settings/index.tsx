@@ -5,7 +5,13 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CopyIcon, CheckIcon } from "@phosphor-icons/react";
-import type { FrameworkInput, FollowUpSettingsInput, ContactRolePillsInput } from "@app/schemas";
+import type {
+  FrameworkInput,
+  FollowUpSettingsInput,
+  ContactRolePillsInput,
+  RoleTypesInput,
+  SaveMessageTemplateApiRequest,
+} from "@app/schemas";
 import JobSearchFrameworkForm from "@/shared/forms/JobSearchFrameworkForm";
 import {
   FrameworkQueries,
@@ -16,9 +22,15 @@ import {
   useSaveFollowUpSettings,
   ContactRolePillsQueries,
   useSaveContactRolePills,
+  RoleTypesQueries,
+  useSaveRoleTypes,
+  MessageTemplateQueries,
+  useSaveMessageTemplate,
 } from "./-data";
 import FollowUpSettingsForm from "./-FollowUpSettingsForm";
 import ContactRolePillsForm from "./-ContactRolePillsForm";
+import RoleTypesForm from "./-RoleTypesForm";
+import MessageTemplatesForm from "./-MessageTemplatesForm";
 import Utilities from "@/utils";
 import { apiClient } from "@/providers/apiClient";
 
@@ -26,7 +38,14 @@ export const Route = createFileRoute("/_authenticated/settings/")({
   component: SettingsFrameworksPage,
 });
 
-type Tab = "job-search" | "followups" | "contact-roles" | "company-research" | "account";
+type Tab =
+  | "job-search"
+  | "followups"
+  | "contact-roles"
+  | "role-types"
+  | "message-templates"
+  | "company-research"
+  | "account";
 
 function useInboundAddress(getToken: () => Promise<string | null>) {
   return useQuery(
@@ -196,6 +215,123 @@ function ContactRolePillsTab({ getToken }: { getToken: () => Promise<string | nu
   );
 }
 
+function RoleTypesTab({ getToken }: { getToken: () => Promise<string | null> }) {
+  const [submitError, setSubmitError] = useState<string | undefined>();
+  const roleTypesQuery = useQuery(RoleTypesQueries.latest(getToken));
+  const saveMutation = useSaveRoleTypes();
+
+  const roleTypes = roleTypesQuery.data?.roleTypes;
+
+  async function handleSubmit(values: RoleTypesInput) {
+    setSubmitError(undefined);
+    try {
+      await saveMutation.mutateAsync(values);
+      toast.success("Role types updated", { duration: 3000 });
+    } catch {
+      setSubmitError("Failed to save. Please try again.");
+    }
+  }
+
+  if (roleTypesQuery.isPending) {
+    return (
+      <div className="px-6 py-10 max-w-2xl mx-auto space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-9 rounded-lg bg-(--surface-raised) animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (roleTypesQuery.isError) {
+    return (
+      <div className="px-6 py-10 max-w-2xl mx-auto">
+        <div className="text-[13px] text-destructive">Failed to load role types.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-6 py-10 max-w-2xl mx-auto">
+      <h2 className="text-[15px] font-semibold text-foreground mb-1.5">Role types</h2>
+      <p className="text-[13px] text-(--text-secondary) mb-8">
+        Tag jobs with a role type (e.g. Backend, Full Stack) so the Day-0 log template automatically
+        matches the right variant for each contact's company.
+      </p>
+
+      <RoleTypesForm
+        key={roleTypes?.updatedAt ?? roleTypes?.createdAt ?? "new"}
+        initialValues={{
+          labels: roleTypes?.labels ?? [],
+          defaultLabel: roleTypes?.defaultLabel ?? null,
+        }}
+        onSubmit={handleSubmit}
+        submitLabel="Save role types"
+        isSubmitting={saveMutation.isPending}
+        submitError={submitError}
+      />
+    </div>
+  );
+}
+
+function MessageTemplatesTab({ getToken }: { getToken: () => Promise<string | null> }) {
+  const templatesQuery = useQuery(MessageTemplateQueries.all(getToken));
+  const settingsQuery = useQuery(FollowUpSettingsQueries.latest(getToken));
+  const roleTypesQuery = useQuery(RoleTypesQueries.latest(getToken));
+  const saveMutation = useSaveMessageTemplate();
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+
+  const isPending = templatesQuery.isPending || settingsQuery.isPending || roleTypesQuery.isPending;
+  const isError = templatesQuery.isError || settingsQuery.isError || roleTypesQuery.isError;
+
+  async function handleSave(entry: SaveMessageTemplateApiRequest) {
+    setSavingKey(`${entry.step}:${entry.variantLabel ?? ""}`);
+    try {
+      await saveMutation.mutateAsync(entry);
+      toast.success("Template saved", { duration: 2000 });
+    } catch {
+      toast.error("Failed to save template. Please try again.");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  if (isPending) {
+    return (
+      <div className="px-6 py-10 max-w-2xl mx-auto space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-24 rounded-lg bg-(--surface-raised) animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="px-6 py-10 max-w-2xl mx-auto">
+        <div className="text-[13px] text-destructive">Failed to load message templates.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-6 py-10 max-w-2xl mx-auto">
+      <h2 className="text-[15px] font-semibold text-foreground mb-1.5">Message templates</h2>
+      <p className="text-[13px] text-(--text-secondary) mb-8">
+        Write a default message for each step of your follow-up sequence. Step count and days follow
+        your Follow-ups cadence.
+      </p>
+
+      <MessageTemplatesForm
+        templates={templatesQuery.data?.templates ?? []}
+        stepOffsetDays={settingsQuery.data?.settings?.stepOffsetDays ?? []}
+        roleTypeLabels={roleTypesQuery.data?.roleTypes?.labels ?? []}
+        onSave={handleSave}
+        savingKey={savingKey}
+      />
+    </div>
+  );
+}
+
 function SettingsFrameworksPage() {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("job-search");
@@ -223,6 +359,8 @@ function SettingsFrameworksPage() {
     { key: "job-search", label: "Job Search" },
     { key: "followups", label: "Follow-ups" },
     { key: "contact-roles", label: "Contact Roles" },
+    { key: "role-types", label: "Role Types" },
+    { key: "message-templates", label: "Message Templates" },
     { key: "company-research", label: "Company Research" },
     { key: "account", label: "Account" },
   ];
@@ -308,6 +446,10 @@ function SettingsFrameworksPage() {
         {activeTab === "followups" && <FollowUpSettingsTab getToken={getToken} />}
 
         {activeTab === "contact-roles" && <ContactRolePillsTab getToken={getToken} />}
+
+        {activeTab === "role-types" && <RoleTypesTab getToken={getToken} />}
+
+        {activeTab === "message-templates" && <MessageTemplatesTab getToken={getToken} />}
 
         {activeTab === "company-research" && (
           <div className="flex items-center justify-center h-64">

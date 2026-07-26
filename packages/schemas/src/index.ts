@@ -5,6 +5,8 @@ export * from "./contacts";
 export * from "./frameworks";
 export * from "./followup-settings";
 export * from "./contact-role-pills";
+export * from "./role-types";
+export * from "./message-template";
 export * from "./log";
 export * from "./common";
 export * from "./jobs";

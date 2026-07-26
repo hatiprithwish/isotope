@@ -11,6 +11,7 @@ export class ContactsQueries {
       ["contacts", "list", search, pageNo, pageSize] as const,
     detail: (id: number) => ["contacts", id] as const,
     history: (id: number) => ["contacts", id, "history"] as const,
+    messageTemplate: (id: number) => ["contacts", id, "message-template"] as const,
     duplicateCheck: (email: string, linkedinUrl: string, excludeId?: number) =>
       ["contacts", "duplicate-check", email, linkedinUrl, excludeId] as const,
   };
@@ -50,6 +51,18 @@ export class ContactsQueries {
         apiClient<Schemas.GetContactHistoryApiResponse>(`/contacts/${id}/history`, getToken, {
           signal,
         }),
+    });
+  }
+
+  static messageTemplate(id: number, getToken: () => Promise<string | null>) {
+    return queryOptions({
+      queryKey: ContactsQueries.keys.messageTemplate(id),
+      queryFn: ({ signal }) =>
+        apiClient<Schemas.ResolveMessageTemplateApiResponse>(
+          `/contacts/${id}/message-template`,
+          getToken,
+          { signal },
+        ),
     });
   }
 

@@ -79,3 +79,77 @@ export function useSaveContactRolePills() {
     },
   });
 }
+
+export class RoleTypesQueries {
+  static readonly keys = {
+    latest: () => ["role-types", "latest"] as const,
+  };
+
+  static latest(getToken: () => Promise<string | null>) {
+    return queryOptions({
+      queryKey: RoleTypesQueries.keys.latest(),
+      queryFn: ({ signal }) =>
+        apiClient<Schemas.GetRoleTypesApiResponse>("/role-types", getToken, { signal }),
+    });
+  }
+}
+
+export function useSaveRoleTypes() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Schemas.SaveRoleTypesApiRequest) =>
+      apiClient<Schemas.SaveRoleTypesApiResponse>("/role-types", getToken, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: RoleTypesQueries.keys.latest(),
+      });
+    },
+    onError: () => {
+      toast.error("Failed to save role types. Please try again.");
+    },
+  });
+}
+
+export class MessageTemplateQueries {
+  static readonly keys = {
+    all: () => ["message-templates"] as const,
+  };
+
+  static all(getToken: () => Promise<string | null>) {
+    return queryOptions({
+      queryKey: MessageTemplateQueries.keys.all(),
+      queryFn: ({ signal }) =>
+        apiClient<Schemas.GetMessageTemplatesApiResponse>("/message-template", getToken, {
+          signal,
+        }),
+    });
+  }
+}
+
+export function useSaveMessageTemplate() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Schemas.SaveMessageTemplateApiRequest) =>
+      apiClient<Schemas.SaveMessageTemplateApiResponse>("/message-template", getToken, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: MessageTemplateQueries.keys.all(),
+      });
+    },
+    onError: () => {
+      toast.error("Failed to save message template. Please try again.");
+    },
+  });
+}

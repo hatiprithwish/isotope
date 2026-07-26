@@ -166,6 +166,21 @@ ContactsRoutes.post(
   },
 );
 
+ContactsRoutes.get(
+  "/:id/message-template",
+  checkAuth,
+  zValidator("param", z.object({ id: z.string().regex(/^\d+$/) })),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { id } = c.req.valid("param");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.resolveMessageTemplate({ contactId: Number(id), userId });
+
+    return c.json(response, response.isSuccess ? 200 : 404);
+  },
+);
+
 ContactsRoutes.patch(
   "/:id/history/:historyId",
   checkAuth,

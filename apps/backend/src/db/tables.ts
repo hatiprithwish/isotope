@@ -121,6 +121,7 @@ export const jobs = table(
     type: t.integer().$type<Schemas.JobTypeIntEnum>().notNull(),
     description: t.text(),
     skills: t.text(),
+    roleType: t.text("role_type"),
     createdBy: t.text("created_by").notNull(),
     matchScore: t.real("match_score"),
     createdAt: t.text("created_at").notNull(),
@@ -219,6 +220,44 @@ export const contactRolePills = table(
     updatedAt: t.text("updated_at"),
   },
   (table) => [t.index("idx_contact_role_pills_user").on(table.createdBy, table.version)],
+);
+
+export const roleTypes = table(
+  "role_types",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    labels: t.text().notNull().default("[]"),
+    defaultLabel: t.text("default_label"),
+    isCustomized: t.integer("is_customized", { mode: "boolean" }).notNull().default(false),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [t.uniqueIndex("UNQ_role_types_created_by").on(table.createdBy)],
+);
+
+// One row per (user, step, variant). variantLabel is only ever non-null at step 0 (one row
+// per configured role type label); step >= 1 and step 0's "default" slot both use NULL.
+// SQLite treats NULL as distinct per-row in a UNIQUE index, so a plain unique index on
+// (created_by, step, variant_label) would NOT block duplicate NULL-variant rows for the
+// same (created_by, step) — enforced instead at the DAL/upsert level.
+export const messageTemplates = table(
+  "message_templates",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    step: t.integer().notNull(),
+    variantLabel: t.text("variant_label"),
+    body: t.text().notNull().default(""),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [
+    t.index("IDX_message_templates_user_step").on(table.createdBy, table.step),
+    t
+      .uniqueIndex("UNQ_message_templates_user_step_variant")
+      .on(table.createdBy, table.step, table.variantLabel),
+  ],
 );
 
 // Single-row global table — id is always 1

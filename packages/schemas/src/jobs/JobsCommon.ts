@@ -78,6 +78,7 @@ export const ZJobBase = z.object({
   description: z.string().nullable().optional(),
   skills: z.array(z.string()).nullable().optional(),
   matchScore: z.number().nullable().optional(),
+  roleType: z.string().nullable().optional(),
 });
 export type JobBase = z.infer<typeof ZJobBase>;
 

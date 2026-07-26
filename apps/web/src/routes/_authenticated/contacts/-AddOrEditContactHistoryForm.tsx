@@ -1,29 +1,52 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { ContactHistoryChannelEnum, ContactHistoryDirectionEnum } from "@app/schemas";
 import { Field, FieldError } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
-import { useCreateContactHistory, useUpdateContactHistory } from "./-data";
+import { useCreateContactHistory, useUpdateContactHistory, ContactsQueries } from "./-data";
 
 const formSchema = z.object({
   body: z.string().min(1, "Message body is required."),
   sentAt: z.string().min(1, "Date is required."),
 });
 
-type AddMode = { mode: "add"; entry?: never; onDone?: never; onSaved: () => void };
+type AddMode = {
+  mode: "add";
+  entry?: never;
+  onDone?: never;
+  onSaved: () => void;
+  getToken: () => Promise<string | null>;
+};
 type EditMode = {
   mode: "edit";
   entry: Schemas.ContactHistory;
   onDone: () => void;
   onSaved?: never;
+  getToken?: never;
 };
 type Props = (AddMode | EditMode) & { contactId: number };
 
-export function AddOrEditContactHistoryForm({ mode, contactId, entry, onDone, onSaved }: Props) {
+export function AddOrEditContactHistoryForm({
+  mode,
+  contactId,
+  entry,
+  onDone,
+  onSaved,
+  getToken,
+}: Props) {
   const createHistory = useCreateContactHistory();
   const updateHistory = useUpdateContactHistory();
+
+  const templateQuery = useQuery({
+    ...ContactsQueries.messageTemplate(contactId, getToken ?? (() => Promise.resolve(null))),
+    enabled: mode === "add",
+  });
+  const resolved = templateQuery.data;
+  const hasTemplate = mode === "add" && !!resolved?.renderedBody;
 
   const [direction, setDirection] = useState<ContactHistoryDirectionEnum>(
     ContactHistoryDirectionEnum.Me,
@@ -31,6 +54,7 @@ export function AddOrEditContactHistoryForm({ mode, contactId, entry, onDone, on
   const [channel, setChannel] = useState<ContactHistoryChannelEnum>(
     ContactHistoryChannelEnum.Email,
   );
+  const templateApplied = useRef(false);
 
   const form = useForm({
     defaultValues: {
@@ -62,6 +86,23 @@ export function AddOrEditContactHistoryForm({ mode, contactId, entry, onDone, on
   });
 
   const isPending = mode === "add" ? createHistory.isPending : updateHistory.isPending;
+
+  // Seed the body from the resolved template once it loads — only if the user hasn't
+  // typed anything yet, and only once, so it never clobbers in-progress edits. A ref (not
+  // state) guards this since it's a one-time imperative sync into TanStack Form's own store,
+  // not something that should itself trigger a React re-render.
+  useEffect(() => {
+    if (
+      mode === "add" &&
+      hasTemplate &&
+      !templateApplied.current &&
+      form.getFieldValue("body") === "" &&
+      resolved?.renderedBody
+    ) {
+      templateApplied.current = true;
+      form.setFieldValue("body", resolved.renderedBody);
+    }
+  }, [mode, hasTemplate, resolved, form]);
 
   return (
     <form
@@ -158,6 +199,20 @@ export function AddOrEditContactHistoryForm({ mode, contactId, entry, onDone, on
           const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
           return (
             <Field data-invalid={isInvalid}>
+              {mode === "add" && !templateQuery.isPending && !hasTemplate && (
+                <p className="text-[12px] text-(--text-secondary) mb-1.5">
+                  No default message template set.{" "}
+                  <Link to="/settings" className="text-primary hover:underline">
+                    Configure in Settings →
+                  </Link>
+                </p>
+              )}
+              {mode === "add" && resolved?.isAmbiguousMatch && (
+                <p className="text-[12px] text-(--warning-text) mb-1.5">
+                  This company has multiple job types listed, so we used your default template
+                  instead of guessing.
+                </p>
+              )}
               <textarea
                 id={field.name}
                 value={field.state.value}

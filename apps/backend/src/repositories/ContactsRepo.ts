@@ -1,6 +1,9 @@
 import ContactsDAL from "@/data-access-layer/ContactsDAL";
 import TasksRepo from "@/repositories/TasksRepo";
 import FollowUpSettingsRepo from "@/repositories/FollowUpSettingsRepo";
+import MessageTemplateRepo from "@/repositories/MessageTemplateRepo";
+import RoleTypesRepo from "@/repositories/RoleTypesRepo";
+import JobsRepo from "@/repositories/JobsRepo";
 import Constants from "@/config/Constants";
 import Utility from "@/utils";
 import * as Schemas from "@app/schemas"; // runtime `import *` (not `import type`): this repo consumes buildContactHistoryType for the history-type convention.
@@ -303,6 +306,97 @@ export default class ContactsRepo {
       createdBy: params.userId,
       nextTouchDueAt: dueAt,
     });
+  }
+
+  /**
+   * Resolves which message template applies to a contact right now, and renders it with
+   * [Name]/[Company] substituted. step 0 = no outbound message sent yet; step N = the Nth
+   * follow-up (mirrors resyncFollowUp's own step derivation via getSentMessageCount, so the
+   * template step always matches the step the follow-up scheduler would compute — not
+   * necessarily the live task's stepNumber, since sequence-complete contacts have no task left
+   * but should still resolve to "no more templates" rather than silently reusing the last one).
+   * Only step 0 has variants (role-type based); step >= 1 always resolves the single body
+   * saved for that step, regardless of role type.
+   */
+  async resolveMessageTemplate(params: {
+    userId: string;
+    contactId: number;
+  }): Promise<Schemas.ResolveMessageTemplateApiResponse> {
+    const response: Schemas.ResolveMessageTemplateApiResponse = { isSuccess: false };
+
+    const contactResponse = await this.dal.getContactDetails({
+      id: params.contactId,
+      createdBy: params.userId,
+    });
+    if (!contactResponse.isSuccess || !contactResponse.contact) {
+      response.message = contactResponse.message ?? "Contact not found";
+      return response;
+    }
+    const contact = contactResponse.contact;
+
+    const sentCountResponse = await this.dal.getSentMessageCount({
+      contactId: params.contactId,
+      createdBy: params.userId,
+    });
+    if (!sentCountResponse.isSuccess) {
+      response.message = sentCountResponse.message ?? "Failed to resolve message count";
+      return response;
+    }
+    const step = sentCountResponse.count ?? 0;
+
+    const messageTemplateRepo = new MessageTemplateRepo(this.env);
+
+    let variantLabel: string | null = null;
+    let isAmbiguousMatch = false;
+
+    if (step === 0 && contact.companyId != null) {
+      const roleTypesResponse = await new RoleTypesRepo(this.env).getRoleTypesDetails({
+        userId: params.userId,
+      });
+      const defaultLabel = roleTypesResponse.roleTypes?.defaultLabel ?? null;
+
+      const jobsResponse = await new JobsRepo(this.env).getJobsByCompany({
+        userId: params.userId,
+        companyId: contact.companyId,
+      });
+      const distinctRoleTypes = [
+        ...new Set(
+          (jobsResponse.jobs ?? []).map((j) => j.roleType).filter((v): v is string => !!v),
+        ),
+      ];
+
+      if (distinctRoleTypes.length === 1) {
+        variantLabel = distinctRoleTypes[0];
+      } else {
+        variantLabel = defaultLabel;
+        isAmbiguousMatch = distinctRoleTypes.length > 1;
+      }
+    }
+
+    const template = await messageTemplateRepo.findTemplate({
+      userId: params.userId,
+      step,
+      variantLabel,
+    });
+
+    if (!template) {
+      response.isSuccess = true;
+      response.step = step;
+      response.variantLabel = variantLabel;
+      response.message = "No template configured for this step";
+      return response;
+    }
+
+    response.isSuccess = true;
+    response.step = step;
+    response.variantLabel = variantLabel;
+    response.isAmbiguousMatch = isAmbiguousMatch;
+    response.renderedBody = Schemas.renderTemplate(template.body, {
+      name: contact.name,
+      company: contact.companyName ?? null,
+    });
+    response.message = "Log template resolved successfully";
+    return response;
   }
 
   /**

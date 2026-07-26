@@ -9,6 +9,7 @@ import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import CompanySelect from "@/shared/fields/CompanySelect";
 import { CompaniesQueries } from "@/routes/_authenticated/companies/-data";
+import { RoleTypesQueries } from "@/routes/_authenticated/settings/-data";
 import { useCreateJob, useUpdateJob } from "./-data";
 import { JobStatusIntEnum, JobStatusLabelEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
@@ -35,6 +36,7 @@ const formSchema = z.object({
   salary: z.string(),
   source: z.string(),
   status: z.enum(JobStatusIntEnum),
+  roleType: z.string().nullable(),
 });
 
 const STATUS_OPTIONS: { value: JobStatusIntEnum; label: string }[] = [
@@ -59,7 +61,11 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
   const updateJob = useUpdateJob();
   const isPending = createJob.isPending || updateJob.isPending;
   const { data: companiesData } = useQuery(CompaniesQueries.list({}, getToken));
+  const { data: roleTypesData } = useQuery(RoleTypesQueries.latest(getToken));
+  const roleTypeLabels = roleTypesData?.roleTypes?.labels ?? [];
+  const defaultRoleType = roleTypesData?.roleTypes?.defaultLabel ?? null;
   const hasAppliedLatestCompany = useRef(false);
+  const hasAppliedDefaultRoleType = useRef(false);
 
   const form = useForm({
     defaultValues: {
@@ -70,6 +76,7 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
       salary: job?.salary ?? "",
       source: job?.source ?? "",
       status: job?.status ?? JobStatusIntEnum.NotStarted,
+      roleType: mode === "edit" ? (job.roleType ?? null) : defaultRoleType,
     },
     validators: { onSubmit: formSchema },
     onSubmit: ({ value }) => {
@@ -82,6 +89,7 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
         jobFields.salary = value.salary || null;
         jobFields.source = value.source || null;
         jobFields.status = value.status;
+        jobFields.roleType = value.roleType;
 
         updateJob.mutate(
           { id: job.id, body: { job: jobFields } },
@@ -101,6 +109,7 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
             description: value.description || null,
             salary: value.salary || null,
             source: value.source || null,
+            roleType: value.roleType,
           },
         };
         createJob.mutate(body, {
@@ -123,6 +132,15 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
     }
   }, [mode, companiesData, form]);
 
+  useEffect(() => {
+    if (mode !== "add" || hasAppliedDefaultRoleType.current) return;
+    if (defaultRoleType == null) return;
+    hasAppliedDefaultRoleType.current = true;
+    if (form.getFieldValue("roleType") == null) {
+      form.setFieldValue("roleType", defaultRoleType);
+    }
+  }, [mode, defaultRoleType, form]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">
       <div
@@ -130,8 +148,8 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
         onClick={onClose}
         aria-hidden
       />
-      <div className="relative z-10 w-full max-w-lg bg-card border border-border rounded-xl shadow-lg overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+      <div className="relative z-10 w-full max-w-lg max-h-[85vh] bg-card border border-border rounded-xl shadow-lg overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <span className="text-[15px] font-semibold text-foreground">
             {mode === "add" ? "Add job" : "Edit job"}
           </span>
@@ -140,14 +158,14 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
           </Button>
         </div>
 
-        <div className="px-5 py-5 max-h-[75vh] overflow-y-auto">
-          <form
-            onSubmit={(e: React.SyntheticEvent) => {
-              e.preventDefault();
-              form.handleSubmit();
-            }}
-            className="flex flex-col gap-4"
-          >
+        <form
+          onSubmit={(e: React.SyntheticEvent) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+          className="flex flex-col min-h-0 flex-1"
+        >
+          <div className="px-5 py-5 overflow-y-auto flex flex-col gap-4 min-h-0">
             {/* Title */}
             <form.Field name="title">
               {(field) => {
@@ -211,6 +229,37 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
                 </Field>
               )}
             </form.Field>
+
+            {/* Role type */}
+            {roleTypeLabels.length > 0 && (
+              <form.Field name="roleType">
+                {(field) => (
+                  <Field>
+                    <FieldLabel className={labelCls}>Role type</FieldLabel>
+                    <div className="flex flex-wrap gap-1.5">
+                      {roleTypeLabels.map((label) => {
+                        const selected = field.state.value === label;
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => field.handleChange(selected ? null : label)}
+                            className={[
+                              "h-7 px-3 rounded-full text-[12px] font-medium border transition-colors",
+                              selected
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-(--text-secondary) border-border hover:border-primary",
+                            ].join(" ")}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Field>
+                )}
+              </form.Field>
+            )}
 
             {/* Status */}
             {mode === "edit" && (
@@ -297,32 +346,32 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
                 </Field>
               )}
             </form.Field>
+          </div>
 
-            {/* Actions */}
-            <div className="flex gap-2 pt-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={() => {
-                  form.reset();
-                  onClose();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" size="lg" disabled={isPending} className="flex-1">
-                {isPending
-                  ? mode === "edit"
-                    ? "Saving…"
-                    : "Adding…"
-                  : mode === "edit"
-                    ? "Save changes"
-                    : "Add job"}
-              </Button>
-            </div>
-          </form>
-        </div>
+          {/* Actions */}
+          <div className="flex gap-2 px-5 py-4 border-t border-border shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                form.reset();
+                onClose();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" size="lg" disabled={isPending} className="flex-1">
+              {isPending
+                ? mode === "edit"
+                  ? "Saving…"
+                  : "Adding…"
+                : mode === "edit"
+                  ? "Save changes"
+                  : "Add job"}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );
