@@ -1,9 +1,10 @@
 import { useRef } from "react";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
-import { XIcon } from "@phosphor-icons/react";
+import { InfoIcon, XIcon } from "@phosphor-icons/react";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shadcn/ui/tooltip";
 import CompanySelect from "@/shared/fields/CompanySelect";
 import Utilities from "@/utils";
 import { useCreateContact, useUpdateContact } from "./-data";
@@ -170,8 +171,20 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name} className={labelCls}>
+                  <FieldLabel
+                    htmlFor={field.name}
+                    className={`${labelCls} inline-flex items-center gap-1`}
+                  >
                     Name <span className="text-destructive">*</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <InfoIcon className="h-3 w-3 text-gray-500 hover:text-gray-400 cursor-pointer" />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-xs text-xs">
+                        Paste an email or LinkedIn URL below and we&apos;ll fill in the name for
+                        you.
+                      </TooltipContent>
+                    </Tooltip>
                   </FieldLabel>
                   <input
                     id={field.name}
@@ -195,8 +208,22 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
               const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
               return (
                 <Field data-invalid={isInvalid}>
-                  <FieldLabel htmlFor={field.name} className={labelCls}>
+                  <FieldLabel
+                    htmlFor={field.name}
+                    className={`${labelCls} inline-flex items-center gap-1`}
+                  >
                     Company <span className="text-destructive">*</span>
+                    {mode === "add" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <InfoIcon className="h-3 w-3 text-gray-500 hover:text-gray-400 cursor-pointer" />
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-xs text-xs">
+                          Defaults to the company and title you used last time — change either if
+                          this contact is different.
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                   </FieldLabel>
                   <CompanySelect
                     value={field.state.value ? Number(field.state.value) : null}

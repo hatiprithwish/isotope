@@ -37,19 +37,19 @@ export default class Utilities {
 
   static guessNameFromEmailOrLinkedin(email: string, linkedinUrl: string): string {
     const localPart = email.trim().split("@")[0];
-    if (localPart) {
-      const guess = Utilities.titleCaseTokens(localPart);
-      if (guess) return guess;
-    }
+    const emailGuess = localPart ? Utilities.titleCaseTokens(localPart) : "";
 
     const slugMatch = linkedinUrl.trim().match(/linkedin\.com\/in\/([^/?#]+)/i);
     const slug = slugMatch?.[1];
-    if (slug) {
-      const withoutTrailingId = slug.replace(/-[a-z0-9]{6,}$/i, "");
-      const guess = Utilities.titleCaseTokens(withoutTrailingId);
-      if (guess) return guess;
-    }
+    const withoutTrailingId = slug?.replace(/-(?=[a-z0-9]{6,}$)[a-z0-9]*\d[a-z0-9]*$/i, "");
+    const linkedinGuess = withoutTrailingId ? Utilities.titleCaseTokens(withoutTrailingId) : "";
 
-    return "";
+    const emailHasFullName = emailGuess.split(" ").filter(Boolean).length >= 2;
+    const linkedinHasFullName = linkedinGuess.split(" ").filter(Boolean).length >= 2;
+
+    // Full first+last name wins; email wins ties since it's more likely to be authoritative.
+    if (emailHasFullName) return emailGuess;
+    if (linkedinHasFullName) return linkedinGuess;
+    return emailGuess || linkedinGuess;
   }
 }
