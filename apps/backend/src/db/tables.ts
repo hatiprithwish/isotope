@@ -207,6 +207,20 @@ export const followUpSettings = table(
   (table) => [t.index("idx_followup_settings_user").on(table.createdBy, table.version)],
 );
 
+export const contactRolePills = table(
+  "contact_role_pills",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    pillLabels: t.text("pill_labels").notNull().default("[]"),
+    version: t.integer().notNull().default(1),
+    isCustomized: t.integer("is_customized", { mode: "boolean" }).notNull().default(false),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [t.index("idx_contact_role_pills_user").on(table.createdBy, table.version)],
+);
+
 // Single-row global table — id is always 1
 export const browserRunBudget = table("browser_run_budget", {
   id: t.int().primaryKey({ autoIncrement: true }),

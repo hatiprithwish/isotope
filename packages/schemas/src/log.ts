@@ -102,6 +102,10 @@ export enum LogAction {
   GetFollowUpSettings = "GetFollowUpSettings",
   SaveFollowUpSettings = "SaveFollowUpSettings",
 
+  // Contact role pills
+  GetContactRolePills = "GetContactRolePills",
+  SaveContactRolePills = "SaveContactRolePills",
+
   // Search
   GlobalSearch = "GlobalSearch",
 }

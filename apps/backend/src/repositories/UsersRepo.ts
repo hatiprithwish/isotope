@@ -1,5 +1,6 @@
 import FrameworksDAL from "@/data-access-layer/FrameworksDAL";
 import FollowUpSettingsDAL from "@/data-access-layer/FollowUpSettingsDAL";
+import ContactRolePillsDAL from "@/data-access-layer/ContactRolePillsDAL";
 import UsersDAL from "@/data-access-layer/UsersDAL";
 import type * as Schemas from "@app/schemas";
 
@@ -19,6 +20,8 @@ export default class UsersRepo {
       await frameworksDAL.createDefaultIfAbsent(params.clerkId);
       const followUpSettingsDAL = new FollowUpSettingsDAL(this.env);
       await followUpSettingsDAL.createDefaultIfAbsent(params.clerkId);
+      const contactRolePillsDAL = new ContactRolePillsDAL(this.env);
+      await contactRolePillsDAL.createDefaultIfAbsent(params.clerkId);
     }
     return result;
   }

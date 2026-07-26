@@ -298,7 +298,7 @@ All authenticated routes MUST be nested under the `_authenticated` route wrapper
 
 - Use `sqliteTable` aliased as `table`
 - Column names: camelCase in code, `snake_case` in DB (`t.text("user_id")`)
-- All timestamps: `t.integer({ mode: "timestamp" })` — never text
+- All timestamps: `t.text()` storing an ISO string (e.g. `Utility.getCurrentISOTimestamp()`) — every existing table uses this; do not switch to `integer({ mode: "timestamp" })` for new tables
 - Always include `createdAt` (notNull) and `updatedAt` (nullable)
 - Add index for all foreign key columns: `t.index("IDX_things_user_id").on(table.userId)`
 - Add unique index where needed: `t.uniqueIndex("UNQ_things_field").on(table.field)`

@@ -4,6 +4,7 @@ export * from "./companies";
 export * from "./contacts";
 export * from "./frameworks";
 export * from "./followup-settings";
+export * from "./contact-role-pills";
 export * from "./log";
 export * from "./common";
 export * from "./jobs";

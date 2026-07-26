@@ -1,47 +1,47 @@
 import { desc, eq, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
-import { followUpSettings } from "@/db/tables";
+import { contactRolePills } from "@/db/tables";
 import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/AppLogger";
 import Utility from "@/utils";
 import Constants from "@/config/Constants";
 
-export default class FollowUpSettingsDAL {
+export default class ContactRolePillsDAL {
   private db: DrizzleD1Database;
 
   constructor(env: Env) {
     this.db = getDbClient(env);
   }
 
-  async getSettingsDetails(
-    params: Schemas.GetFollowUpSettingsDALRequest,
-  ): Promise<Schemas.GetFollowUpSettingsApiResponse> {
-    const response: Schemas.GetFollowUpSettingsApiResponse = { isSuccess: false };
+  async getPillsDetails(
+    params: Schemas.GetContactRolePillsDALRequest,
+  ): Promise<Schemas.GetContactRolePillsApiResponse> {
+    const response: Schemas.GetContactRolePillsApiResponse = { isSuccess: false };
 
     try {
       const [row] = await this.db
         .select()
-        .from(followUpSettings)
-        .where(eq(followUpSettings.createdBy, params.createdBy))
-        .orderBy(desc(followUpSettings.version))
+        .from(contactRolePills)
+        .where(eq(contactRolePills.createdBy, params.createdBy))
+        .orderBy(desc(contactRolePills.version))
         .limit(1);
 
       response.isSuccess = true;
 
       if (!row) {
-        response.settings = null;
-        response.message = "No follow-up settings found";
+        response.pills = null;
+        response.message = "No contact role pills found";
         return response;
       }
 
-      response.settings = this.deserialise(row);
-      response.message = "Follow-up settings fetched successfully";
+      response.pills = this.deserialise(row);
+      response.message = "Contact role pills fetched successfully";
     } catch (error) {
-      const message = "Unknown error fetching follow-up settings";
+      const message = "Unknown error fetching contact role pills";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.GetFollowUpSettings,
+        action: Schemas.LogAction.GetContactRolePills,
         message,
         error,
         metadata: params,
@@ -57,35 +57,35 @@ export default class FollowUpSettingsDAL {
    * concurrent saves for the same user can't both read the same "latest" version and insert a
    * colliding row — the version bump and the insert happen atomically, not as separate read-then-write steps.
    */
-  async saveSettings(
-    params: Schemas.SaveFollowUpSettingsDALRequest,
-  ): Promise<Schemas.SaveFollowUpSettingsApiResponse> {
-    const response: Schemas.SaveFollowUpSettingsApiResponse = { isSuccess: false };
+  async savePills(
+    params: Schemas.SaveContactRolePillsDALRequest,
+  ): Promise<Schemas.SaveContactRolePillsApiResponse> {
+    const response: Schemas.SaveContactRolePillsApiResponse = { isSuccess: false };
 
     try {
       const result = await this.db.run(sql`
-        INSERT INTO followup_settings (created_by, step_offset_days, version, is_customized, created_at, updated_at)
-        SELECT ${params.createdBy}, ${JSON.stringify(params.input.stepOffsetDays)},
+        INSERT INTO contact_role_pills (created_by, pill_labels, version, is_customized, created_at, updated_at)
+        SELECT ${params.createdBy}, ${JSON.stringify(params.input.pillLabels)},
                COALESCE(MAX(version), 0) + 1, ${true}, ${Utility.getCurrentISOTimestamp()}, NULL
-        FROM followup_settings
+        FROM contact_role_pills
         WHERE created_by = ${params.createdBy}
         RETURNING *
       `);
 
-      const row = result.results?.[0] as typeof followUpSettings.$inferSelect | undefined;
+      const row = result.results?.[0] as typeof contactRolePills.$inferSelect | undefined;
       if (!row) {
-        response.message = "Failed to save follow-up settings";
+        response.message = "Failed to save contact role pills";
         return response;
       }
 
       response.isSuccess = true;
-      response.message = "Follow-up settings saved successfully";
-      response.settings = this.deserialise(row);
+      response.message = "Contact role pills saved successfully";
+      response.pills = this.deserialise(row);
     } catch (error) {
-      const message = "Unknown error saving follow-up settings";
+      const message = "Unknown error saving contact role pills";
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.SaveFollowUpSettings,
+        action: Schemas.LogAction.SaveContactRolePills,
         message,
         error,
         metadata: params,
@@ -99,17 +99,17 @@ export default class FollowUpSettingsDAL {
   async createDefaultIfAbsent(createdBy: string): Promise<void> {
     try {
       const existing = await this.db
-        .select({ id: followUpSettings.id })
-        .from(followUpSettings)
-        .where(eq(followUpSettings.createdBy, createdBy))
+        .select({ id: contactRolePills.id })
+        .from(contactRolePills)
+        .where(eq(contactRolePills.createdBy, createdBy))
         .limit(1);
 
       if (existing.length > 0) return;
 
-      const d = Constants.FOLLOWUP_SETTINGS_DEFAULTS;
-      await this.db.insert(followUpSettings).values({
+      const d = Constants.CONTACT_ROLE_PILLS_DEFAULTS;
+      await this.db.insert(contactRolePills).values({
         createdBy,
-        stepOffsetDays: JSON.stringify(d.stepOffsetDays),
+        pillLabels: JSON.stringify(d.pillLabels),
         isCustomized: false,
         version: 1,
         createdAt: Utility.getCurrentISOTimestamp(),
@@ -118,19 +118,19 @@ export default class FollowUpSettingsDAL {
     } catch (error) {
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.SaveFollowUpSettings,
-        message: "Failed to seed default follow-up settings",
+        action: Schemas.LogAction.SaveContactRolePills,
+        message: "Failed to seed default contact role pills",
         error,
         metadata: { createdBy },
       });
     }
   }
 
-  private deserialise(row: typeof followUpSettings.$inferSelect): Schemas.FollowUpSettings {
+  private deserialise(row: typeof contactRolePills.$inferSelect): Schemas.ContactRolePills {
     return {
       id: row.id,
       createdBy: row.createdBy,
-      stepOffsetDays: this.parseJsonArray<number>(row.stepOffsetDays),
+      pillLabels: this.parseJsonArray<string>(row.pillLabels),
       version: row.version,
       isCustomized: Boolean(row.isCustomized),
       createdAt: row.createdAt,

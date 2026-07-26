@@ -11,6 +11,7 @@ import CompanySelect from "@/shared/fields/CompanySelect";
 import Utilities from "@/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ContactsQueries, useCreateContact, useUpdateContact } from "./-data";
+import { ContactRolePillsQueries } from "../settings/-data";
 import { ContactStatusIntEnum, ContactStatusLabelEnum, ContactSourceIntEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
 
@@ -246,9 +247,24 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
           <form.Field name="designation">
             {(field) => (
               <Field>
-                <FieldLabel htmlFor={field.name} className={labelCls}>
+                <FieldLabel
+                  htmlFor={field.name}
+                  className={`${labelCls} inline-flex items-center gap-1`}
+                >
                   Title
+                  <Tooltip>
+                    <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <InfoIcon className="h-3 w-3 text-gray-500 hover:text-gray-400 cursor-pointer" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs text-xs">
+                      Configure these quick-fill options in Settings.
+                    </TooltipContent>
+                  </Tooltip>
                 </FieldLabel>
+                <TitleRolePills
+                  getToken={getToken}
+                  onSelect={(label) => field.handleChange(label)}
+                />
                 <input
                   id={field.name}
                   type="text"
@@ -384,6 +400,34 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function TitleRolePills({
+  getToken,
+  onSelect,
+}: {
+  getToken: () => Promise<string | null>;
+  onSelect: (label: string) => void;
+}) {
+  const { data } = useQuery(ContactRolePillsQueries.latest(getToken));
+  const pillLabels = data?.pills?.pillLabels ?? [];
+
+  if (pillLabels.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 mb-1.5">
+      {pillLabels.map((label) => (
+        <button
+          key={label}
+          type="button"
+          onClick={() => onSelect(label)}
+          className="h-6 px-2.5 rounded-full text-[12px] font-medium bg-(--surface-raised) text-(--text-secondary) border border-border hover:bg-background hover:text-foreground transition-colors"
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }

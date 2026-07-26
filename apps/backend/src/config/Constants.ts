@@ -76,6 +76,10 @@ export default class Constants {
     stepOffsetDays: [7],
   } as const;
 
+  static readonly CONTACT_ROLE_PILLS_DEFAULTS = {
+    pillLabels: ["HR", "Tech"],
+  } as const;
+
   // Workers always run in UTC, but task due dates are day-keyed in the user's timezone (IST).
   // Single source of the app's day boundary — every "today" computation must go through Utility.getTodayDateKey().
   static readonly APP_UTC_OFFSET_MINUTES = 330 as const;

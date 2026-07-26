@@ -5,14 +5,20 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CopyIcon, CheckIcon } from "@phosphor-icons/react";
-import type { FrameworkInput, FollowUpSettingsInput } from "@app/schemas";
+import type { FrameworkInput, FollowUpSettingsInput, ContactRolePillsInput } from "@app/schemas";
 import JobSearchFrameworkForm from "@/shared/forms/JobSearchFrameworkForm";
 import {
   FrameworkQueries,
   useSaveFramework,
 } from "../../_without_nav/onboarding/job-search-framework/-data";
-import { FollowUpSettingsQueries, useSaveFollowUpSettings } from "./-data";
+import {
+  FollowUpSettingsQueries,
+  useSaveFollowUpSettings,
+  ContactRolePillsQueries,
+  useSaveContactRolePills,
+} from "./-data";
 import FollowUpSettingsForm from "./-FollowUpSettingsForm";
+import ContactRolePillsForm from "./-ContactRolePillsForm";
 import Utilities from "@/utils";
 import { apiClient } from "@/providers/apiClient";
 
@@ -20,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/settings/")({
   component: SettingsFrameworksPage,
 });
 
-type Tab = "job-search" | "followups" | "company-research" | "account";
+type Tab = "job-search" | "followups" | "contact-roles" | "company-research" | "account";
 
 function useInboundAddress(getToken: () => Promise<string | null>) {
   return useQuery(
@@ -136,6 +142,60 @@ function FollowUpSettingsTab({ getToken }: { getToken: () => Promise<string | nu
   );
 }
 
+function ContactRolePillsTab({ getToken }: { getToken: () => Promise<string | null> }) {
+  const [submitError, setSubmitError] = useState<string | undefined>();
+  const pillsQuery = useQuery(ContactRolePillsQueries.latest(getToken));
+  const saveMutation = useSaveContactRolePills();
+
+  const pills = pillsQuery.data?.pills;
+
+  async function handleSubmit(values: ContactRolePillsInput) {
+    setSubmitError(undefined);
+    try {
+      await saveMutation.mutateAsync(values);
+      toast.success("Contact role pills updated", { duration: 3000 });
+    } catch {
+      setSubmitError("Failed to save. Please try again.");
+    }
+  }
+
+  if (pillsQuery.isPending) {
+    return (
+      <div className="px-6 py-10 max-w-2xl mx-auto space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-9 rounded-lg bg-(--surface-raised) animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (pillsQuery.isError) {
+    return (
+      <div className="px-6 py-10 max-w-2xl mx-auto">
+        <div className="text-[13px] text-destructive">Failed to load contact role pills.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-6 py-10 max-w-2xl mx-auto">
+      <h2 className="text-[15px] font-semibold text-foreground mb-1.5">Contact role pills</h2>
+      <p className="text-[13px] text-(--text-secondary) mb-8">
+        Set up to 5 quick-fill shortcuts for the Title field on the Add Contact form.
+      </p>
+
+      <ContactRolePillsForm
+        key={pills?.version ?? 0}
+        initialValues={{ pillLabels: pills?.pillLabels ?? [] }}
+        onSubmit={handleSubmit}
+        submitLabel="Save pills"
+        isSubmitting={saveMutation.isPending}
+        submitError={submitError}
+      />
+    </div>
+  );
+}
+
 function SettingsFrameworksPage() {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("job-search");
@@ -162,6 +222,7 @@ function SettingsFrameworksPage() {
   const TABS: { key: Tab; label: string }[] = [
     { key: "job-search", label: "Job Search" },
     { key: "followups", label: "Follow-ups" },
+    { key: "contact-roles", label: "Contact Roles" },
     { key: "company-research", label: "Company Research" },
     { key: "account", label: "Account" },
   ];
@@ -245,6 +306,8 @@ function SettingsFrameworksPage() {
         )}
 
         {activeTab === "followups" && <FollowUpSettingsTab getToken={getToken} />}
+
+        {activeTab === "contact-roles" && <ContactRolePillsTab getToken={getToken} />}
 
         {activeTab === "company-research" && (
           <div className="flex items-center justify-center h-64">
