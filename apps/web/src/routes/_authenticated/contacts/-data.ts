@@ -11,6 +11,8 @@ export class ContactsQueries {
       ["contacts", "list", search, pageNo, pageSize] as const,
     detail: (id: number) => ["contacts", id] as const,
     history: (id: number) => ["contacts", id, "history"] as const,
+    duplicateCheck: (email: string, linkedinUrl: string, excludeId?: number) =>
+      ["contacts", "duplicate-check", email, linkedinUrl, excludeId] as const,
   };
 
   static list(params: Schemas.GetContactsApiRequest, getToken: () => Promise<string | null>) {
@@ -48,6 +50,31 @@ export class ContactsQueries {
         apiClient<Schemas.GetContactHistoryApiResponse>(`/contacts/${id}/history`, getToken, {
           signal,
         }),
+    });
+  }
+
+  static duplicateCheck(
+    params: Schemas.CheckDuplicateContactApiRequest,
+    getToken: () => Promise<string | null>,
+  ) {
+    return queryOptions({
+      queryKey: ContactsQueries.keys.duplicateCheck(
+        params.email ?? "",
+        params.linkedinUrl ?? "",
+        params.excludeId,
+      ),
+      queryFn: ({ signal }) => {
+        const query = new URLSearchParams();
+        if (params.email) query.set("email", params.email);
+        if (params.linkedinUrl) query.set("linkedinUrl", params.linkedinUrl);
+        if (params.excludeId != null) query.set("excludeId", String(params.excludeId));
+        return apiClient<Schemas.CheckDuplicateContactApiResponse>(
+          `/contacts/duplicate-check?${query.toString()}`,
+          getToken,
+          { signal },
+        );
+      },
+      staleTime: 0,
     });
   }
 }

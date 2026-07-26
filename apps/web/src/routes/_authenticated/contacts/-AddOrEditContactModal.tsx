@@ -1,13 +1,16 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
-import { InfoIcon, XIcon } from "@phosphor-icons/react";
+import { InfoIcon, WarningIcon, XIcon } from "@phosphor-icons/react";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shadcn/ui/tooltip";
 import CompanySelect from "@/shared/fields/CompanySelect";
 import Utilities from "@/utils";
-import { useCreateContact, useUpdateContact } from "./-data";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { ContactsQueries, useCreateContact, useUpdateContact } from "./-data";
 import { ContactStatusIntEnum, ContactStatusLabelEnum, ContactSourceIntEnum } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
 
@@ -72,6 +75,7 @@ const inputCls =
 const labelCls = "text-[12px] font-semibold text-(--text-secondary)";
 
 export default function AddOrEditContactModal({ mode, contact, onClose }: Props) {
+  const { getToken } = useAuth();
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
 
@@ -140,6 +144,8 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
       form.setFieldValue("name", guess);
     }
   };
+
+  const excludeId = mode === "edit" ? contact.id : undefined;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -314,6 +320,17 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
             </form.Field>
           </div>
 
+          <form.Subscribe selector={(state) => [state.values.email, state.values.linkedinUrl]}>
+            {([email, linkedinUrl]) => (
+              <DuplicateContactWarning
+                email={email}
+                linkedinUrl={linkedinUrl}
+                excludeId={excludeId}
+                getToken={getToken}
+              />
+            )}
+          </form.Subscribe>
+
           {/* Status */}
           {mode === "edit" && (
             <form.Field name="status">
@@ -367,6 +384,61 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function DuplicateContactWarning({
+  email,
+  linkedinUrl,
+  excludeId,
+  getToken,
+}: {
+  email: string;
+  linkedinUrl: string;
+  excludeId?: number;
+  getToken: () => Promise<string | null>;
+}) {
+  const debouncedEmail = useDebouncedValue(email.trim(), 400);
+  const debouncedLinkedinUrl = useDebouncedValue(linkedinUrl.trim(), 400);
+  const [dismissedKey, setDismissedKey] = useState<string | null>(null);
+
+  const { data } = useQuery({
+    ...ContactsQueries.duplicateCheck(
+      { email: debouncedEmail || null, linkedinUrl: debouncedLinkedinUrl || null, excludeId },
+      getToken,
+    ),
+    enabled: Boolean(debouncedEmail || debouncedLinkedinUrl),
+  });
+
+  const match = data?.match;
+  // Keyed by the triggering values, not just match.id — so dismissing one warning doesn't
+  // permanently suppress a later, different-value match that happens to resolve to the same contact.
+  const matchKey = match ? `${match.id}:${debouncedEmail}:${debouncedLinkedinUrl}` : null;
+  if (!match || matchKey === dismissedKey) return null;
+
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+      <WarningIcon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+      <div className="flex-1">
+        Possible match:{" "}
+        <a
+          href={`/contacts/${match.id}`}
+          target="_blank"
+          rel="noreferrer"
+          className="font-semibold underline underline-offset-2"
+        >
+          {match.name}
+        </a>
+        {match.companyName ? ` at ${match.companyName}` : ""} — check before adding another.
+      </div>
+      <button
+        type="button"
+        onClick={() => setDismissedKey(matchKey)}
+        className="shrink-0 text-amber-700/70 hover:text-amber-700 dark:text-amber-400/70 dark:hover:text-amber-400"
+      >
+        Dismiss
+      </button>
     </div>
   );
 }

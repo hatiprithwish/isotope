@@ -53,6 +53,21 @@ ContactsRoutes.get(
   },
 );
 
+ContactsRoutes.get(
+  "/duplicate-check",
+  checkAuth,
+  zValidator("query", Schemas.ZCheckDuplicateContactApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { email, linkedinUrl, excludeId } = c.req.valid("query");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.checkDuplicateContact({ userId, email, linkedinUrl, excludeId });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
 ContactsRoutes.patch(
   "/bulk",
   checkAuth,

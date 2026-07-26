@@ -41,6 +41,78 @@ export default class ContactsRepo {
     });
   }
 
+  async checkDuplicateContact(
+    params: Schemas.CheckDuplicateContactApiRequest & { userId: string },
+  ) {
+    const response: Schemas.CheckDuplicateContactApiResponse = { isSuccess: false };
+
+    const normalizedEmail = this.normalizeEmail(params.email);
+    const normalizedLinkedinUrl = this.normalizeLinkedinUrl(params.linkedinUrl);
+    const linkedinSlug = this.extractLinkedinSlug(params.linkedinUrl);
+
+    const candidatesResponse = await this.dal.findDuplicateContactCandidates({
+      createdBy: params.userId,
+      normalizedEmail,
+      linkedinSlug,
+      excludeId: params.excludeId,
+    });
+
+    if (!candidatesResponse.isSuccess) {
+      response.message = candidatesResponse.message;
+      return response;
+    }
+
+    const candidates = candidatesResponse.candidates ?? [];
+
+    // Email is stored/compared exactly (no format ambiguity) — the DAL already filtered on it,
+    // so any candidate whose stored email matches is a confirmed duplicate on that basis alone.
+    const emailMatch = normalizedEmail
+      ? candidates.find((c) => this.normalizeEmail(c.email) === normalizedEmail)
+      : undefined;
+
+    // LinkedIn URLs vary in format (protocol/www/trailing-slash/query), so the LIKE-narrowed
+    // candidates must be re-verified by comparing normalized slugs, not raw stored strings.
+    const linkedinMatch = normalizedLinkedinUrl
+      ? candidates.find((c) => this.normalizeLinkedinUrl(c.linkedinUrl) === normalizedLinkedinUrl)
+      : undefined;
+
+    response.isSuccess = true;
+    const match = emailMatch ?? linkedinMatch ?? null;
+    response.message = match ? "Duplicate contact found" : "No duplicate contact found";
+    response.match = match;
+    return response;
+  }
+
+  private normalizeEmail(email: string | null | undefined): string | null {
+    const trimmed = email?.trim().toLowerCase();
+    return trimmed || null;
+  }
+
+  private extractLinkedinSlug(linkedinUrl: string | null | undefined): string | null {
+    const slugMatch = linkedinUrl?.trim().match(/linkedin\.com\/in\/([^/?#]+)/i);
+    return slugMatch?.[1]?.toLowerCase() ?? null;
+  }
+
+  private normalizeLinkedinUrl(linkedinUrl: string | null | undefined): string | null {
+    const trimmed = linkedinUrl?.trim().toLowerCase();
+    if (!trimmed) return null;
+
+    // Reduce to the profile slug so protocol/www/trailing-slash/query variants of the
+    // same profile all compare equal (e.g. "linkedin.com/in/x" vs "https://www.linkedin.com/in/x/").
+    const slug = this.extractLinkedinSlug(trimmed);
+    if (slug) return `linkedin.com/in/${slug}`;
+
+    // Not a recognizable /in/ profile URL (e.g. a company page) — still strip protocol/www/query/
+    // trailing-slash so equivalent URLs compare equal, same as the profile-slug path above.
+    return (
+      trimmed
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .split(/[?#]/)[0]
+        .replace(/\/+$/, "") || null
+    );
+  }
+
   async deleteContact(params: { userId: string; id: number }) {
     return await this.dal.deleteContact({ createdBy: params.userId, id: params.id });
   }

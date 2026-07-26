@@ -49,6 +49,7 @@ export enum LogAction {
   UpdateNextTouchDueAt = "UpdateNextTouchDueAt",
   GetLastSentHistory = "GetLastSentHistory",
   GetSentMessageCount = "GetSentMessageCount",
+  CheckDuplicateContact = "CheckDuplicateContact",
 
   // Frameworks
   SaveFramework = "SaveFramework",

@@ -13,6 +13,13 @@ export const ZGetContactsApiRequest = z.object({
 });
 export type GetContactsApiRequest = z.infer<typeof ZGetContactsApiRequest>;
 
+export const ZCheckDuplicateContactApiRequest = z.object({
+  email: z.string().nullable().optional(),
+  linkedinUrl: z.string().nullable().optional(),
+  excludeId: z.coerce.number().int().positive().optional(),
+});
+export type CheckDuplicateContactApiRequest = z.infer<typeof ZCheckDuplicateContactApiRequest>;
+
 export const ZCreateContactApiRequest = z.object({
   contact: ZContactBase,
 });

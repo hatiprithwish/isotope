@@ -14,6 +14,10 @@ export interface GetContactsApiResponse extends ApiResponse {
   totalCount?: number;
 }
 
+export interface CheckDuplicateContactApiResponse extends ApiResponse {
+  match?: Contact | null;
+}
+
 export interface UpdateContactApiResponse extends ApiResponse {
   contact?: Contact;
 }

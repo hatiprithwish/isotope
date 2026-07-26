@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { contacts, contactHistory, companies } from "@/db/tables";
@@ -79,6 +79,97 @@ export default class ContactsDAL {
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
         action: Schemas.LogAction.CreateContact,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  /**
+   * Returns candidate contacts that might match on email or LinkedIn URL — broad on purpose.
+   * linkedin_url is stored as pasted (protocol/www/trailing-slash/query all vary), so an exact
+   * DB-side comparison would miss same-profile URLs in a different format; the caller
+   * (ContactsRepo) re-normalizes each candidate's raw linkedinUrl and picks the true match.
+   */
+  async findDuplicateContactCandidates(params: Schemas.FindDuplicateContactDALRequest) {
+    const response: Schemas.FindDuplicateContactCandidatesDALResponse = { isSuccess: false };
+
+    try {
+      const matchConditions: SQL[] = [];
+      if (params.normalizedEmail) {
+        matchConditions.push(sql`lower(trim(${contacts.email})) = ${params.normalizedEmail}`);
+      }
+      if (params.linkedinSlug) {
+        const pattern = `%${Utility.escapeLikePattern(params.linkedinSlug)}%`;
+        matchConditions.push(sql`${contacts.linkedinUrl} LIKE ${pattern} ESCAPE '\\'`);
+      }
+
+      if (matchConditions.length === 0) {
+        response.isSuccess = true;
+        response.message = "No identifiers provided";
+        response.candidates = [];
+        return response;
+      }
+
+      const conditions: SQL[] = [
+        eq(contacts.createdBy, params.createdBy),
+        or(...matchConditions) as SQL,
+      ];
+      if (params.excludeId != null) {
+        conditions.push(ne(contacts.id, params.excludeId));
+      }
+
+      const candidates = await this.db
+        .select({
+          id: contacts.id,
+          name: contacts.name,
+          designation: contacts.designation,
+          email: contacts.email,
+          linkedinUrl: contacts.linkedinUrl,
+          linkedinConnected: contacts.linkedinConnected,
+          companyId: contacts.companyId,
+          sequencePosition: contacts.sequencePosition,
+          lastTouchAt: contacts.lastTouchAt,
+          nextTouchDueAt: contacts.nextTouchDueAt,
+          deadAt: contacts.deadAt,
+          reEngageAt: contacts.reEngageAt,
+          abVariable: contacts.abVariable,
+          abVariant: contacts.abVariant,
+          abReplied: contacts.abReplied,
+          status: contacts.status,
+          statusLabel: contactStatusLabelExpr,
+          draftBody: contacts.draftBody,
+          draftSubject: contacts.draftSubject,
+          personalizationNotes: contacts.personalizationNotes,
+          manualPersonalizationNotes: contacts.manualPersonalizationNotes,
+          reengagementRecommendation: contacts.reengagementRecommendation,
+          source: contacts.source,
+          notes: contacts.notes,
+          failedAt: contacts.failedAt,
+          retryCount: contacts.retryCount,
+          createdBy: contacts.createdBy,
+          companyName: companies.name,
+          companyFitBand: companies.fitBand,
+          createdAt: contacts.createdAt,
+          updatedAt: contacts.updatedAt,
+        })
+        .from(contacts)
+        .leftJoin(companies, eq(contacts.companyId, companies.id))
+        .where(and(...conditions))
+        .limit(10);
+
+      response.isSuccess = true;
+      response.message = "Candidates fetched successfully";
+      response.candidates = candidates;
+    } catch (error) {
+      const message = "Unknown error in fetching duplicate contact candidates";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.CheckDuplicateContact,
         message,
         error,
         metadata: params,

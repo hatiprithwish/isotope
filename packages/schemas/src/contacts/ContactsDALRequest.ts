@@ -13,6 +13,18 @@ export type GetContactsDALRequest = Pick<Contact, "createdBy"> & {
 
 export type GetContactsByCompanyDALRequest = Pick<Contact, "createdBy"> & { companyId: number };
 
+export type FindDuplicateContactDALRequest = Pick<Contact, "createdBy"> & {
+  normalizedEmail: string | null;
+  linkedinSlug: string | null;
+  excludeId?: number;
+};
+
+export interface FindDuplicateContactCandidatesDALResponse {
+  isSuccess: boolean;
+  message?: string;
+  candidates?: Contact[];
+}
+
 export type UpdateContactDALRequest = FindContactDALRequest &
   NullableDALFields<Omit<Contact, "id" | "createdBy" | "createdAt" | "statusLabel">>;
 
