@@ -55,12 +55,16 @@ export function AddOrEditContactHistoryForm({
   const [channel, setChannel] = useState<ContactHistoryChannelEnum>(
     ContactHistoryChannelEnum.Email,
   );
-  const templateApplied = useRef(false);
+  // Tracks the template body last auto-seeded into the field, so a later template change
+  // (e.g. deleting a history entry reverts the resolved step) can re-seed — but only while the
+  // field still holds exactly what was auto-seeded, never clobbering a manual edit.
+  const lastSeededBody = useRef<string | null>(null);
+  const [todayIsoDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const form = useForm({
     defaultValues: {
       body: entry?.body ?? "",
-      sentAt: entry ? entry.sentAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+      sentAt: entry ? entry.sentAt.slice(0, 10) : todayIsoDate,
     },
     validators: { onSubmit: formSchema },
     onSubmit: ({ value }) => {
@@ -73,6 +77,14 @@ export function AddOrEditContactHistoryForm({
           {
             onSuccess: () => {
               form.reset();
+              // By now useCreateContactHistory's own onSuccess (data.ts) has already awaited the
+              // messageTemplate invalidation/refetch, so `resolved` here already reflects the next
+              // step's template — that refetch may have already re-fired the seeding effect against
+              // the pre-reset body, so re-seed explicitly instead of relying on the effect to fire
+              // again (its only dependency, `resolved`, won't change again on its own).
+              const nextBody = resolved?.renderedBody;
+              lastSeededBody.current = nextBody ?? null;
+              if (nextBody) form.setFieldValue("body", nextBody);
               onSaved();
             },
           },
@@ -88,19 +100,16 @@ export function AddOrEditContactHistoryForm({
 
   const isPending = mode === "add" ? createHistory.isPending : updateHistory.isPending;
 
-  // Seed the body from the resolved template once it loads — only if the user hasn't
-  // typed anything yet, and only once, so it never clobbers in-progress edits. A ref (not
-  // state) guards this since it's a one-time imperative sync into TanStack Form's own store,
-  // not something that should itself trigger a React re-render.
+  // Seed the body from the resolved template whenever it loads or changes — but only while the
+  // field is empty, or still holds exactly what was auto-seeded last time (so re-resolving after
+  // a history edit/delete shifts the step correctly), never clobbering a manual edit. A ref (not
+  // state) guards this since it's an imperative sync into TanStack Form's own store, not
+  // something that should itself trigger a React re-render.
   useEffect(() => {
-    if (
-      mode === "add" &&
-      hasTemplate &&
-      !templateApplied.current &&
-      form.getFieldValue("body") === "" &&
-      resolved?.renderedBody
-    ) {
-      templateApplied.current = true;
+    if (mode !== "add" || !hasTemplate || !resolved?.renderedBody) return;
+    const currentBody = form.getFieldValue("body");
+    if (currentBody === "" || currentBody === lastSeededBody.current) {
+      lastSeededBody.current = resolved.renderedBody;
       form.setFieldValue("body", resolved.renderedBody);
     }
   }, [mode, hasTemplate, resolved, form]);

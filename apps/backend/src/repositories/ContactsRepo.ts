@@ -165,6 +165,19 @@ export default class ContactsRepo {
 
     if (!response.isSuccess) return response;
 
+    // First message ever logged on a fresh contact moves it out of NotStarted, regardless of direction.
+    const existing = await this.dal.getContactDetails({
+      id: params.contactId,
+      createdBy: params.userId,
+    });
+    if (existing.contact?.status === Schemas.ContactStatusIntEnum.NotStarted) {
+      await this.dal.updateContactStatus({
+        id: params.contactId,
+        createdBy: params.userId,
+        status: Schemas.ContactStatusIntEnum.InPipeline,
+      });
+    }
+
     if (params.direction === Schemas.ContactHistoryDirectionEnum.Contact) {
       // Inbound reply — pause the active Pending follow-up, if any (no-op if none/already Paused).
       await new TasksRepo(this.env).pauseFollowUpForContact({
@@ -214,6 +227,28 @@ export default class ContactsRepo {
 
     if (response.isSuccess) {
       await this.resyncFollowUp({ userId: params.userId, contactId: params.contactId });
+
+      // Deleting the last remaining message reverts the auto-bump from logContactHistory —
+      // only if status is still InPipeline (untouched since), never a further/manual status.
+      const historyResponse = await this.dal.getContactHistory({
+        contactId: params.contactId,
+        createdBy: params.userId,
+      });
+      const existing = await this.dal.getContactDetails({
+        id: params.contactId,
+        createdBy: params.userId,
+      });
+      if (
+        historyResponse.isSuccess &&
+        historyResponse.history?.length === 0 &&
+        existing.contact?.status === Schemas.ContactStatusIntEnum.InPipeline
+      ) {
+        await this.dal.updateContactStatus({
+          id: params.contactId,
+          createdBy: params.userId,
+          status: Schemas.ContactStatusIntEnum.NotStarted,
+        });
+      }
     }
 
     return response;

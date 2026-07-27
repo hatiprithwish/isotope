@@ -812,6 +812,32 @@ export default class ContactsDAL {
     return response;
   }
 
+  async updateContactStatus(params: Schemas.UpdateContactStatusDALRequest) {
+    const response: Schemas.ApiResponse = { isSuccess: false };
+
+    try {
+      await this.db
+        .update(contacts)
+        .set({ status: params.status, updatedAt: Utility.getCurrentISOTimestamp() })
+        .where(and(eq(contacts.id, params.id), eq(contacts.createdBy, params.createdBy)));
+
+      response.isSuccess = true;
+      response.message = "Contact status updated successfully";
+    } catch (error) {
+      const message = "Unknown error in updating contact status";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.UpdateContactStatus,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
   async deleteContactHistory(params: Schemas.DeleteContactHistoryDALRequest) {
     const response: Schemas.DeleteContactHistoryApiResponse = { isSuccess: false };
 

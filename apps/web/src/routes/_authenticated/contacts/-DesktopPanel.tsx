@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import type * as Schemas from "@app/schemas";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
 import { ContactDetailContent, type ContactDetailTab } from "./-ContactDetailContent";
+import { ContactsQueries } from "./-data";
 
 interface ContactDetailPanelProps {
   contactId: number | null;
@@ -11,10 +13,32 @@ interface ContactDetailPanelProps {
   onClose: () => void;
 }
 
-export function ContactDetailPanel({ contactId, contact, onClose }: ContactDetailPanelProps) {
+/**
+ * The list-page row (`contact` prop) is only refetched when the list query is invalidated,
+ * so it goes stale after mutations that invalidate `keys.detail` but not `keys.list` (e.g.
+ * logging/editing/deleting history, which can change status/nextTouchDueAt). Fetching the
+ * detail query here too — seeded with the row as a placeholder so there's no loading flash —
+ * makes the panel self-heal on those invalidations instead of relying on the list row.
+ */
+function useLiveContact(contactId: number | null, rowContact: Schemas.Contact | null) {
+  const { getToken } = useAuth();
+  const { data } = useQuery({
+    ...ContactsQueries.detail(contactId ?? 0, getToken),
+    enabled: contactId != null,
+    placeholderData: rowContact ? { isSuccess: true, contact: rowContact } : undefined,
+  });
+  return data?.contact ?? rowContact;
+}
+
+export function ContactDetailPanel({
+  contactId,
+  contact: rowContact,
+  onClose,
+}: ContactDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<ContactDetailTab>("history");
   const { getToken } = useAuth();
   const navigate = useNavigate();
+  const contact = useLiveContact(contactId, rowContact);
   const isOpen = contactId != null && contact != null;
 
   return (
@@ -45,11 +69,12 @@ export function ContactDetailPanel({ contactId, contact, onClose }: ContactDetai
 
 export function ContactDetailMobileDrawer({
   contactId,
-  contact,
+  contact: rowContact,
   onClose,
 }: ContactDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<ContactDetailTab>("history");
   const { getToken } = useAuth();
+  const contact = useLiveContact(contactId, rowContact);
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
   );

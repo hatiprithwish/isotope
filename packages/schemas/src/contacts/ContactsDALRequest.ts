@@ -1,5 +1,11 @@
 import type { NullableDALFields } from "../common";
-import type { Contact, ContactBase, ContactHistory, ContactHistoryBase } from "./ContactsCommon";
+import type {
+  Contact,
+  ContactBase,
+  ContactHistory,
+  ContactHistoryBase,
+  ContactStatusIntEnum,
+} from "./ContactsCommon";
 
 export type CreateContactDALRequest = ContactBase & Pick<Contact, "createdBy">;
 
@@ -46,6 +52,12 @@ export type UpdateNextTouchDueAtDALRequest = {
   id: number;
   createdBy: string;
   nextTouchDueAt: string | null;
+};
+
+export type UpdateContactStatusDALRequest = {
+  id: number;
+  createdBy: string;
+  status: ContactStatusIntEnum;
 };
 
 export type GetLastSentHistoryDALRequest = { contactId: number; createdBy: string };
