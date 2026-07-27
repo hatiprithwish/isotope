@@ -5,6 +5,7 @@ import {
   ZContactHistoryDirectionEnum,
   ZContactHistoryChannelEnum,
   BULK_LOG_CONTACT_HISTORY_MAX_ENTRIES,
+  BULK_CREATE_CONTACTS_MAX_ENTRIES,
 } from "./ContactsCommon";
 
 export const ZGetContactsApiRequest = z.object({
@@ -82,3 +83,19 @@ export const ZBulkLogContactHistoryApiRequest = z.object({
     ),
 });
 export type BulkLogContactHistoryApiRequest = z.infer<typeof ZBulkLogContactHistoryApiRequest>;
+
+export const ZBulkCreateContactsEntry = ZContactBase.extend({
+  tempId: z.string(),
+});
+export type BulkCreateContactsEntry = z.infer<typeof ZBulkCreateContactsEntry>;
+
+export const ZBulkCreateContactsApiRequest = z.object({
+  entries: z
+    .array(ZBulkCreateContactsEntry)
+    .min(1)
+    .max(
+      BULK_CREATE_CONTACTS_MAX_ENTRIES,
+      `At most ${BULK_CREATE_CONTACTS_MAX_ENTRIES} contacts can be added at once`,
+    ),
+});
+export type BulkCreateContactsApiRequest = z.infer<typeof ZBulkCreateContactsApiRequest>;

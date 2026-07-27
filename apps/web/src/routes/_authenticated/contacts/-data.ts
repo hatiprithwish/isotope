@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { apiClient } from "@/providers/apiClient";
+import { apiClient, ApiError } from "@/providers/apiClient";
 import type * as Schemas from "@app/schemas";
 import { toast } from "sonner";
 
@@ -303,6 +303,28 @@ export function useResolveMessageTemplatesBulk() {
   });
 }
 
+export function useBulkCreateContacts() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Schemas.BulkCreateContactsApiRequest) =>
+      apiClient<Schemas.BulkCreateContactsApiResponse>("/contacts/bulk", getToken, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.all() });
+    },
+    onError: (error) => {
+      // A total-failure batch still carries a `results` array on the thrown ApiError — the page
+      // reads it to show a more specific message, so don't double up with a generic toast here.
+      if (error instanceof ApiError && "results" in error.body) return;
+      toast.error("Failed to add contacts. Please try again.");
+    },
+  });
+}
+
 export function useBulkLogContactHistory() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
@@ -318,7 +340,10 @@ export function useBulkLogContactHistory() {
       // simplest correct invalidation is the whole contacts domain, same as bulkUpdateContacts.
       await queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.all() });
     },
-    onError: () => {
+    onError: (error) => {
+      // A total-failure batch still carries a `results` array on the thrown ApiError — the page
+      // reads it to show a more specific message, so don't double up with a generic toast here.
+      if (error instanceof ApiError && "results" in error.body) return;
       toast.error("Failed to log messages. Please try again.");
     },
   });

@@ -24,6 +24,35 @@ export default class ContactsRepo {
     });
   }
 
+  /**
+   * Creates each entry independently via createContact and never lets one entry's failure stop
+   * the rest — the caller gets a per-tempId success/failure map back. Mirrors bulkLogContactHistory.
+   */
+  async bulkCreateContacts(
+    params: Schemas.BulkCreateContactsApiRequest & { userId: string },
+  ): Promise<Schemas.BulkCreateContactsApiResponse> {
+    const results: Schemas.BulkCreateContactsResult[] = [];
+
+    for (const entry of params.entries) {
+      const { tempId, ...contact } = entry;
+      const response = await this.createContact({ contact, userId: params.userId });
+      results.push({
+        tempId,
+        isSuccess: response.isSuccess,
+        message: response.message,
+        contact: response.contact,
+      });
+    }
+
+    return {
+      // At least one entry must have actually been created — mirrors bulkLogContactHistory, so a
+      // batch where every entry failed is never reported as a success.
+      isSuccess: results.some((r) => r.isSuccess),
+      message: "Bulk contact creation processed",
+      results,
+    };
+  }
+
   async getContactDetails(params: { userId: string; id: number }) {
     return await this.dal.getContactDetails({ createdBy: params.userId, id: params.id });
   }

@@ -409,7 +409,7 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
   );
 }
 
-function TitleRolePills({
+export function TitleRolePills({
   getToken,
   onSelect,
 }: {
@@ -437,7 +437,7 @@ function TitleRolePills({
   );
 }
 
-function DuplicateContactWarning({
+export function DuplicateContactWarning({
   email,
   linkedinUrl,
   excludeId,

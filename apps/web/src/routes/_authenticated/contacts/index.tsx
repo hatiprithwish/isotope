@@ -36,7 +36,16 @@ function ContactsPage() {
   const bulkDeleteMutation = useBulkDeleteContacts();
   const bulkUpdateMutation = useBulkUpdateContacts();
 
-  useAddShortcut(() => setShowAddModal(true));
+  useAddShortcut(() => {
+    // Desktop's "Add" button navigates to the bulk-add page; mobile has no button of its own and
+    // relies solely on this shortcut, so it must fork the same way by viewport (Tailwind's default
+    // `md` breakpoint, matching the CSS that already hides/shows DesktopContactsTable/MobileContactsList).
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      navigate({ to: "/contacts/bulk-add" });
+    } else {
+      setShowAddModal(true);
+    }
+  });
 
   const { data, isPending, isError } = useQuery(
     ContactsQueries.list(
@@ -111,7 +120,7 @@ function ContactsPage() {
         selectedContact={selectedContact}
         onOpenPanel={openPanel}
         onClosePanel={closePanel}
-        onAddClick={() => setShowAddModal(true)}
+        onAddClick={() => navigate({ to: "/contacts/bulk-add" })}
         onBulkDelete={handleBulkDelete}
         onBulkUpdate={handleBulkUpdate}
         isBulkPending={bulkDeleteMutation.isPending || bulkUpdateMutation.isPending}

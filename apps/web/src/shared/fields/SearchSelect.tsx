@@ -9,10 +9,14 @@ interface Option {
 interface Props {
   value: number | null;
   options: Option[];
-  onChange: (id: number | null) => void;
+  /** `label` is the selected option's label (or the newly-created entry's typed name on create) — pass it through so callers don't need a separate, possibly-stale lookup by id. */
+  onChange: (id: number | null, label?: string) => void;
   onBlur?: () => void;
   error?: string;
   placeholder?: string;
+  /** When provided, an option to create a new entry from the current search text is offered. Must resolve to the new option's id, or throw — SearchSelect stays open on throw so the user can retry; the caller is responsible for toasting the error. */
+  onCreateNew?: (label: string) => Promise<number>;
+  createNewLabel?: (search: string) => string;
 }
 
 export default function SearchSelect({
@@ -22,14 +26,21 @@ export default function SearchSelect({
   onBlur,
   error,
   placeholder = "Search…",
+  onCreateNew,
+  createNewLabel,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const selected = options.find((o) => o.id === value) ?? null;
 
   const filtered = options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()));
+
+  const trimmedSearch = search.trim();
+  const hasExactMatch = options.some((o) => o.label.toLowerCase() === trimmedSearch.toLowerCase());
+  const showCreateNew = Boolean(onCreateNew) && trimmedSearch.length > 0 && !hasExactMatch;
 
   useEffect(() => {
     if (!open) return;
@@ -46,7 +57,8 @@ export default function SearchSelect({
   }, [open, onBlur]);
 
   function handleSelect(id: number) {
-    onChange(id);
+    const label = options.find((o) => o.id === id)?.label;
+    onChange(id, label);
     setOpen(false);
     setSearch("");
     onBlur?.();
@@ -56,6 +68,22 @@ export default function SearchSelect({
     e.stopPropagation();
     onChange(null);
     onBlur?.();
+  }
+
+  async function handleCreateNew() {
+    if (!onCreateNew || !trimmedSearch || creating) return;
+    setCreating(true);
+    try {
+      const newId = await onCreateNew(trimmedSearch);
+      onChange(newId, trimmedSearch);
+      setOpen(false);
+      setSearch("");
+      onBlur?.();
+    } catch {
+      // Caller's own mutation onError already toasts — keep the dropdown open so the user can retry.
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
@@ -107,7 +135,11 @@ export default function SearchSelect({
                 if (e.key === "Enter") {
                   e.preventDefault();
                   e.stopPropagation();
-                  if (filtered.length > 0) handleSelect(filtered[0].id);
+                  if (filtered.length > 0) {
+                    handleSelect(filtered[0].id);
+                  } else if (showCreateNew) {
+                    void handleCreateNew();
+                  }
                 } else if (e.key === "Escape") {
                   e.stopPropagation();
                   setOpen(false);
@@ -120,28 +152,39 @@ export default function SearchSelect({
             />
           </div>
           <div className="max-h-48 overflow-y-auto">
-            {filtered.length === 0 ? (
+            {filtered.length === 0 && !showCreateNew && (
               <div className="px-3 py-2.5 text-[12px] text-(--text-secondary)">
                 No results found.
               </div>
-            ) : (
-              filtered.map((o) => (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => handleSelect(o.id)}
-                  className={[
-                    "w-full text-left px-3 py-2 text-[13px] transition-colors",
-                    o.id === value
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-foreground hover:bg-(--surface-raised)",
-                  ].join(" ")}
-                >
-                  {o.label}
-                </button>
-              ))
             )}
+            {filtered.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => handleSelect(o.id)}
+                className={[
+                  "w-full text-left px-3 py-2 text-[13px] transition-colors",
+                  o.id === value
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-foreground hover:bg-(--surface-raised)",
+                ].join(" ")}
+              >
+                {o.label}
+              </button>
+            ))}
           </div>
+          {showCreateNew && (
+            <button
+              type="button"
+              disabled={creating}
+              onClick={() => void handleCreateNew()}
+              className="w-full text-left px-3 py-2 text-[12.5px] font-medium text-primary border-t border-border hover:bg-(--surface-raised) transition-colors disabled:opacity-50"
+            >
+              {creating
+                ? "Creating…"
+                : (createNewLabel?.(trimmedSearch) ?? `Create "${trimmedSearch}"`)}
+            </button>
+          )}
         </div>
       )}
 

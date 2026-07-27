@@ -84,6 +84,24 @@ ContactsRoutes.patch(
 );
 
 ContactsRoutes.post(
+  "/bulk",
+  checkAuth,
+  zValidator("json", Schemas.ZBulkCreateContactsApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.bulkCreateContacts({ ...body, userId });
+
+    // The request itself was always processed — per-entry success/failure lives in `results`,
+    // not the HTTP status. A batch where every entry failed is a legitimate outcome the caller
+    // must branch on, not a server fault, so this always returns 201 (never 500).
+    return c.json(response, 201);
+  },
+);
+
+ContactsRoutes.post(
   "/history/bulk",
   checkAuth,
   zValidator("json", Schemas.ZBulkLogContactHistoryApiRequest),
@@ -94,7 +112,8 @@ ContactsRoutes.post(
     const repo = new ContactsRepo(c.env);
     const response = await repo.bulkLogContactHistory({ ...body, userId });
 
-    return c.json(response, response.isSuccess ? 201 : 500);
+    // Same reasoning as POST /bulk above — per-entry outcome lives in `results`, not the status.
+    return c.json(response, 201);
   },
 );
 

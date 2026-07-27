@@ -61,3 +61,14 @@ export interface BulkLogContactHistoryResult {
 export interface BulkLogContactHistoryApiResponse extends ApiResponse {
   results?: BulkLogContactHistoryResult[];
 }
+
+export interface BulkCreateContactsResult {
+  tempId: string;
+  isSuccess: boolean;
+  message?: string;
+  contact?: Contact;
+}
+
+export interface BulkCreateContactsApiResponse extends ApiResponse {
+  results?: BulkCreateContactsResult[];
+}

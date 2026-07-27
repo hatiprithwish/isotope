@@ -8,6 +8,7 @@ import {
 } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
 import { Button } from "@/shadcn/ui/button";
+import { ApiError } from "@/providers/apiClient";
 import { useResolveMessageTemplatesBulk, useBulkLogContactHistory } from "./-data";
 import { BulkLogContactSearch } from "./-BulkLogContactSearch";
 import { BulkLogRow, type BulkLogRowState } from "./-BulkLogRow";
@@ -112,10 +113,14 @@ function BulkLogPage() {
     let response: Schemas.BulkLogContactHistoryApiResponse;
     try {
       response = await bulkLog.mutateAsync({ entries });
-    } catch {
-      // A batch where every entry failed now rejects (isSuccess: false) — useBulkLogContactHistory's
-      // own onError already toasted, so just stop here instead of throwing past this function.
-      return;
+    } catch (error) {
+      // POST /history/bulk always returns 201 with a results array — apiClient still throws
+      // because body.isSuccess is false when every entry fails, but that ApiError carries the
+      // same results we need below, so a total-failure batch is handled here, not treated as an
+      // opaque network/server error. Only bail out (relying on useBulkLogContactHistory's own
+      // onError toast) when the thrown error has no usable results at all.
+      if (!(error instanceof ApiError) || !("results" in error.body)) return;
+      response = error.body as Schemas.BulkLogContactHistoryApiResponse;
     }
 
     const results = response.results ?? [];
