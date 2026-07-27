@@ -1,4 +1,5 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
+import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import * as Schemas from "@app/schemas";
 
@@ -9,7 +10,6 @@ interface TaskRowProps {
 }
 
 export function TaskRow({ task, onToggle, isUpdating }: TaskRowProps) {
-  const navigate = useNavigate();
   const isCompleted = task.status === Schemas.TaskStatusIntEnum.Completed;
   const isPaused = task.status === Schemas.TaskStatusIntEnum.Paused;
   const isOverdue = task.overdueByDays > 0 && !isCompleted && !isPaused;
@@ -49,19 +49,17 @@ export function TaskRow({ task, onToggle, isUpdating }: TaskRowProps) {
         </span>
       )}
       {task.contactId != null && (
-        <button
-          type="button"
-          onClick={() =>
-            navigate({
-              to: "/contacts/$contactId",
-              params: { contactId: String(task.contactId) },
-              search: { tab: "history" },
-            })
-          }
-          className="shrink-0 text-[13px] font-medium text-primary hover:underline"
+        <Link
+          to="/contacts/$contactId"
+          params={{ contactId: String(task.contactId) }}
+          search={{ tab: "history" }}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 inline-flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
         >
           View conversation
-        </button>
+          <ArrowUpRightIcon size={13} />
+        </Link>
       )}
     </div>
   );
