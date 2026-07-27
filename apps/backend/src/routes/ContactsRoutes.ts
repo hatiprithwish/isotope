@@ -83,6 +83,36 @@ ContactsRoutes.patch(
   },
 );
 
+ContactsRoutes.post(
+  "/history/bulk",
+  checkAuth,
+  zValidator("json", Schemas.ZBulkLogContactHistoryApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.bulkLogContactHistory({ ...body, userId });
+
+    return c.json(response, response.isSuccess ? 201 : 500);
+  },
+);
+
+ContactsRoutes.post(
+  "/message-templates/bulk",
+  checkAuth,
+  zValidator("json", Schemas.ZResolveMessageTemplatesBulkApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.resolveMessageTemplatesBulk({ ...body, userId });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
 ContactsRoutes.get(
   "/:id",
   checkAuth,

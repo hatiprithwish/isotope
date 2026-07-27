@@ -195,6 +195,39 @@ export default class ContactsRepo {
     return response;
   }
 
+  /**
+   * Logs each entry independently via logContactHistory (so every entry gets the same
+   * NotStarted->InPipeline bump, pause/resync side effects as a single log) and never lets one
+   * entry's failure stop the rest — the caller gets a per-contact success/failure map back.
+   */
+  async bulkLogContactHistory(
+    params: Schemas.BulkLogContactHistoryApiRequest & { userId: string },
+  ): Promise<Schemas.BulkLogContactHistoryApiResponse> {
+    const results: Schemas.BulkLogContactHistoryResult[] = [];
+
+    for (const entry of params.entries) {
+      const { contactId, ...history } = entry;
+      const response = await this.logContactHistory({
+        ...history,
+        userId: params.userId,
+        contactId,
+      });
+      results.push({
+        contactId,
+        isSuccess: response.isSuccess,
+        message: response.message,
+      });
+    }
+
+    return {
+      // At least one entry must have actually been logged — mirrors how the route maps this to
+      // a 201/500 status, so a batch where every entry failed is never reported as a success.
+      isSuccess: results.some((r) => r.isSuccess),
+      message: "Bulk history log processed",
+      results,
+    };
+  }
+
   async updateContactHistory(
     params: Schemas.UpdateContactHistoryApiRequest & {
       userId: string;
@@ -432,6 +465,42 @@ export default class ContactsRepo {
     });
     response.message = "Log template resolved successfully";
     return response;
+  }
+
+  /**
+   * Resolves each contact's template independently via resolveMessageTemplate, so one contact
+   * with no company/template configured doesn't block the rest of the batch.
+   */
+  async resolveMessageTemplatesBulk(params: {
+    userId: string;
+    contactIds: number[];
+  }): Promise<Schemas.ResolveMessageTemplatesBulkApiResponse> {
+    const results: Schemas.ResolveMessageTemplatesBulkResult[] = [];
+
+    for (const contactId of params.contactIds) {
+      const response = await this.resolveMessageTemplate({ userId: params.userId, contactId });
+      results.push({
+        contactId,
+        // resolveMessageTemplate's isSuccess is a real failure signal (contact not found, DAL
+        // error) — "no template configured" is isSuccess: true with no renderedBody — so this
+        // must be preserved per-contact, not collapsed away, or a lookup failure becomes
+        // indistinguishable from "nothing configured".
+        isSuccess: response.isSuccess,
+        message: response.message,
+        step: response.step,
+        variantLabel: response.variantLabel,
+        renderedBody: response.renderedBody,
+        isAmbiguousMatch: response.isAmbiguousMatch,
+      });
+    }
+
+    return {
+      // At least one contact must have actually resolved — mirrors bulkLogContactHistory, so a
+      // batch where every lookup failed is never reported as a success.
+      isSuccess: results.some((r) => r.isSuccess),
+      message: "Bulk message templates resolved",
+      results,
+    };
   }
 
   /**

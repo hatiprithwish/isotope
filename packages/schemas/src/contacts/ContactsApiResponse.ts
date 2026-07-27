@@ -51,3 +51,13 @@ export interface BulkDeleteContactsApiResponse extends ApiResponse {
 export interface BulkUpdateContactsApiResponse extends ApiResponse {
   updatedCount?: number;
 }
+
+export interface BulkLogContactHistoryResult {
+  contactId: number;
+  isSuccess: boolean;
+  message?: string;
+}
+
+export interface BulkLogContactHistoryApiResponse extends ApiResponse {
+  results?: BulkLogContactHistoryResult[];
+}

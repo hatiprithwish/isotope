@@ -4,6 +4,7 @@ import {
   ZContactHistoryBase,
   ZContactHistoryDirectionEnum,
   ZContactHistoryChannelEnum,
+  BULK_LOG_CONTACT_HISTORY_MAX_ENTRIES,
 } from "./ContactsCommon";
 
 export const ZGetContactsApiRequest = z.object({
@@ -65,3 +66,19 @@ export const ZBulkUpdateContactsApiRequest = z.object({
     }),
 });
 export type BulkUpdateContactsApiRequest = z.infer<typeof ZBulkUpdateContactsApiRequest>;
+
+export const ZBulkLogContactHistoryEntry = ZLogContactHistoryApiRequest.extend({
+  contactId: z.number().int().positive(),
+});
+export type BulkLogContactHistoryEntry = z.infer<typeof ZBulkLogContactHistoryEntry>;
+
+export const ZBulkLogContactHistoryApiRequest = z.object({
+  entries: z
+    .array(ZBulkLogContactHistoryEntry)
+    .min(1)
+    .max(
+      BULK_LOG_CONTACT_HISTORY_MAX_ENTRIES,
+      `At most ${BULK_LOG_CONTACT_HISTORY_MAX_ENTRIES} messages can be logged at once`,
+    ),
+});
+export type BulkLogContactHistoryApiRequest = z.infer<typeof ZBulkLogContactHistoryApiRequest>;

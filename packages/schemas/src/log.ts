@@ -51,6 +51,7 @@ export enum LogAction {
   GetLastSentHistory = "GetLastSentHistory",
   GetSentMessageCount = "GetSentMessageCount",
   CheckDuplicateContact = "CheckDuplicateContact",
+  BulkLogContactHistory = "BulkLogContactHistory",
 
   // Frameworks
   SaveFramework = "SaveFramework",
@@ -115,6 +116,7 @@ export enum LogAction {
   GetMessageTemplates = "GetMessageTemplates",
   SaveMessageTemplate = "SaveMessageTemplate",
   ResolveMessageTemplate = "ResolveMessageTemplate",
+  ResolveMessageTemplatesBulk = "ResolveMessageTemplatesBulk",
 
   // Search
   GlobalSearch = "GlobalSearch",

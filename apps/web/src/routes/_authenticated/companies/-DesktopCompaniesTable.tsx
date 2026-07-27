@@ -45,7 +45,7 @@ export function DesktopCompaniesTable({
 }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [fitFilter, setFitFilter] = useState<FitFilter>("all");
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
 
   const filtered = applyFilters(companies, statusFilter, fitFilter);
   const allPageIds = filtered.map((c) => c.id);
@@ -240,9 +240,9 @@ export function DesktopCompaniesTable({
         <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
           <span className="text-base font-semibold text-foreground tracking-tight">Companies</span>
           <div className="ml-auto flex gap-2 items-center">
-            <Button type="button" variant="outline" size="lg" onClick={onAddClick}>
+            <Button type="button" variant="default" size="lg" onClick={onAddClick}>
               <PlusIcon size={13} />
-              Add company
+              Add
             </Button>
           </div>
         </header>

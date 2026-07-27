@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   MagnifyingGlassIcon,
   PlusIcon,
   TrashIcon,
   CheckSquareIcon,
   SquareIcon,
+  ChatsCircleIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { AppTable, AppTablePagination } from "@/components/app-table";
@@ -57,7 +59,7 @@ export function DesktopContactsTable({
   onSearchChange,
   pagination,
 }: Props) {
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
   const [bulkField, setBulkField] = useState<BulkField>("");
   const [bulkValue, setBulkValue] = useState<number | null>(null);
 
@@ -307,9 +309,15 @@ export function DesktopContactsTable({
         <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
           <span className="text-base font-semibold text-foreground tracking-tight">Contacts</span>
           <div className="ml-auto flex gap-2 items-center">
-            <Button type="button" variant="outline" size="lg" onClick={onAddClick}>
+            <Button type="button" variant="outline" size="lg" asChild>
+              <Link to="/contacts/bulk-log">
+                <ChatsCircleIcon size={13} />
+                Bulk Log Messages
+              </Link>
+            </Button>
+            <Button type="button" variant="default" size="lg" onClick={onAddClick}>
               <PlusIcon size={13} />
-              Add manually
+              Add
             </Button>
           </div>
         </header>

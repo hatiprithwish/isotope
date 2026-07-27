@@ -118,6 +118,9 @@ export function buildContactHistoryType(
   return `${channel}${suffix}`;
 }
 
+/** Shared by the bulk-log Zod request schema (server) and the bulk-log page (client) — one cap, enforced both places. */
+export const BULK_LOG_CONTACT_HISTORY_MAX_ENTRIES = 50;
+
 /** Exact outbound type values ("email_sent", "linkedin_sent", …) — use with inArray/includes instead of suffix pattern-matching. */
 export const CONTACT_HISTORY_SENT_TYPES: string[] = Object.values(ContactHistoryChannelEnum).map(
   (channel) => `${channel}${CONTACT_HISTORY_SENT_SUFFIX}`,

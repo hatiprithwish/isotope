@@ -285,3 +285,41 @@ export function useDeleteContactHistory() {
     },
   });
 }
+
+/** On-demand (not cached as a query) since contactIds changes every time a row is added/removed. */
+export function useResolveMessageTemplatesBulk() {
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: (body: Schemas.ResolveMessageTemplatesBulkApiRequest) =>
+      apiClient<Schemas.ResolveMessageTemplatesBulkApiResponse>(
+        "/contacts/message-templates/bulk",
+        getToken,
+        { method: "POST", body: JSON.stringify(body) },
+      ),
+    onError: () => {
+      toast.error("Failed to load default message templates. Please try again.");
+    },
+  });
+}
+
+export function useBulkLogContactHistory() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Schemas.BulkLogContactHistoryApiRequest) =>
+      apiClient<Schemas.BulkLogContactHistoryApiResponse>("/contacts/history/bulk", getToken, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: async () => {
+      // Every logged entry can bump status/nextTouchDueAt/message-template step for its contact —
+      // simplest correct invalidation is the whole contacts domain, same as bulkUpdateContacts.
+      await queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.all() });
+    },
+    onError: () => {
+      toast.error("Failed to log messages. Please try again.");
+    },
+  });
+}

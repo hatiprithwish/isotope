@@ -17,3 +17,17 @@ export interface ResolveMessageTemplateApiResponse extends ApiResponse {
   /** true when the contact's company had more than one distinct job role type, so the default template was used instead of a specific match. */
   isAmbiguousMatch?: boolean;
 }
+
+export interface ResolveMessageTemplatesBulkResult {
+  contactId: number;
+  isSuccess: boolean;
+  message?: string;
+  step?: number;
+  variantLabel?: string | null;
+  renderedBody?: string;
+  isAmbiguousMatch?: boolean;
+}
+
+export interface ResolveMessageTemplatesBulkApiResponse extends ApiResponse {
+  results?: ResolveMessageTemplatesBulkResult[];
+}
