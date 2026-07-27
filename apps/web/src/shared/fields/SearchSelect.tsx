@@ -101,6 +101,20 @@ export default function SearchSelect({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter selects the top filtered match instead of falling through to submit
+                // whatever form this select happens to be embedded in.
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (filtered.length > 0) handleSelect(filtered[0].id);
+                } else if (e.key === "Escape") {
+                  e.stopPropagation();
+                  setOpen(false);
+                  setSearch("");
+                  onBlur?.();
+                }
+              }}
               placeholder="Search…"
               className="w-full h-8 px-2.5 rounded-md bg-background border border-border text-[12px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
             />

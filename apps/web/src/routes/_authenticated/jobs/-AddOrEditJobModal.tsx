@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
 import { toast } from "sonner";
-import { XIcon } from "@phosphor-icons/react";
+import { XIcon, ArrowElbowDownLeftIcon } from "@phosphor-icons/react";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import CompanySelect from "@/shared/fields/CompanySelect";
@@ -339,7 +339,13 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    placeholder="Paste the job description here…"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        form.handleSubmit();
+                      }
+                    }}
+                    placeholder="Paste the job description here… (Enter to submit, Shift+Enter for a new line)"
                     rows={6}
                     className="w-full px-3 py-2 rounded-lg bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors resize-none"
                   />
@@ -361,14 +367,19 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
             >
               Cancel
             </Button>
-            <Button type="submit" size="lg" disabled={isPending} className="flex-1">
-              {isPending
-                ? mode === "edit"
-                  ? "Saving…"
-                  : "Adding…"
-                : mode === "edit"
-                  ? "Save changes"
-                  : "Add job"}
+            <Button type="submit" size="lg" disabled={isPending} className="flex-1 gap-1.5">
+              {isPending ? (
+                mode === "edit" ? (
+                  "Saving…"
+                ) : (
+                  "Adding…"
+                )
+              ) : (
+                <>
+                  {mode === "edit" ? "Save changes" : "Add job"}
+                  <ArrowElbowDownLeftIcon size={13} />
+                </>
+              )}
             </Button>
           </div>
         </form>

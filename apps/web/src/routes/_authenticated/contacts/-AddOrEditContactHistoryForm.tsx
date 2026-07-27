@@ -3,6 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { z } from "zod";
+import { ArrowElbowDownLeftIcon } from "@phosphor-icons/react";
 import { ContactHistoryChannelEnum, ContactHistoryDirectionEnum } from "@app/schemas";
 import { Field, FieldError } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
@@ -218,7 +219,13 @@ export function AddOrEditContactHistoryForm({
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
-                placeholder="Type the message body…"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    form.handleSubmit();
+                  }
+                }}
+                placeholder="Type the message body… (Enter to submit, Shift+Enter for a new line)"
                 rows={3}
                 aria-invalid={isInvalid}
                 className="w-full bg-background border border-border rounded-lg px-3 py-2 text-[13px] text-foreground leading-[1.65] resize-none outline-none focus:border-primary transition-colors placeholder:text-muted-foreground group-data-[invalid=true]/field:border-destructive"
@@ -231,16 +238,30 @@ export function AddOrEditContactHistoryForm({
 
       {/* Actions */}
       {mode === "add" ? (
-        <Button type="submit" size="default" disabled={isPending} className="self-end">
-          {isPending ? "Saving…" : "Log message"}
+        <Button type="submit" size="default" disabled={isPending} className="self-end gap-1.5">
+          {isPending ? (
+            "Saving…"
+          ) : (
+            <>
+              Log message
+              <ArrowElbowDownLeftIcon size={13} />
+            </>
+          )}
         </Button>
       ) : (
         <div className="flex gap-2">
           <Button type="button" variant="outline" size="default" onClick={onDone}>
             Cancel
           </Button>
-          <Button type="submit" size="default" disabled={isPending}>
-            {isPending ? "Saving…" : "Save"}
+          <Button type="submit" size="default" disabled={isPending} className="gap-1.5">
+            {isPending ? (
+              "Saving…"
+            ) : (
+              <>
+                Save
+                <ArrowElbowDownLeftIcon size={13} />
+              </>
+            )}
           </Button>
         </div>
       )}

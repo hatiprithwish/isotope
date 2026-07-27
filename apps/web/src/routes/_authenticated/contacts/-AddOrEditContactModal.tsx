@@ -3,7 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
-import { InfoIcon, WarningIcon, XIcon } from "@phosphor-icons/react";
+import { InfoIcon, WarningIcon, XIcon, ArrowElbowDownLeftIcon } from "@phosphor-icons/react";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shadcn/ui/tooltip";
@@ -388,14 +388,19 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
             >
               Cancel
             </Button>
-            <Button type="submit" size="lg" disabled={isPending} className="flex-1">
-              {isPending
-                ? mode === "add"
-                  ? "Adding…"
-                  : "Saving…"
-                : mode === "add"
-                  ? "Add contact"
-                  : "Save changes"}
+            <Button type="submit" size="lg" disabled={isPending} className="flex-1 gap-1.5">
+              {isPending ? (
+                mode === "add" ? (
+                  "Adding…"
+                ) : (
+                  "Saving…"
+                )
+              ) : (
+                <>
+                  {mode === "add" ? "Add contact" : "Save changes"}
+                  <ArrowElbowDownLeftIcon size={13} />
+                </>
+              )}
             </Button>
           </div>
         </form>

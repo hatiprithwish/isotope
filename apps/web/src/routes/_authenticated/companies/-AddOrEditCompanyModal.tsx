@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
-import { XIcon } from "@phosphor-icons/react";
+import { XIcon, ArrowElbowDownLeftIcon } from "@phosphor-icons/react";
 import { Field, FieldError, FieldLabel } from "@/shadcn/ui/field";
 import { Button } from "@/shadcn/ui/button";
 import { useCreateCompany, useUpdateCompany } from "./-data";
@@ -246,14 +246,19 @@ export default function AddOrEditCompanyModal({ mode, company, onClose }: Props)
             >
               Cancel
             </Button>
-            <Button type="submit" size="lg" disabled={isPending} className="flex-1">
-              {isPending
-                ? mode === "add"
-                  ? "Adding…"
-                  : "Saving…"
-                : mode === "add"
-                  ? "Add company"
-                  : "Save changes"}
+            <Button type="submit" size="lg" disabled={isPending} className="flex-1 gap-1.5">
+              {isPending ? (
+                mode === "add" ? (
+                  "Adding…"
+                ) : (
+                  "Saving…"
+                )
+              ) : (
+                <>
+                  {mode === "add" ? "Add company" : "Save changes"}
+                  <ArrowElbowDownLeftIcon size={13} />
+                </>
+              )}
             </Button>
           </div>
         </form>

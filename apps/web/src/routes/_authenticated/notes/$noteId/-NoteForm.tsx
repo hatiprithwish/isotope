@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form";
+import { ArrowElbowDownLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { Input } from "@/shadcn/ui/input";
 import { Textarea } from "@/shadcn/ui/textarea";
@@ -73,8 +74,15 @@ export function NoteForm({
                 value={field.state.value ?? ""}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    form.handleSubmit();
+                  }
+                }}
                 aria-invalid={isInvalid}
                 rows={6}
+                placeholder="Enter to save, Shift+Enter for a new line"
               />
               <FieldError errors={field.state.meta.errors} />
             </Field>
@@ -95,8 +103,15 @@ export function NoteForm({
         </Button>
         <form.Subscribe selector={(state) => state.isSubmitting}>
           {(isSubmitting) => (
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : submitLabel}
+            <Button type="submit" disabled={isSubmitting} className="gap-1.5">
+              {isSubmitting ? (
+                "Saving..."
+              ) : (
+                <>
+                  {submitLabel}
+                  <ArrowElbowDownLeftIcon size={13} />
+                </>
+              )}
             </Button>
           )}
         </form.Subscribe>
