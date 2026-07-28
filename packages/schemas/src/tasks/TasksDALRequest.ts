@@ -1,4 +1,5 @@
 import type { TaskCalendarDay, TaskRecord, TaskStatusIntEnum } from "./TasksCommon";
+import type { ContactHistoryChannelEnum } from "../contacts/ContactsCommon";
 import type { ApiResponse } from "../common";
 
 export type GetTasksCalendarDALRequest = { createdBy: string; startDate: string; endDate: string };
@@ -18,17 +19,31 @@ export type UpdateTaskStatusDALRequest = {
 export type SyncFollowUpDALRequest = {
   createdBy: string;
   contactId: number;
+  channel: ContactHistoryChannelEnum;
   dueAt: string;
   stepNumber: number;
 };
 
 export type SweepOverdueDALRequest = { today: string };
 
-export type PauseFollowUpDALRequest = { createdBy: string; contactId: number };
+export type PauseFollowUpDALRequest = {
+  createdBy: string;
+  contactId: number;
+  channel: ContactHistoryChannelEnum;
+};
 
-export type ResumeFollowUpDALRequest = { createdBy: string; contactId: number };
+export type ResumeFollowUpDALRequest = {
+  createdBy: string;
+  contactId: number;
+  channel: ContactHistoryChannelEnum;
+};
 
-export type DeleteFollowUpTasksDALRequest = { createdBy: string; contactId: number };
+export type DeleteFollowUpTasksDALRequest = {
+  createdBy: string;
+  contactId: number;
+  // Omitted = clears the follow-up task on every channel (used when a contact is marked Dead).
+  channel?: ContactHistoryChannelEnum;
+};
 
 // DAL response shapes — raw TaskRecord rows (status int only); the Repo maps int → label and derives overdueByDays.
 

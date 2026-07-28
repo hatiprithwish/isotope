@@ -31,11 +31,6 @@ function MobileContactRow({ contact }: { contact: Schemas.Contact }) {
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
         <StatusBadge status={contact.status} sm />
-        {contact.nextTouchDueAt && (
-          <span className="text-[11px] text-(--text-secondary)">
-            {new Date(contact.nextTouchDueAt).toLocaleDateString()}
-          </span>
-        )}
       </div>
       <svg
         width={16}

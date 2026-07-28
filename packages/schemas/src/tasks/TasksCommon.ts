@@ -1,4 +1,5 @@
 import z from "zod";
+import { ZContactHistoryChannelEnum } from "../contacts/ContactsCommon";
 
 /** YYYY-MM-DD date key — the wire format for all task/follow-up date fields. Queries compare these lexically, so the shape must be enforced at the validation boundary. */
 export const ZDateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD date key");
@@ -29,6 +30,7 @@ export const taskStatusIntToLabel: Record<TaskStatusIntEnum, TaskStatusLabelEnum
 
 export const ZTaskBase = z.object({
   contactId: z.number().nullable().optional(),
+  channel: ZContactHistoryChannelEnum,
   title: z.string(),
   dueAt: z.string(),
   note: z.string().nullable().optional(),

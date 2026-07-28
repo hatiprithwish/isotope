@@ -208,10 +208,12 @@ export default class ContactsRepo {
     }
 
     if (params.direction === Schemas.ContactHistoryDirectionEnum.Contact) {
-      // Inbound reply — pause the active Pending follow-up, if any (no-op if none/already Paused).
+      // Inbound reply — pause the active Pending follow-up for this channel's sequence, if any
+      // (no-op if none/already Paused). Email and linkedin sequences pause independently.
       await new TasksRepo(this.env).pauseFollowUpForContact({
         userId: params.userId,
         contactId: params.contactId,
+        channel: params.channel,
       });
       return response;
     }
@@ -220,7 +222,12 @@ export default class ContactsRepo {
     // since the last resync; the new outbound message supersedes it. resyncFollowUp's UPDATE-not-INSERT
     // semantics (widened to match Paused rows too, see TasksDAL.syncFollowUpForContact) unconditionally
     // advance it to Pending + the newly computed dueAt + stepNumber, naturally clearing Paused state.
-    await this.resyncFollowUp({ userId: params.userId, contactId: params.contactId });
+    // Email and linkedin run independent sequences, so this resyncs only this message's channel.
+    await this.resyncFollowUp({
+      userId: params.userId,
+      contactId: params.contactId,
+      channel: params.channel,
+    });
     return response;
   }
 
@@ -273,8 +280,13 @@ export default class ContactsRepo {
     });
 
     // sentAt is editable, so the follow-up schedule may no longer be derived from the latest sent message.
-    if (response.isSuccess) {
-      await this.resyncFollowUp({ userId: params.userId, contactId: params.contactId });
+    // Resyncs only the edited message's own channel — email and linkedin sequences are independent.
+    if (response.isSuccess && response.history) {
+      await this.resyncFollowUp({
+        userId: params.userId,
+        contactId: params.contactId,
+        channel: response.history.channel,
+      });
     }
 
     return response;
@@ -287,8 +299,12 @@ export default class ContactsRepo {
       createdBy: params.userId,
     });
 
-    if (response.isSuccess) {
-      await this.resyncFollowUp({ userId: params.userId, contactId: params.contactId });
+    if (response.isSuccess && response.channel) {
+      await this.resyncFollowUp({
+        userId: params.userId,
+        contactId: params.contactId,
+        channel: response.channel,
+      });
 
       // Deleting the last remaining message reverts the auto-bump from logContactHistory —
       // only if status is still InPipeline (untouched since), never a further/manual status.
@@ -317,16 +333,22 @@ export default class ContactsRepo {
   }
 
   /**
-   * Recomputes the contact's follow-up state from the latest remaining sent message and the user's
-   * configured step offsets — the single "advance to next step" mechanism invoked after every history
-   * mutation (create-outbound, update, delete). The task row is written first; nextTouchDueAt follows
-   * only on success so the two never diverge. Must NOT run as a side effect of an inbound reply —
+   * Recomputes the contact's follow-up state, for one channel, from that channel's latest remaining
+   * sent message and the user's configured step offsets — the single "advance to next step"
+   * mechanism invoked after every history mutation (create-outbound, update, delete) on that channel.
+   * Email and linkedin each run their own independent sequence/task, so this only ever touches the
+   * channel of the message that triggered it. Must NOT run as a side effect of an inbound reply —
    * that is the separate pause path in logContactHistory.
    */
-  private async resyncFollowUp(params: { userId: string; contactId: number }) {
+  private async resyncFollowUp(params: {
+    userId: string;
+    contactId: number;
+    channel: Schemas.ContactHistoryChannelEnum;
+  }) {
     const lastSentResponse = await this.dal.getLastSentHistory({
       contactId: params.contactId,
       createdBy: params.userId,
+      channel: params.channel,
     });
 
     // A failed read must not be mistaken for "no sent messages" — bail without touching follow-up state.
@@ -334,23 +356,17 @@ export default class ContactsRepo {
 
     const tasksRepo = new TasksRepo(this.env);
 
-    // No sent messages left at all (e.g. the last one was deleted) — clear any follow-up task/state entirely.
+    // No sent messages left on this channel (e.g. the last one was deleted) — clear this channel's follow-up task.
     if (!lastSentResponse.lastSentAt) {
-      const deleteResponse = await tasksRepo.deleteFollowUpTasks({
+      await tasksRepo.deleteFollowUpTasks({
         userId: params.userId,
         contactId: params.contactId,
-      });
-      if (!deleteResponse.isSuccess) return;
-
-      await this.dal.updateNextTouchDueAt({
-        id: params.contactId,
-        createdBy: params.userId,
-        nextTouchDueAt: null,
+        channel: params.channel,
       });
       return;
     }
 
-    // Resolve the user's configured offsets (global-for-now; contact-level override slot reserved in FollowUpSettingsRepo).
+    // Resolve the user's configured offsets (global-for-now, shared across channels; contact-level override slot reserved in FollowUpSettingsRepo).
     const settingsRepo = new FollowUpSettingsRepo(this.env);
     const settingsResponse = await settingsRepo.getSettingsDetails({ userId: params.userId });
     if (!settingsResponse.isSuccess) return;
@@ -358,10 +374,11 @@ export default class ContactsRepo {
       settingsResponse.settings?.stepOffsetDays ??
       Constants.FOLLOWUP_SETTINGS_DEFAULTS.stepOffsetDays;
 
-    // How many outbound messages have actually been sent so far == latest Touch N.
+    // How many outbound messages have actually been sent so far on this channel == latest Touch N for this channel.
     const sentCountResponse = await this.dal.getSentMessageCount({
       contactId: params.contactId,
       createdBy: params.userId,
+      channel: params.channel,
     });
     if (!sentCountResponse.isSuccess) return;
     const sentCount = sentCountResponse.count ?? 0; // defensive; lastSentAt truthy above implies >= 1
@@ -369,39 +386,27 @@ export default class ContactsRepo {
     // stepNumber of the NEXT follow-up to schedule = sentCount (1-based; see plan §0 derivation).
     const stepNumber = sentCount;
 
-    // Sequence complete — no more offsets configured for this step. Clear any dangling task.
+    // Sequence complete — no more offsets configured for this step. Clear any dangling task for this channel.
     if (stepNumber > offsetDays.length) {
-      const deleteResponse = await tasksRepo.deleteFollowUpTasks({
+      await tasksRepo.deleteFollowUpTasks({
         userId: params.userId,
         contactId: params.contactId,
-      });
-      if (!deleteResponse.isSuccess) return;
-
-      await this.dal.updateNextTouchDueAt({
-        id: params.contactId,
-        createdBy: params.userId,
-        nextTouchDueAt: null,
+        channel: params.channel,
       });
       return;
     }
 
-    // Due date: lastSentAt (actual send date of the most recent outbound message) + offset[stepNumber-1].
+    // Due date: lastSentAt (actual send date of the most recent outbound message on this channel) + offset[stepNumber-1].
     const dueAt = Utility.getDateKey(
       new Date(Date.parse(lastSentResponse.lastSentAt) + offsetDays[stepNumber - 1] * 86_400_000),
     );
 
-    const syncResponse = await tasksRepo.syncFollowUpForContact({
+    await tasksRepo.syncFollowUpForContact({
       userId: params.userId,
       contactId: params.contactId,
+      channel: params.channel,
       dueAt,
       stepNumber,
-    });
-    if (!syncResponse.isSuccess) return;
-
-    await this.dal.updateNextTouchDueAt({
-      id: params.contactId,
-      createdBy: params.userId,
-      nextTouchDueAt: dueAt,
     });
   }
 
@@ -561,7 +566,6 @@ export default class ContactsRepo {
       companyId: params.contact.companyId ?? null,
       sequencePosition: params.contact.sequencePosition ?? null,
       lastTouchAt: params.contact.lastTouchAt ?? null,
-      nextTouchDueAt: params.contact.nextTouchDueAt ?? null,
       deadAt,
       reEngageAt: params.contact.reEngageAt ?? null,
       abVariable: params.contact.abVariable ?? null,

@@ -46,7 +46,6 @@ export enum LogAction {
   CreateContactHistory = "CreateContactHistory",
   UpdateContactHistory = "UpdateContactHistory",
   DeleteContactHistory = "DeleteContactHistory",
-  UpdateNextTouchDueAt = "UpdateNextTouchDueAt",
   UpdateContactStatus = "UpdateContactStatus",
   GetLastSentHistory = "GetLastSentHistory",
   GetSentMessageCount = "GetSentMessageCount",

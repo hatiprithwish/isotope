@@ -42,7 +42,6 @@ export default class ContactsDAL {
           linkedinConnected: params.linkedinConnected ?? null,
           sequencePosition: params.sequencePosition ?? null,
           lastTouchAt: params.lastTouchAt ?? null,
-          nextTouchDueAt: params.nextTouchDueAt ?? null,
           deadAt: params.deadAt ?? null,
           reEngageAt: params.reEngageAt ?? null,
           abVariable: params.abVariable ?? null,
@@ -134,7 +133,6 @@ export default class ContactsDAL {
           companyId: contacts.companyId,
           sequencePosition: contacts.sequencePosition,
           lastTouchAt: contacts.lastTouchAt,
-          nextTouchDueAt: contacts.nextTouchDueAt,
           deadAt: contacts.deadAt,
           reEngageAt: contacts.reEngageAt,
           abVariable: contacts.abVariable,
@@ -200,7 +198,6 @@ export default class ContactsDAL {
           companyId: contacts.companyId,
           sequencePosition: contacts.sequencePosition,
           lastTouchAt: contacts.lastTouchAt,
-          nextTouchDueAt: contacts.nextTouchDueAt,
           deadAt: contacts.deadAt,
           reEngageAt: contacts.reEngageAt,
           abVariable: contacts.abVariable,
@@ -296,7 +293,6 @@ export default class ContactsDAL {
           companyId: contacts.companyId,
           sequencePosition: contacts.sequencePosition,
           lastTouchAt: contacts.lastTouchAt,
-          nextTouchDueAt: contacts.nextTouchDueAt,
           deadAt: contacts.deadAt,
           reEngageAt: contacts.reEngageAt,
           abVariable: contacts.abVariable,
@@ -360,7 +356,6 @@ export default class ContactsDAL {
           companyId: contacts.companyId,
           sequencePosition: contacts.sequencePosition,
           lastTouchAt: contacts.lastTouchAt,
-          nextTouchDueAt: contacts.nextTouchDueAt,
           deadAt: contacts.deadAt,
           reEngageAt: contacts.reEngageAt,
           abVariable: contacts.abVariable,
@@ -425,7 +420,6 @@ export default class ContactsDAL {
           companyId: params.companyId ?? undefined,
           sequencePosition: params.sequencePosition,
           lastTouchAt: params.lastTouchAt,
-          nextTouchDueAt: params.nextTouchDueAt,
           deadAt: params.deadAt,
           reEngageAt: params.reEngageAt,
           abVariable: params.abVariable,
@@ -608,7 +602,7 @@ export default class ContactsDAL {
     return response;
   }
 
-  /** Returns the sentAt of the most recent outbound message for the contact, or null if none remain. */
+  /** Returns the sentAt of the most recent outbound message for the contact on this channel, or null if none remain. */
   async getLastSentHistory(params: Schemas.GetLastSentHistoryDALRequest) {
     const response: Schemas.GetLastSentHistoryApiResponse = { isSuccess: false };
 
@@ -620,6 +614,7 @@ export default class ContactsDAL {
           and(
             eq(contactHistory.contactId, params.contactId),
             eq(contactHistory.createdBy, params.createdBy),
+            params.channel ? eq(contactHistory.channel, params.channel) : undefined,
             inArray(contactHistory.type, Schemas.CONTACT_HISTORY_SENT_TYPES),
           ),
         )
@@ -644,7 +639,7 @@ export default class ContactsDAL {
     return response;
   }
 
-  /** Count of outbound (_sent) history rows for the contact — doubles as "latest Touch N". */
+  /** Count of outbound (_sent) history rows for the contact on this channel — doubles as "latest Touch N" for that channel's sequence. */
   async getSentMessageCount(params: Schemas.GetSentMessageCountDALRequest) {
     const response: Schemas.GetSentMessageCountApiResponse = { isSuccess: false };
 
@@ -656,6 +651,7 @@ export default class ContactsDAL {
           and(
             eq(contactHistory.contactId, params.contactId),
             eq(contactHistory.createdBy, params.createdBy),
+            params.channel ? eq(contactHistory.channel, params.channel) : undefined,
             inArray(contactHistory.type, Schemas.CONTACT_HISTORY_SENT_TYPES),
           ),
         );
@@ -693,6 +689,7 @@ export default class ContactsDAL {
             and(
               eq(contactHistory.contactId, params.contactId),
               eq(contactHistory.createdBy, params.createdBy),
+              eq(contactHistory.channel, params.channel),
             ),
           );
 
@@ -786,32 +783,6 @@ export default class ContactsDAL {
     return response;
   }
 
-  async updateNextTouchDueAt(params: Schemas.UpdateNextTouchDueAtDALRequest) {
-    const response: Schemas.ApiResponse = { isSuccess: false };
-
-    try {
-      await this.db
-        .update(contacts)
-        .set({ nextTouchDueAt: params.nextTouchDueAt, updatedAt: Utility.getCurrentISOTimestamp() })
-        .where(and(eq(contacts.id, params.id), eq(contacts.createdBy, params.createdBy)));
-
-      response.isSuccess = true;
-      response.message = "Next touch due date updated successfully";
-    } catch (error) {
-      const message = "Unknown error in updating next touch due date";
-      AppLogger.error({
-        category: Schemas.LogCategory.DAL,
-        action: Schemas.LogAction.UpdateNextTouchDueAt,
-        message,
-        error,
-        metadata: params,
-      });
-      response.message = message;
-    }
-
-    return response;
-  }
-
   async updateContactStatus(params: Schemas.UpdateContactStatusDALRequest) {
     const response: Schemas.ApiResponse = { isSuccess: false };
 
@@ -843,7 +814,8 @@ export default class ContactsDAL {
 
     try {
       // Scoped to contactId so a mismatched URL contact can neither delete another contact's row nor resync the wrong contact.
-      const result = await this.db
+      // Returns the deleted row's channel so the caller can resync that channel's follow-up sequence specifically.
+      const [deleted] = await this.db
         .delete(contactHistory)
         .where(
           and(
@@ -852,15 +824,16 @@ export default class ContactsDAL {
             eq(contactHistory.createdBy, params.createdBy),
           ),
         )
-        .run();
+        .returning({ channel: contactHistory.channel });
 
-      if ((result.meta.changes ?? 0) === 0) {
+      if (!deleted) {
         response.message = "History entry not found";
         return response;
       }
 
       response.isSuccess = true;
       response.message = "History entry deleted successfully";
+      response.channel = deleted.channel;
     } catch (error) {
       const message = "Unknown error in deleting contact history entry";
       AppLogger.error({

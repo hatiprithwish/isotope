@@ -1,4 +1,4 @@
-import type { Contact, ContactHistory } from "./ContactsCommon";
+import type { Contact, ContactHistory, ContactHistoryChannelEnum } from "./ContactsCommon";
 import type { ApiResponse } from "../common";
 
 export interface CreateContactApiResponse extends ApiResponse {
@@ -34,7 +34,9 @@ export interface UpdateContactHistoryApiResponse extends ApiResponse {
   history?: ContactHistory;
 }
 
-export interface DeleteContactHistoryApiResponse extends ApiResponse {}
+export interface DeleteContactHistoryApiResponse extends ApiResponse {
+  channel?: ContactHistoryChannelEnum;
+}
 
 export interface GetLastSentHistoryApiResponse extends ApiResponse {
   lastSentAt?: string | null;

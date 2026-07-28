@@ -90,42 +90,59 @@ export default class TasksRepo {
     return response;
   }
 
-  /** Invoked from ContactsRepo after a sent message is logged — keeps the follow-up task in sync with the contact's next touch date. */
+  /** Invoked from ContactsRepo after a sent message is logged — keeps that channel's follow-up task in sync with the contact's next touch date. Email and linkedin sequences are independent. */
   async syncFollowUpForContact(params: {
     userId: string;
     contactId: number;
+    channel: Schemas.ContactHistoryChannelEnum;
     dueAt: string;
     stepNumber: number;
   }) {
     return await this.dal.syncFollowUpForContact({
       createdBy: params.userId,
       contactId: params.contactId,
+      channel: params.channel,
       dueAt: params.dueAt,
       stepNumber: params.stepNumber,
     });
   }
 
-  /** Invoked from ContactsRepo when an inbound reply is logged — pauses the contact's active Pending follow-up, if any. */
-  async pauseFollowUpForContact(params: { userId: string; contactId: number }) {
+  /** Invoked from ContactsRepo when an inbound reply is logged — pauses the contact's active Pending follow-up on that channel, if any. */
+  async pauseFollowUpForContact(params: {
+    userId: string;
+    contactId: number;
+    channel: Schemas.ContactHistoryChannelEnum;
+  }) {
     return await this.dal.pauseFollowUpForContact({
       createdBy: params.userId,
       contactId: params.contactId,
+      channel: params.channel,
     });
   }
 
-  /** Shifts a Paused follow-up's dueAt forward by the paused duration. Implemented but not yet wired into the automatic flow (see followup-sequences-plan.md §5). */
-  async resumeFollowUpForContact(params: { userId: string; contactId: number }) {
+  /** Shifts a Paused follow-up's dueAt forward by the paused duration, for one channel. Implemented but not yet wired into the automatic flow (see followup-sequences-plan.md §5). */
+  async resumeFollowUpForContact(params: {
+    userId: string;
+    contactId: number;
+    channel: Schemas.ContactHistoryChannelEnum;
+  }) {
     return await this.dal.resumeFollowUpForContact({
       createdBy: params.userId,
       contactId: params.contactId,
+      channel: params.channel,
     });
   }
 
-  /** Invoked from ContactsRepo when no sent messages remain, the sequence completes, or the contact is marked Dead — removes the contact's active Pending/Paused follow-up task. */
-  async deleteFollowUpTasks(params: { userId: string; contactId: number }) {
+  /** Invoked from ContactsRepo when no sent messages remain on a channel or that channel's sequence completes (channel required); or when the contact is marked Dead (channel omitted — clears every channel's follow-up task). */
+  async deleteFollowUpTasks(params: {
+    userId: string;
+    contactId: number;
+    channel?: Schemas.ContactHistoryChannelEnum;
+  }) {
     return await this.dal.deleteFollowUpTasks({
       createdBy: params.userId,
       contactId: params.contactId,
+      channel: params.channel,
     });
   }
 

@@ -4,6 +4,7 @@ import type {
   ContactBase,
   ContactHistory,
   ContactHistoryBase,
+  ContactHistoryChannelEnum,
   ContactStatusIntEnum,
 } from "./ContactsCommon";
 
@@ -48,21 +49,25 @@ export type UpdateContactHistoryDALRequest = FindContactHistoryDALRequest & {
   subject?: string | null;
 };
 
-export type UpdateNextTouchDueAtDALRequest = {
-  id: number;
-  createdBy: string;
-  nextTouchDueAt: string | null;
-};
-
 export type UpdateContactStatusDALRequest = {
   id: number;
   createdBy: string;
   status: ContactStatusIntEnum;
 };
 
-export type GetLastSentHistoryDALRequest = { contactId: number; createdBy: string };
+export type GetLastSentHistoryDALRequest = {
+  contactId: number;
+  createdBy: string;
+  // Omitted = across all channels (used by message-template step resolution, which is channel-agnostic).
+  channel?: ContactHistoryChannelEnum;
+};
 
-export type GetSentMessageCountDALRequest = { contactId: number; createdBy: string };
+export type GetSentMessageCountDALRequest = {
+  contactId: number;
+  createdBy: string;
+  // Omitted = across all channels (used by message-template step resolution, which is channel-agnostic).
+  channel?: ContactHistoryChannelEnum;
+};
 
 export type BulkDeleteContactsDALRequest = { ids: number[]; createdBy: string };
 

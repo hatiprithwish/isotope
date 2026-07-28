@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import { Checkbox } from "@/shadcn/ui/checkbox";
-import * as Schemas from "@app/schemas";
+import * as Schemas from "@app/schemas"; // runtime `import *`: consumes CONTACT_HISTORY_CHANNEL_LABEL_MAP alongside types.
 
 interface TaskRowProps {
   task: Schemas.TaskWithMeta;
@@ -33,6 +33,9 @@ export function TaskRow({ task, onToggle, isUpdating }: TaskRowProps) {
         </p>
         {metaLine && <p className="text-xs text-(--text-secondary) truncate mt-0.5">{metaLine}</p>}
       </div>
+      <span className="shrink-0 inline-flex items-center gap-1 h-5 px-1.75 rounded-md text-[11px] font-semibold bg-(--surface-raised) text-(--text-secondary)">
+        {Schemas.CONTACT_HISTORY_CHANNEL_LABEL_MAP[task.channel]}
+      </span>
       {task.stepNumber != null && (
         <span className="shrink-0 inline-flex items-center gap-1 h-5 px-1.75 rounded-md text-[11px] font-semibold bg-(--surface-raised) text-(--text-secondary)">
           Follow-up {task.stepNumber}

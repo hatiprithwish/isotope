@@ -10,6 +10,7 @@ const taskSelection = {
   id: tasks.id,
   createdBy: tasks.createdBy,
   contactId: tasks.contactId,
+  channel: tasks.channel,
   title: tasks.title,
   dueAt: tasks.dueAt,
   status: tasks.status,
@@ -274,6 +275,7 @@ export default class TasksDAL {
     try {
       // Matches Pending AND Paused rows — Advance must unconditionally supersede a Paused row left
       // over from an inbound reply (see followup-sequences-plan.md §5), not just a Pending one.
+      // Scoped to channel — email and linkedin each have their own active follow-up row.
       const [existing] = await this.db
         .select({ id: tasks.id })
         .from(tasks)
@@ -281,6 +283,7 @@ export default class TasksDAL {
           and(
             eq(tasks.createdBy, params.createdBy),
             eq(tasks.contactId, params.contactId),
+            eq(tasks.channel, params.channel),
             inArray(tasks.status, [
               Schemas.TaskStatusIntEnum.Pending,
               Schemas.TaskStatusIntEnum.Paused,
@@ -328,6 +331,7 @@ export default class TasksDAL {
       await this.db.insert(tasks).values({
         createdBy: params.createdBy,
         contactId: params.contactId,
+        channel: params.channel,
         title: `Follow up with ${contact.name}`,
         dueAt: params.dueAt,
         status: Schemas.TaskStatusIntEnum.Pending,
@@ -372,6 +376,7 @@ export default class TasksDAL {
           and(
             eq(tasks.createdBy, params.createdBy),
             eq(tasks.contactId, params.contactId),
+            eq(tasks.channel, params.channel),
             eq(tasks.status, Schemas.TaskStatusIntEnum.Pending),
           ),
         );
@@ -405,6 +410,7 @@ export default class TasksDAL {
           and(
             eq(tasks.createdBy, params.createdBy),
             eq(tasks.contactId, params.contactId),
+            eq(tasks.channel, params.channel),
             eq(tasks.status, Schemas.TaskStatusIntEnum.Paused),
           ),
         )
@@ -457,6 +463,7 @@ export default class TasksDAL {
           and(
             eq(tasks.createdBy, params.createdBy),
             eq(tasks.contactId, params.contactId),
+            params.channel ? eq(tasks.channel, params.channel) : undefined,
             inArray(tasks.status, [
               Schemas.TaskStatusIntEnum.Pending,
               Schemas.TaskStatusIntEnum.Paused,

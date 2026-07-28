@@ -62,7 +62,6 @@ export const ZContactBase = z.object({
   linkedinConnected: z.boolean().nullable().optional(),
   sequencePosition: z.number().nullable().optional(),
   lastTouchAt: z.string().nullable().optional(),
-  nextTouchDueAt: z.string().nullable().optional(),
   deadAt: z.string().nullable().optional(),
   reEngageAt: z.string().nullable().optional(),
   abVariable: z.string().nullable().optional(),
@@ -103,6 +102,12 @@ export enum ContactHistoryChannelEnum {
 }
 export const ZContactHistoryChannelEnum = z.nativeEnum(ContactHistoryChannelEnum);
 
+/** Single owner of channel display labels — "linkedin".charAt(0).toUpperCase() would render "Linkedin", not "LinkedIn". */
+export const CONTACT_HISTORY_CHANNEL_LABEL_MAP: Record<ContactHistoryChannelEnum, string> = {
+  [ContactHistoryChannelEnum.Email]: "Email",
+  [ContactHistoryChannelEnum.LinkedIn]: "LinkedIn",
+};
+
 // Single owner of the "<channel>_<direction>" history-type convention — build and match types only through these, never with string literals or LIKE patterns.
 export const CONTACT_HISTORY_SENT_SUFFIX = "_sent" as const;
 export const CONTACT_HISTORY_RECEIVED_SUFFIX = "_received" as const;
@@ -132,7 +137,7 @@ export const CONTACT_HISTORY_SENT_TYPES: string[] = Object.values(ContactHistory
 export const ZContactHistoryBase = z.object({
   contactId: z.number(),
   type: z.string(),
-  channel: z.string(),
+  channel: ZContactHistoryChannelEnum,
   subject: z.string().nullable().optional(),
   body: z.string(),
   sequencePosition: z.number().nullable().optional(),

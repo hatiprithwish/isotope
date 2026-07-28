@@ -61,7 +61,6 @@ export const contacts = table(
     linkedinConnected: t.integer("linkedin_connected", { mode: "boolean" }),
     sequencePosition: t.integer("sequence_position"),
     lastTouchAt: t.text("last_touch_at"),
-    nextTouchDueAt: t.text("next_touch_due_at"),
     deadAt: t.text("dead_at"),
     reEngageAt: t.text("re_engage_at"),
     abVariable: t.text("ab_variable"),
@@ -93,7 +92,7 @@ export const contactHistory = table(
     createdBy: t.text("created_by").notNull(),
     contactId: t.int("contact_id").notNull(),
     type: t.text().notNull(),
-    channel: t.text().notNull(),
+    channel: t.text().$type<Schemas.ContactHistoryChannelEnum>().notNull(),
     subject: t.text(),
     body: t.text().notNull(),
     sequencePosition: t.integer("sequence_position"),
@@ -175,6 +174,9 @@ export const tasks = table(
     id: t.int().primaryKey({ autoIncrement: true }),
     createdBy: t.text("created_by").notNull(),
     contactId: t.int("contact_id"),
+    // Every task row is a follow-up today (see TasksRepo — no standalone-task creation path exists),
+    // so this is required; email and linkedin run independent sequences for the same contact.
+    channel: t.text().$type<Schemas.ContactHistoryChannelEnum>().notNull(),
     title: t.text().notNull(),
     dueAt: t.text("due_at").notNull(),
     status: t.integer().$type<Schemas.TaskStatusIntEnum>().notNull(),
@@ -188,7 +190,9 @@ export const tasks = table(
   (table) => [
     // Composite: every hot read filters created_by AND due_at (day/calendar/past); the createdBy prefix still serves createdBy-only predicates.
     t.index("IDX_tasks_created_by_due_at").on(table.createdBy, table.dueAt),
-    t.index("IDX_tasks_contact_id").on(table.contactId),
+    // Widened to (contact_id, channel) — the "one active follow-up per contact" lookups now filter
+    // on both, since email and linkedin each have their own active Pending/Paused row.
+    t.index("IDX_tasks_contact_id_channel").on(table.contactId, table.channel),
     // Serves the cron sweep's (status, due_at) predicate, which has no created_by filter.
     t.index("IDX_tasks_due_at").on(table.dueAt),
   ],

@@ -45,7 +45,7 @@ export function HistoryTab({
 
       {history.map((h) => {
         const isSent = Schemas.CONTACT_HISTORY_SENT_TYPES.includes(h.type);
-        const channelLabel = h.channel.charAt(0).toUpperCase() + h.channel.slice(1);
+        const channelLabel = Schemas.CONTACT_HISTORY_CHANNEL_LABEL_MAP[h.channel];
         const touchLabel =
           isSent && h.sequencePosition != null ? `Touch ${h.sequencePosition}` : null;
 

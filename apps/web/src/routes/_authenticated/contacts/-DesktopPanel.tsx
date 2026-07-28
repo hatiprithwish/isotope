@@ -16,7 +16,7 @@ interface ContactDetailPanelProps {
 /**
  * The list-page row (`contact` prop) is only refetched when the list query is invalidated,
  * so it goes stale after mutations that invalidate `keys.detail` but not `keys.list` (e.g.
- * logging/editing/deleting history, which can change status/nextTouchDueAt). Fetching the
+ * logging/editing/deleting history, which can change status/follow-up state). Fetching the
  * detail query here too — seeded with the row as a placeholder so there's no loading flash —
  * makes the panel self-heal on those invalidations instead of relying on the list row.
  */

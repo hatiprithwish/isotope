@@ -242,8 +242,8 @@ export function useUpdateContactHistory() {
         { method: "PATCH", body: JSON.stringify(body) },
       ),
     onSuccess: async (_data, { contactId }) => {
-      // Editing sentAt re-triggers resyncFollowUp server-side, which can shift nextTouchDueAt
-      // and the resolved default message template's step — refetch all three.
+      // Editing sentAt re-triggers resyncFollowUp server-side, which can shift that channel's
+      // follow-up due date and the resolved default message template's step — refetch all three.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.history(contactId) }),
         queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.detail(contactId) }),
@@ -270,8 +270,8 @@ export function useDeleteContactHistory() {
         { method: "DELETE" },
       ),
     onSuccess: async (_data, { contactId }) => {
-      // Deleting resyncs (or clears) the follow-up step server-side, which reverts nextTouchDueAt
-      // and the resolved default message template back to the prior step — refetch all three.
+      // Deleting resyncs (or clears) that channel's follow-up step server-side, which reverts its
+      // due date and the resolved default message template back to the prior step — refetch all three.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.history(contactId) }),
         queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.detail(contactId) }),
@@ -336,7 +336,7 @@ export function useBulkLogContactHistory() {
         body: JSON.stringify(body),
       }),
     onSuccess: async () => {
-      // Every logged entry can bump status/nextTouchDueAt/message-template step for its contact —
+      // Every logged entry can bump status/follow-up state/message-template step for its contact —
       // simplest correct invalidation is the whole contacts domain, same as bulkUpdateContacts.
       await queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.all() });
     },
