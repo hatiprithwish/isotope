@@ -6,6 +6,7 @@ import { apiClient } from "@/providers/apiClient";
 import { DesktopSidebar } from "./-DesktopSidebar";
 import { MobileTabBar } from "./-MobileTabBar";
 import { GlobalSearchPalette } from "./-GlobalSearchPalette";
+import { SidebarProvider } from "@/providers/SidebarProvider";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -37,25 +38,27 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="flex h-dvh w-screen overflow-hidden bg-background">
-      <GlobalSearchPalette />
+    <SidebarProvider>
+      <div className="flex h-dvh w-screen overflow-hidden bg-background">
+        <GlobalSearchPalette />
 
-      {/* Desktop sidebar — hidden on mobile */}
-      <div className="hidden md:flex">
-        <DesktopSidebar />
-      </div>
+        {/* Desktop sidebar — hidden on mobile */}
+        <div className="hidden md:flex">
+          <DesktopSidebar />
+        </div>
 
-      {/* Main content area */}
-      <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
-        <main className="flex-1 min-h-0 overflow-hidden">
-          <Outlet />
-        </main>
+        {/* Main content area */}
+        <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
+          <main className="flex-1 min-h-0 overflow-hidden">
+            <Outlet />
+          </main>
 
-        {/* Mobile tab bar — hidden on desktop */}
-        <div className="flex md:hidden w-full">
-          <MobileTabBar />
+          {/* Mobile tab bar — hidden on desktop */}
+          <div className="flex md:hidden w-full">
+            <MobileTabBar />
+          </div>
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

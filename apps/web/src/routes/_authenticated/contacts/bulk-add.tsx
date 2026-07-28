@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useBlocker, Link } from "@tanstack/react-router";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { toast } from "sonner";
 import { ContactSourceIntEnum, BULK_CREATE_CONTACTS_MAX_ENTRIES } from "@app/schemas";
@@ -21,11 +21,31 @@ function BulkAddPage() {
   const bulkCreate = useBulkCreateContacts();
 
   const [rows, setRows] = useState<BulkAddRowState[]>(() => [makeEmptyRow()]);
+  const [submitSucceeded, setSubmitSucceeded] = useState(false);
 
   const activeRows = rows.filter((r) => !r.skipped);
   const canSubmit =
     activeRows.length > 0 && activeRows.every((r) => r.name.trim() && r.companyId != null);
   const remainingCapacity = BULK_CREATE_CONTACTS_MAX_ENTRIES - rows.length;
+
+  const hasUnsavedData =
+    !submitSucceeded &&
+    rows.some(
+      (r) =>
+        r.name.trim() ||
+        r.companyId != null ||
+        r.designation.trim() ||
+        r.email.trim() ||
+        r.linkedinUrl.trim(),
+    );
+
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!hasUnsavedData) return false;
+      return !window.confirm("You have unsaved contacts. Leave this page and discard them?");
+    },
+    enableBeforeUnload: () => hasUnsavedData,
+  });
 
   function patchRow(rowId: string, patch: Partial<BulkAddRowState>) {
     setRows((prev) => prev.map((r) => (r.rowId === rowId ? { ...r, ...patch } : r)));
@@ -89,6 +109,7 @@ function BulkAddPage() {
 
     if (failed.length === 0) {
       toast.success(`Added ${results.length} contact${results.length === 1 ? "" : "s"}.`);
+      setSubmitSucceeded(true);
       navigate({ to: "/contacts" });
       return;
     }
@@ -119,7 +140,7 @@ function BulkAddPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[1320px] mx-auto px-6 py-6 flex flex-col gap-4">
+        <div className="max-w-330 mx-auto px-6 py-6 flex flex-col gap-4">
           <div>
             <h1 className="text-lg font-semibold text-foreground">Add contacts in bulk</h1>
             <p className="text-[12px] text-(--text-secondary) mt-0.5">
@@ -127,7 +148,7 @@ function BulkAddPage() {
             </p>
           </div>
 
-          <div className="border border-border rounded-lg overflow-hidden bg-card">
+          <div className="border border-border rounded-lg bg-card">
             <table className="w-full border-collapse table-fixed">
               <colgroup>
                 <col className="w-7" />
@@ -142,27 +163,27 @@ function BulkAddPage() {
               </colgroup>
               <thead>
                 <tr className="bg-(--surface-raised) border-b border-border">
-                  <th className="pl-3 py-2" />
-                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.05em] text-(--text-secondary)">
+                  <th className="pl-3 py-2 rounded-tl-lg" />
+                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-(--text-secondary)">
                     Name *
                   </th>
-                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.05em] text-(--text-secondary)">
+                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-(--text-secondary)">
                     Company *
                   </th>
-                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.05em] text-(--text-secondary)">
+                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-(--text-secondary)">
                     Title
                   </th>
-                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.05em] text-(--text-secondary)">
+                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-(--text-secondary)">
                     Email
                   </th>
-                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.05em] text-(--text-secondary)">
+                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-(--text-secondary)">
                     LinkedIn URL
                   </th>
-                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-[0.05em] text-(--text-secondary)">
+                  <th className="p-1.5 text-left text-[10.5px] font-semibold uppercase tracking-wider text-(--text-secondary)">
                     Status
                   </th>
                   <th className="p-1.5" />
-                  <th className="p-1.5" />
+                  <th className="p-1.5 rounded-tr-lg" />
                 </tr>
               </thead>
               <tbody>
@@ -180,7 +201,7 @@ function BulkAddPage() {
               </tbody>
             </table>
 
-            <div className="flex items-center justify-between px-3 py-2.5 border-t border-border bg-(--surface-raised)">
+            <div className="flex items-center justify-between px-3 py-2.5 border-t border-border bg-(--surface-raised) rounded-b-lg">
               <Button
                 type="button"
                 variant="outline"

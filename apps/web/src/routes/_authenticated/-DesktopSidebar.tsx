@@ -1,11 +1,13 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/shadcn/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shadcn/ui/tooltip";
 import { useUser, useAuth, useClerk } from "@clerk/tanstack-react-start";
-import { GearSixIcon, SignOutIcon } from "@phosphor-icons/react";
+import { CaretLineLeftIcon, GearSixIcon, SignOutIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import HomeUtils from "./-utils";
 import Utilities from "@/utils";
 import { apiClient } from "@/providers/apiClient";
+import { useSidebar } from "@/providers/SidebarProvider";
 
 export function DesktopSidebar() {
   const { user } = useUser();
@@ -13,10 +15,12 @@ export function DesktopSidebar() {
   const { signOut } = useClerk();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { collapsed, toggleCollapsed } = useSidebar();
 
   const name = user?.fullName ?? "";
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
   const initials = name ? Utilities.getInitials(name) : "?";
+  const settingsActive = pathname.startsWith("/settings");
 
   async function handleSignOut() {
     try {
@@ -30,36 +34,71 @@ export function DesktopSidebar() {
     }
   }
 
+  function navLinkClass(active: boolean) {
+    return [
+      "flex items-center gap-2.25 py-1.75 px-2.5 rounded-lg",
+      "text-xs font-medium leading-none border",
+      "transition-colors duration-120",
+      collapsed && "justify-center px-0",
+      active
+        ? "bg-surface border-border text-foreground"
+        : "border-transparent text-(--text-secondary) hover:text-foreground",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
   return (
-    <aside className="w-48 shrink-0 bg-sidebar border-r border-border flex flex-col p-4 px-3">
-      {/* Logo */}
-      <div className="flex items-center gap-1.5 px-2.5 pt-1.5 pb-5.5">
-        <span className="font-semibold leading-none tracking-[-0.012em] text-foreground">
-          Isotope
-          <sup className="text-xxxs font-semibold text-primary align-super ml-0.5">¹³</sup>
-        </span>
+    <aside
+      className={[
+        "shrink-0 bg-sidebar border-r border-border flex flex-col p-4 px-3 transition-[width] duration-150",
+        collapsed ? "w-16" : "w-48",
+      ].join(" ")}
+    >
+      {/* Logo + collapse toggle */}
+      <div
+        className={[
+          "flex items-center px-2.5 pt-1.5 pb-5.5",
+          collapsed ? "justify-center" : "justify-between",
+        ].join(" ")}
+      >
+        {!collapsed && (
+          <span className="font-semibold leading-none tracking-[-0.012em] text-foreground">
+            Isotope
+            <sup className="text-xxxs font-semibold text-primary align-super ml-0.5">¹³</sup>
+          </span>
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={toggleCollapsed}
+              className="rounded-full"
+            >
+              <CaretLineLeftIcon size={14} className={collapsed ? "rotate-180" : undefined} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">{collapsed ? "Expand" : "Collapse"}</TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Primary nav */}
       <nav className="flex flex-col gap-0.5">
         {HomeUtils.NAV_ITEMS.map(({ id, label, icon: Icon, href }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
-          return (
-            <Link
-              key={id}
-              to={href}
-              className={[
-                "flex items-center gap-2.25 py-1.75 px-2.5 rounded-lg",
-                "text-xs font-medium leading-none border",
-                "transition-colors duration-120",
-                active
-                  ? "bg-surface border-border text-foreground"
-                  : "border-transparent text-(--text-secondary) hover:text-foreground",
-              ].join(" ")}
-            >
+          const link = (
+            <Link key={id} to={href} className={navLinkClass(active)}>
               <Icon size={16} weight={active ? "bold" : "regular"} />
-              {label}
+              {!collapsed && label}
             </Link>
+          );
+          if (!collapsed) return link;
+          return (
+            <Tooltip key={id}>
+              <TooltipTrigger asChild>{link}</TooltipTrigger>
+              <TooltipContent side="right">{label}</TooltipContent>
+            </Tooltip>
           );
         })}
       </nav>
@@ -71,42 +110,67 @@ export function DesktopSidebar() {
       <div className="h-px bg-border mx-1.5 my-3.5" />
 
       {/* Sign out */}
-      <Button
-        variant="ghost"
-        onClick={handleSignOut}
-        className="flex items-center gap-2.25 py-1.75 px-2.5 rounded-lg w-full justify-start text-xs font-medium leading-none border border-transparent text-(--text-secondary) hover:text-foreground h-auto"
-      >
-        <SignOutIcon size={16} weight="regular" />
-        Sign out
-      </Button>
+      {collapsed ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              onClick={handleSignOut}
+              className="flex items-center justify-center py-1.75 px-0 rounded-lg w-full text-xs font-medium leading-none border border-transparent text-(--text-secondary) hover:text-foreground h-auto"
+            >
+              <SignOutIcon size={16} weight="regular" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">Sign out</TooltipContent>
+        </Tooltip>
+      ) : (
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className="flex items-center gap-2.25 py-1.75 px-2.5 rounded-lg w-full justify-start text-xs font-medium leading-none border border-transparent text-(--text-secondary) hover:text-foreground h-auto"
+        >
+          <SignOutIcon size={16} weight="regular" />
+          Sign out
+        </Button>
+      )}
 
       {/* Settings */}
-      <Link
-        to="/settings"
-        className={[
-          "flex items-center gap-2.25 py-1.75 px-2.5 rounded-lg",
-          "text-xs font-medium leading-none border",
-          "transition-colors duration-120",
-          pathname.startsWith("/settings")
-            ? "bg-surface border-border text-foreground"
-            : "border-transparent text-(--text-secondary) hover:text-foreground",
-        ].join(" ")}
-      >
-        <GearSixIcon size={16} weight={pathname.startsWith("/settings") ? "bold" : "regular"} />
-        Settings
-      </Link>
+      {collapsed ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link to="/settings" className={navLinkClass(settingsActive)}>
+              <GearSixIcon size={16} weight={settingsActive ? "bold" : "regular"} />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right">Settings</TooltipContent>
+        </Tooltip>
+      ) : (
+        <Link to="/settings" className={navLinkClass(settingsActive)}>
+          <GearSixIcon size={16} weight={settingsActive ? "bold" : "regular"} />
+          Settings
+        </Link>
+      )}
 
       {/* User row */}
-      <div className="flex items-center gap-2 py-1.75 px-2.5 mt-0.5">
+      <div
+        className={[
+          "flex items-center gap-2 py-1.75 mt-0.5",
+          collapsed ? "justify-center px-0" : "px-2.5",
+        ].join(" ")}
+      >
         <span className="w-7 h-7 rounded-full flex items-center justify-center text-xxs font-semibold shrink-0 bg-(--accent-bg) text-(--accent-text)">
           {initials}
         </span>
-        <div className="flex flex-col min-w-0">
-          <span className="text-xs font-medium leading-snug text-foreground truncate">{name}</span>
-          <span className="text-xxs leading-none text-muted-foreground mt-0.5 truncate">
-            {email}
-          </span>
-        </div>
+        {!collapsed && (
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-medium leading-snug text-foreground truncate">
+              {name}
+            </span>
+            <span className="text-xxs leading-none text-muted-foreground mt-0.5 truncate">
+              {email}
+            </span>
+          </div>
+        )}
       </div>
     </aside>
   );
