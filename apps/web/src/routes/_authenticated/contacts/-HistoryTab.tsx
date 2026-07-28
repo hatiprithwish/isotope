@@ -1,10 +1,50 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowCounterClockwiseIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 import * as Schemas from "@app/schemas"; // runtime `import *`: consumes the history-type helpers alongside types.
-import { ContactsQueries, useDeleteContactHistory } from "./-data";
+import {
+  CONTACT_HISTORY_UNDO_WINDOW_MS,
+  ContactsQueries,
+  useDeleteContactHistory,
+  useRestoreContactHistory,
+} from "./-data";
 import { AddOrEditContactHistoryForm } from "./-AddOrEditContactHistoryForm";
 import { Button } from "@/shadcn/ui/button";
+
+/**
+ * Once a tombstone's undo window has elapsed, the queued HardDeleteContactHistoryHandler has run
+ * server-side — it hard-deletes the row AND (deferred from the old immediate-delete behavior)
+ * resyncs that channel's follow-up state and may revert the contact's status. Nothing pushes that
+ * completion to the client, so this timer is the only signal we get: refetch history, detail, and
+ * the resolved message template at the same 15 min mark, or all three caches go stale until some
+ * unrelated action happens to refetch them.
+ */
+function useTombstoneExpiry(deletedRows: Schemas.ContactHistory[], contactId: number) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (deletedRows.length === 0) return;
+
+    const timers = deletedRows.map((row) => {
+      const msRemaining =
+        CONTACT_HISTORY_UNDO_WINDOW_MS - (Date.now() - Date.parse(row.deletedAt as string));
+      return setTimeout(
+        () => {
+          void queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.history(contactId) });
+          void queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.detail(contactId) });
+          void queryClient.invalidateQueries({
+            queryKey: ContactsQueries.keys.messageTemplate(contactId),
+          });
+        },
+        Math.max(msRemaining, 0),
+      );
+    });
+
+    return () => {
+      for (const timer of timers) clearTimeout(timer);
+    };
+  }, [deletedRows, contactId, queryClient]);
+}
 
 export function HistoryTab({
   contact,
@@ -15,11 +55,16 @@ export function HistoryTab({
 }) {
   const { data, isPending } = useQuery(ContactsQueries.history(contact.id, getToken));
   const deleteHistory = useDeleteContactHistory();
+  const restoreHistory = useRestoreContactHistory();
   const [editingId, setEditingId] = useState<number | null>(null);
   const history = data?.history ?? [];
   const isTerminal = Schemas.CONTACT_TERMINAL_STATUSES.includes(contact.status);
 
-  const replyCount = history.filter((h) =>
+  const deletedRows = history.filter((h) => h.deletedAt != null);
+  useTombstoneExpiry(deletedRows, contact.id);
+
+  const visibleHistory = history.filter((h) => h.deletedAt == null);
+  const replyCount = visibleHistory.filter((h) =>
     h.type.endsWith(Schemas.CONTACT_HISTORY_RECEIVED_SUFFIX),
   ).length;
 
@@ -28,9 +73,9 @@ export function HistoryTab({
 
   return (
     <div className="px-5 py-4 flex flex-col gap-3">
-      {history.length > 0 && (
+      {visibleHistory.length > 0 && (
         <div className="flex items-center gap-2 text-[12px] text-(--text-secondary) border-b border-border pb-3">
-          <span className="font-medium">{history.length} messages</span>
+          <span className="font-medium">{visibleHistory.length} messages</span>
           <span className="w-1 h-1 rounded-full bg-(--border-strong)" />
           <span className="font-medium">
             {replyCount} repl{replyCount === 1 ? "y" : "ies"}
@@ -49,6 +94,33 @@ export function HistoryTab({
         const channelLabel = Schemas.CONTACT_HISTORY_CHANNEL_LABEL_MAP[h.channel];
         const touchLabel =
           isSent && h.sequencePosition != null ? `Touch ${h.sequencePosition}` : null;
+
+        if (h.deletedAt != null) {
+          return (
+            <div
+              key={h.id}
+              className={`flex flex-col gap-1 ${isSent ? "items-end" : "items-start"}`}
+            >
+              <span className="text-[11px] text-(--text-secondary)">
+                {channelLabel} · {new Date(h.sentAt).toLocaleDateString()}
+              </span>
+              <div className="max-w-[82%] px-3.5 py-2.5 text-[13px] leading-[1.7] flex items-center gap-2 text-(--text-secondary) italic border border-dashed border-border rounded-[16px]">
+                <span>This message was deleted</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => restoreHistory.mutate({ contactId: contact.id, historyId: h.id })}
+                  disabled={restoreHistory.isPending}
+                  className="not-italic text-primary hover:text-primary"
+                >
+                  <ArrowCounterClockwiseIcon size={11} />
+                  Undo
+                </Button>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div key={h.id} className={`flex flex-col gap-1 ${isSent ? "items-end" : "items-start"}`}>
@@ -122,6 +194,11 @@ export function HistoryTab({
           mode="add"
           contactId={contact.id}
           getToken={getToken}
+          lastChannel={
+            [...visibleHistory]
+              .reverse()
+              .find((h) => Schemas.CONTACT_HISTORY_SENT_TYPES.includes(h.type))?.channel ?? null
+          }
           onSaved={() => {}}
         />
       )}

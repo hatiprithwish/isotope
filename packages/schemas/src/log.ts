@@ -51,6 +51,8 @@ export enum LogAction {
   GetSentMessageCount = "GetSentMessageCount",
   CheckDuplicateContact = "CheckDuplicateContact",
   BulkLogContactHistory = "BulkLogContactHistory",
+  RestoreContactHistory = "RestoreContactHistory",
+  HardDeleteContactHistory = "HardDeleteContactHistory",
 
   // Frameworks
   SaveFramework = "SaveFramework",

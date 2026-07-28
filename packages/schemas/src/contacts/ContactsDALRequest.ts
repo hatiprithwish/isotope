@@ -43,6 +43,10 @@ export type FindContactHistoryDALRequest = { id: number; createdBy: string };
 
 export type DeleteContactHistoryDALRequest = FindContactHistoryDALRequest & { contactId: number };
 
+/** Same shape as soft-delete — reused by restore and the hard-delete sweep, both scoped by id/contactId/createdBy. */
+export type RestoreContactHistoryDALRequest = DeleteContactHistoryDALRequest;
+export type HardDeleteContactHistoryDALRequest = DeleteContactHistoryDALRequest;
+
 export type UpdateContactHistoryDALRequest = FindContactHistoryDALRequest & {
   body?: string;
   sentAt?: string;

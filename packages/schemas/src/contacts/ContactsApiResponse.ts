@@ -43,6 +43,10 @@ export interface DeleteContactHistoryApiResponse extends ApiResponse {
   channel?: ContactHistoryChannelEnum;
 }
 
+/** Same shape as soft-delete's response — reused by restore and the hard-delete sweep. */
+export type RestoreContactHistoryApiResponse = DeleteContactHistoryApiResponse;
+export type HardDeleteContactHistoryApiResponse = DeleteContactHistoryApiResponse;
+
 export interface GetLastSentHistoryApiResponse extends ApiResponse {
   lastSentAt?: string | null;
 }

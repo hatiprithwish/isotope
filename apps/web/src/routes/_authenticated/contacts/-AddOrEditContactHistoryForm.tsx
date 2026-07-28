@@ -21,6 +21,7 @@ type AddMode = {
   onDone?: never;
   onSaved: () => void;
   getToken: () => Promise<string | null>;
+  lastChannel: ContactHistoryChannelEnum | null;
 };
 type EditMode = {
   mode: "edit";
@@ -28,6 +29,7 @@ type EditMode = {
   onDone: () => void;
   onSaved?: never;
   getToken?: never;
+  lastChannel?: never;
 };
 type Props = (AddMode | EditMode) & { contactId: number };
 
@@ -38,6 +40,7 @@ export function AddOrEditContactHistoryForm({
   onDone,
   onSaved,
   getToken,
+  lastChannel,
 }: Props) {
   const createHistory = useCreateContactHistory();
   const updateHistory = useUpdateContactHistory();
@@ -53,7 +56,7 @@ export function AddOrEditContactHistoryForm({
     ContactHistoryDirectionEnum.Me,
   );
   const [channel, setChannel] = useState<ContactHistoryChannelEnum>(
-    ContactHistoryChannelEnum.Email,
+    lastChannel ?? ContactHistoryChannelEnum.Email,
   );
   // Tracks the template body last auto-seeded into the field, so a later template change
   // (e.g. deleting a history entry reverts the resolved step) can re-seed — but only while the

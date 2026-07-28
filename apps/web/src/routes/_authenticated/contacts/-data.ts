@@ -252,11 +252,20 @@ export function useUpdateContactHistory() {
         }),
       ]);
     },
-    onError: () => {
-      toast.error("Failed to update history entry. Please try again.");
+    onError: (error) => {
+      // Surfaces "This message was deleted" when the edit target was soft-deleted out from under
+      // a stale view (see ContactsDAL.updateContactHistory) instead of a generic failure toast.
+      toast.error(
+        error instanceof ApiError && error.body.message
+          ? error.body.message
+          : "Failed to update history entry. Please try again.",
+      );
     },
   });
 }
+
+/** Undo window before a soft-deleted history entry is hard-deleted server-side — keep in sync with Constants.CONTACT_HISTORY_UNDO_WINDOW_SECONDS on the backend. Consumed by -HistoryTab.tsx to time the inline tombstone's Undo expiry. */
+export const CONTACT_HISTORY_UNDO_WINDOW_MS = 900_000;
 
 export function useDeleteContactHistory() {
   const { getToken } = useAuth();
@@ -270,18 +279,33 @@ export function useDeleteContactHistory() {
         { method: "DELETE" },
       ),
     onSuccess: async (_data, { contactId }) => {
-      // Deleting resyncs (or clears) that channel's follow-up step server-side, which reverts its
-      // due date and the resolved default message template back to the prior step — refetch all three.
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.history(contactId) }),
-        queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.detail(contactId) }),
-        queryClient.invalidateQueries({
-          queryKey: ContactsQueries.keys.messageTemplate(contactId),
-        }),
-      ]);
+      // Soft-delete hides the row behind a tombstone (rendered inline by -HistoryTab.tsx via
+      // deletedAt) — follow-up resync and any status revert are deferred until the 15 min
+      // hard-delete window closes server-side, so only the history list needs refetching now.
+      await queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.history(contactId) });
     },
     onError: () => {
       toast.error("Failed to delete history entry. Please try again.");
+    },
+  });
+}
+
+export function useRestoreContactHistory() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ contactId, historyId }: { contactId: number; historyId: number }) =>
+      apiClient<Schemas.RestoreContactHistoryApiResponse>(
+        `/contacts/${contactId}/history/${historyId}/restore`,
+        getToken,
+        { method: "POST" },
+      ),
+    onSuccess: async (_data, { contactId }) => {
+      await queryClient.invalidateQueries({ queryKey: ContactsQueries.keys.history(contactId) });
+    },
+    onError: () => {
+      toast.error("Failed to restore history entry. Please try again.");
     },
   });
 }

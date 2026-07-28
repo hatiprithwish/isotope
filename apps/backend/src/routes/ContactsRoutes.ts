@@ -277,4 +277,26 @@ ContactsRoutes.delete(
   },
 );
 
+ContactsRoutes.post(
+  "/:id/history/:historyId/restore",
+  checkAuth,
+  zValidator(
+    "param",
+    z.object({ id: z.string().regex(/^\d+$/), historyId: z.string().regex(/^\d+$/) }),
+  ),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const { id, historyId } = c.req.valid("param");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.restoreContactHistory({
+      historyId: Number(historyId),
+      contactId: Number(id),
+      userId,
+    });
+
+    return c.json(response, response.isSuccess ? 200 : 404);
+  },
+);
+
 export default ContactsRoutes;

@@ -161,5 +161,6 @@ export const ZContactHistory = ZContactHistoryBase.extend({
   id: z.number(),
   createdBy: z.string(),
   createdAt: z.string(),
+  deletedAt: z.string().nullable(),
 });
 export type ContactHistory = z.infer<typeof ZContactHistory>;

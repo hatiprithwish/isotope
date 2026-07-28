@@ -1,5 +1,5 @@
 import type { SQL } from "drizzle-orm";
-import { and, count, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { contacts, contactHistory, companies } from "@/db/tables";
@@ -580,6 +580,7 @@ export default class ContactsDAL {
     return response;
   }
 
+  /** Intentionally includes soft-deleted rows (deletedAt set) — the frontend renders those as an undoable tombstone for the 15 min window before the hard-delete sweep removes them. Every other query in this file filters deletedAt IS NULL since they drive follow-up/sequence logic, not display. */
   async getContactHistory(params: Schemas.GetContactHistoryDALRequest) {
     const response: Schemas.GetContactHistoryApiResponse = { isSuccess: false };
 
@@ -627,6 +628,7 @@ export default class ContactsDAL {
             eq(contactHistory.createdBy, params.createdBy),
             params.channel ? eq(contactHistory.channel, params.channel) : undefined,
             inArray(contactHistory.type, Schemas.CONTACT_HISTORY_SENT_TYPES),
+            isNull(contactHistory.deletedAt),
           ),
         )
         .orderBy(desc(contactHistory.sentAt))
@@ -664,6 +666,7 @@ export default class ContactsDAL {
             eq(contactHistory.createdBy, params.createdBy),
             params.channel ? eq(contactHistory.channel, params.channel) : undefined,
             inArray(contactHistory.type, Schemas.CONTACT_HISTORY_SENT_TYPES),
+            isNull(contactHistory.deletedAt),
           ),
         );
 
@@ -701,6 +704,7 @@ export default class ContactsDAL {
               eq(contactHistory.contactId, params.contactId),
               eq(contactHistory.createdBy, params.createdBy),
               eq(contactHistory.channel, params.channel),
+              isNull(contactHistory.deletedAt),
             ),
           );
 
@@ -759,13 +763,32 @@ export default class ContactsDAL {
           subject: params.subject,
         })
         .where(
-          and(eq(contactHistory.id, params.id), eq(contactHistory.createdBy, params.createdBy)),
+          and(
+            eq(contactHistory.id, params.id),
+            eq(contactHistory.createdBy, params.createdBy),
+            isNull(contactHistory.deletedAt),
+          ),
         )
         .returning()
         .get();
 
       if (!updated) {
-        const message = "History entry not found";
+        // 0 rows matched — either the row never existed, or it exists but is currently
+        // soft-deleted (isNull(deletedAt) excluded it above). A stale view in another tab/session
+        // can still render its edit control during the 15 min undo window, so distinguish the two
+        // rather than surfacing a generic not-found for a row the user can see was just deleted.
+        const [tombstoned] = await this.db
+          .select({ id: contactHistory.id })
+          .from(contactHistory)
+          .where(
+            and(
+              eq(contactHistory.id, params.id),
+              eq(contactHistory.createdBy, params.createdBy),
+              sql`${contactHistory.deletedAt} is not null`,
+            ),
+          );
+
+        const message = tombstoned ? "This message was deleted" : "History entry not found";
         AppLogger.error({
           category: Schemas.LogCategory.DAL,
           action: Schemas.LogAction.UpdateContactHistory,
@@ -820,19 +843,22 @@ export default class ContactsDAL {
     return response;
   }
 
+  /** Soft-delete only — marks deletedAt so the row drops out of every read query above. Hard deletion happens 15 min later via hardDeleteContactHistory, queued by the caller. */
   async deleteContactHistory(params: Schemas.DeleteContactHistoryDALRequest) {
     const response: Schemas.DeleteContactHistoryApiResponse = { isSuccess: false };
 
     try {
       // Scoped to contactId so a mismatched URL contact can neither delete another contact's row nor resync the wrong contact.
-      // Returns the deleted row's channel so the caller can resync that channel's follow-up sequence specifically.
+      // Returns the row's channel so the caller can resync that channel's follow-up sequence specifically.
       const [deleted] = await this.db
-        .delete(contactHistory)
+        .update(contactHistory)
+        .set({ deletedAt: Utility.getCurrentISOTimestamp() })
         .where(
           and(
             eq(contactHistory.id, params.id),
             eq(contactHistory.contactId, params.contactId),
             eq(contactHistory.createdBy, params.createdBy),
+            isNull(contactHistory.deletedAt),
           ),
         )
         .returning({ channel: contactHistory.channel });
@@ -850,6 +876,91 @@ export default class ContactsDAL {
       AppLogger.error({
         category: Schemas.LogCategory.DAL,
         action: Schemas.LogAction.DeleteContactHistory,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  /** Undo — clears deletedAt within the 15 min window. No-ops (0 rows) once the sweep has hard-deleted the row. */
+  async restoreContactHistory(params: Schemas.RestoreContactHistoryDALRequest) {
+    const response: Schemas.RestoreContactHistoryApiResponse = { isSuccess: false };
+
+    try {
+      const [restored] = await this.db
+        .update(contactHistory)
+        .set({ deletedAt: null })
+        .where(
+          and(
+            eq(contactHistory.id, params.id),
+            eq(contactHistory.contactId, params.contactId),
+            eq(contactHistory.createdBy, params.createdBy),
+            sql`${contactHistory.deletedAt} is not null`,
+          ),
+        )
+        .returning({ channel: contactHistory.channel });
+
+      if (!restored) {
+        response.message = "History entry not found";
+        return response;
+      }
+
+      response.isSuccess = true;
+      response.message = "History entry restored successfully";
+      response.channel = restored.channel;
+    } catch (error) {
+      const message = "Unknown error in restoring contact history entry";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.RestoreContactHistory,
+        message,
+        error,
+        metadata: params,
+      });
+      response.message = message;
+    }
+
+    return response;
+  }
+
+  /**
+   * Real DELETE, invoked only by the queued hard-delete message ~15 min after soft-delete.
+   * WHERE guards deletedAt IS NOT NULL — if the row was restored (or already hard-deleted by a
+   * prior delivery) this matches 0 rows and isSuccess stays false, which the caller treats as a no-op.
+   */
+  async hardDeleteContactHistory(params: Schemas.HardDeleteContactHistoryDALRequest) {
+    const response: Schemas.HardDeleteContactHistoryApiResponse = { isSuccess: false };
+
+    try {
+      const [deleted] = await this.db
+        .delete(contactHistory)
+        .where(
+          and(
+            eq(contactHistory.id, params.id),
+            eq(contactHistory.contactId, params.contactId),
+            eq(contactHistory.createdBy, params.createdBy),
+            sql`${contactHistory.deletedAt} is not null`,
+          ),
+        )
+        .returning({ channel: contactHistory.channel });
+
+      if (!deleted) {
+        response.message = "History entry not found or no longer pending deletion";
+        return response;
+      }
+
+      response.isSuccess = true;
+      response.message = "History entry hard-deleted successfully";
+      response.channel = deleted.channel;
+    } catch (error) {
+      const message = "Unknown error in hard-deleting contact history entry";
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.HardDeleteContactHistory,
         message,
         error,
         metadata: params,

@@ -100,6 +100,7 @@ export const contactHistory = table(
     abVariant: t.text("ab_variant"),
     sentAt: t.text("sent_at").notNull(),
     createdAt: t.text("created_at").notNull(),
+    deletedAt: t.text("deleted_at"),
   },
   (table) => [
     t.index("IDX_contact_history_contact_id").on(table.contactId),

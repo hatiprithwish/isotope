@@ -76,6 +76,9 @@ export default class Constants {
     stepOffsetDays: [7],
   } as const;
 
+  // Undo window before a soft-deleted contact history entry is hard-deleted by the queued sweep.
+  static readonly CONTACT_HISTORY_UNDO_WINDOW_SECONDS = 900 as const;
+
   static readonly CONTACT_ROLE_PILLS_DEFAULTS = {
     pillLabels: ["HR", "Tech"],
   } as const;

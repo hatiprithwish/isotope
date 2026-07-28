@@ -1,0 +1,1 @@
+ALTER TABLE `contact_history` ADD `deleted_at` text;

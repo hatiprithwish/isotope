@@ -305,8 +305,52 @@ export default class ContactsRepo {
     return response;
   }
 
+  /**
+   * Soft-deletes only — the row is hidden immediately (filtered from every read query) but kept
+   * for a 15 min undo window. Queues the real deletion via ISOTOPE_QUEUE with a 900s delay;
+   * follow-up resync and the InPipeline status revert are deferred until that hard-delete
+   * actually happens (see hardDeleteContactHistory), so undo requires no reverse side effects.
+   */
   async deleteContactHistory(params: { userId: string; historyId: number; contactId: number }) {
     const response = await this.dal.deleteContactHistory({
+      id: params.historyId,
+      contactId: params.contactId,
+      createdBy: params.userId,
+    });
+
+    if (response.isSuccess) {
+      await this.env.ISOTOPE_QUEUE.send(
+        {
+          type: "HardDeleteContactHistory" as const,
+          historyId: params.historyId,
+          contactId: params.contactId,
+          userId: params.userId,
+        },
+        { delaySeconds: Constants.CONTACT_HISTORY_UNDO_WINDOW_SECONDS },
+      );
+    }
+
+    return response;
+  }
+
+  /** Undo — clears deletedAt within the 15 min window. The queued hard-delete message still fires but no-ops once restored. */
+  async restoreContactHistory(params: { userId: string; historyId: number; contactId: number }) {
+    return await this.dal.restoreContactHistory({
+      id: params.historyId,
+      contactId: params.contactId,
+      createdBy: params.userId,
+    });
+  }
+
+  /**
+   * Invoked only by the queued message ~15 min after soft-delete (see deleteContactHistory).
+   * Performs the real DELETE, then runs the resync/status-revert side effects that used to fire
+   * immediately on delete — deferred here so an undo within the window never needs to reverse them.
+   * A false isSuccess means the row was already restored or already hard-deleted by a prior
+   * delivery — treated as a no-op, no side effects run.
+   */
+  async hardDeleteContactHistory(params: { userId: string; historyId: number; contactId: number }) {
+    const response = await this.dal.hardDeleteContactHistory({
       id: params.historyId,
       contactId: params.contactId,
       createdBy: params.userId,
@@ -319,8 +363,10 @@ export default class ContactsRepo {
         channel: response.channel,
       });
 
-      // Deleting the last remaining message reverts the auto-bump from logContactHistory —
+      // Hard-deleting the last remaining LIVE message reverts the auto-bump from logContactHistory —
       // only if status is still InPipeline (untouched since), never a further/manual status.
+      // getContactHistory intentionally also returns soft-deleted (tombstoned) rows for the undo
+      // UI, so "no messages left" must filter those out rather than checking length === 0 directly.
       const historyResponse = await this.dal.getContactHistory({
         contactId: params.contactId,
         createdBy: params.userId,
@@ -329,9 +375,10 @@ export default class ContactsRepo {
         id: params.contactId,
         createdBy: params.userId,
       });
+      const hasLiveHistory = historyResponse.history?.some((h) => h.deletedAt == null) ?? true;
       if (
         historyResponse.isSuccess &&
-        historyResponse.history?.length === 0 &&
+        !hasLiveHistory &&
         existing.contact?.status === Schemas.ContactStatusIntEnum.InPipeline
       ) {
         await this.dal.updateContactStatus({
@@ -521,7 +568,7 @@ export default class ContactsRepo {
     response.variantLabel = variantLabel;
     response.isAmbiguousMatch = isAmbiguousMatch;
     response.renderedBody = Schemas.renderTemplate(template.body, {
-      name: contact.name,
+      name: contact.name.trim().split(/\s+/)[0] ?? contact.name,
       company: contact.companyName ?? null,
     });
     response.message = "Log template resolved successfully";
