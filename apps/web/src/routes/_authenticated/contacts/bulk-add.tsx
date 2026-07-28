@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, useNavigate, useBlocker, Link } from "@tanstack/react-router";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { toast } from "sonner";
@@ -21,30 +21,38 @@ function BulkAddPage() {
   const bulkCreate = useBulkCreateContacts();
 
   const [rows, setRows] = useState<BulkAddRowState[]>(() => [makeEmptyRow()]);
-  const [submitSucceeded, setSubmitSucceeded] = useState(false);
+  const submitSucceededRef = useRef(false);
 
   const activeRows = rows.filter((r) => !r.skipped);
   const canSubmit =
     activeRows.length > 0 && activeRows.every((r) => r.name.trim() && r.companyId != null);
   const remainingCapacity = BULK_CREATE_CONTACTS_MAX_ENTRIES - rows.length;
 
-  const hasUnsavedData =
-    !submitSucceeded &&
-    rows.some(
-      (r) =>
-        r.name.trim() ||
-        r.companyId != null ||
-        r.designation.trim() ||
-        r.email.trim() ||
-        r.linkedinUrl.trim(),
-    );
-
   useBlocker({
     shouldBlockFn: () => {
+      if (submitSucceededRef.current) return false;
+      const hasUnsavedData = rows.some(
+        (r) =>
+          r.name.trim() ||
+          r.companyId != null ||
+          r.designation.trim() ||
+          r.email.trim() ||
+          r.linkedinUrl.trim(),
+      );
       if (!hasUnsavedData) return false;
       return !window.confirm("You have unsaved contacts. Leave this page and discard them?");
     },
-    enableBeforeUnload: () => hasUnsavedData,
+    enableBeforeUnload: () => {
+      if (submitSucceededRef.current) return false;
+      return rows.some(
+        (r) =>
+          r.name.trim() ||
+          r.companyId != null ||
+          r.designation.trim() ||
+          r.email.trim() ||
+          r.linkedinUrl.trim(),
+      );
+    },
   });
 
   function patchRow(rowId: string, patch: Partial<BulkAddRowState>) {
@@ -109,7 +117,7 @@ function BulkAddPage() {
 
     if (failed.length === 0) {
       toast.success(`Added ${results.length} contact${results.length === 1 ? "" : "s"}.`);
-      setSubmitSucceeded(true);
+      submitSucceededRef.current = true;
       navigate({ to: "/contacts" });
       return;
     }
