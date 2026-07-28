@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -7,6 +8,7 @@ import {
   CheckSquareIcon,
   SquareIcon,
   ChatsCircleIcon,
+  CopyIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { AppTable, AppTablePagination } from "@/components/app-table";
@@ -81,6 +83,13 @@ export function DesktopContactsTable({
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
+    });
+  }
+
+  function copyToClipboard(e: React.MouseEvent, value: string, label: string) {
+    e.stopPropagation();
+    void navigator.clipboard.writeText(value).then(() => {
+      toast.success(`${label} copied`);
     });
   }
 
@@ -161,32 +170,53 @@ export function DesktopContactsTable({
     {
       key: "email",
       header: "Email",
-      cell: (row) => (
-        <span className="text-[12px] text-(--text-secondary) truncate">{row.email ?? "—"}</span>
-      ),
+      cell: (row) => {
+        const email = row.email;
+        return email ? (
+          <button
+            type="button"
+            onClick={(e) => copyToClipboard(e, email, "Email")}
+            className="group flex items-center gap-1.5 min-w-0 text-[12px] text-(--text-secondary) hover:text-foreground"
+            title="Copy email"
+          >
+            <span className="truncate">{row.email}</span>
+            <CopyIcon
+              size={12}
+              className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          </button>
+        ) : (
+          <span className="text-[12px] text-(--text-secondary)">—</span>
+        );
+      },
     },
     {
       key: "linkedinUrl",
       header: "LinkedIn",
-      cell: (row) => (
-        <span className="text-[12px] text-(--text-secondary) truncate">
-          {row.linkedinUrl ?? "—"}
-        </span>
-      ),
+      cell: (row) => {
+        const linkedinUrl = row.linkedinUrl;
+        return linkedinUrl ? (
+          <button
+            type="button"
+            onClick={(e) => copyToClipboard(e, linkedinUrl, "LinkedIn URL")}
+            className="group flex items-center gap-1.5 min-w-0 text-[12px] text-(--text-secondary) hover:text-foreground"
+            title="Copy LinkedIn URL"
+          >
+            <span className="truncate">{linkedinUrl}</span>
+            <CopyIcon
+              size={12}
+              className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          </button>
+        ) : (
+          <span className="text-[12px] text-(--text-secondary)">—</span>
+        );
+      },
     },
     {
       key: "status",
       header: "Status",
       cell: (row) => (row.status ? <StatusBadge status={row.status} sm /> : null),
-    },
-    {
-      key: "nextTouchDueAt",
-      header: "Next",
-      cell: (row) => (
-        <span className="text-[11px] text-(--text-secondary)">
-          {row.nextTouchDueAt ? new Date(row.nextTouchDueAt).toLocaleDateString() : "—"}
-        </span>
-      ),
     },
   ];
 
