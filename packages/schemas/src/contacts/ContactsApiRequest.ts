@@ -6,6 +6,7 @@ import {
   ZContactHistoryChannelEnum,
   BULK_LOG_CONTACT_HISTORY_MAX_ENTRIES,
   BULK_CREATE_CONTACTS_MAX_ENTRIES,
+  BULK_CONTACT_IDS_MAX_ENTRIES,
 } from "./ContactsCommon";
 
 export const ZGetContactsApiRequest = z.object({
@@ -54,12 +55,24 @@ export const ZUpdateContactHistoryApiRequest = z.object({
 export type UpdateContactHistoryApiRequest = z.infer<typeof ZUpdateContactHistoryApiRequest>;
 
 export const ZBulkDeleteContactsApiRequest = z.object({
-  ids: z.array(z.number().int().positive()).min(1),
+  ids: z
+    .array(z.number().int().positive())
+    .min(1)
+    .max(
+      BULK_CONTACT_IDS_MAX_ENTRIES,
+      `At most ${BULK_CONTACT_IDS_MAX_ENTRIES} contacts can be deleted at once`,
+    ),
 });
 export type BulkDeleteContactsApiRequest = z.infer<typeof ZBulkDeleteContactsApiRequest>;
 
 export const ZBulkUpdateContactsApiRequest = z.object({
-  ids: z.array(z.number().int().positive()).min(1),
+  ids: z
+    .array(z.number().int().positive())
+    .min(1)
+    .max(
+      BULK_CONTACT_IDS_MAX_ENTRIES,
+      `At most ${BULK_CONTACT_IDS_MAX_ENTRIES} contacts can be updated at once`,
+    ),
   updates: ZContactBase.omit({ name: true })
     .partial()
     .refine((obj) => Object.keys(obj).length > 0, {

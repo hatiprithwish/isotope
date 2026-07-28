@@ -1,4 +1,9 @@
-import type { Contact, ContactHistory, ContactHistoryChannelEnum } from "./ContactsCommon";
+import type {
+  Contact,
+  ContactHistory,
+  ContactHistoryChannelEnum,
+  ContactStatusIntEnum,
+} from "./ContactsCommon";
 import type { ApiResponse } from "../common";
 
 export interface CreateContactApiResponse extends ApiResponse {
@@ -52,6 +57,9 @@ export interface BulkDeleteContactsApiResponse extends ApiResponse {
 
 export interface BulkUpdateContactsApiResponse extends ApiResponse {
   updatedCount?: number;
+  updatedIds?: number[];
+  /** Each updated contact's status immediately before this update — lets the caller tell an actual status transition from a no-op re-save. */
+  previousStatusById?: Record<number, ContactStatusIntEnum>;
 }
 
 export interface BulkLogContactHistoryResult {

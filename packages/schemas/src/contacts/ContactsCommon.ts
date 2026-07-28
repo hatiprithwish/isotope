@@ -35,6 +35,13 @@ export const contactStatusIntToLabel: Record<ContactStatusIntEnum, ContactStatus
   [ContactStatusIntEnum.Failed]: ContactStatusLabelEnum.Failed,
 };
 
+/** Statuses that mean "stop outreach" — single source of truth shared by backend (follow-up cleanup/resync guards) and frontend (compose-form gating). */
+export const CONTACT_TERMINAL_STATUSES: ContactStatusIntEnum[] = [
+  ContactStatusIntEnum.Dead,
+  ContactStatusIntEnum.Failed,
+  ContactStatusIntEnum.Closed,
+];
+
 export enum ContactSourceIntEnum {
   Apollo = 1,
   Manual = 2,
@@ -128,6 +135,9 @@ export const BULK_LOG_CONTACT_HISTORY_MAX_ENTRIES = 50;
 
 /** Shared by the bulk-create Zod request schema (server) and the bulk-add page (client) — one cap, enforced both places. */
 export const BULK_CREATE_CONTACTS_MAX_ENTRIES = 50;
+
+/** Shared by the bulk-update/bulk-delete Zod request schemas — bounds the follow-up-task cleanup fan-out too. */
+export const BULK_CONTACT_IDS_MAX_ENTRIES = 50;
 
 /** Exact outbound type values ("email_sent", "linkedin_sent", …) — use with inArray/includes instead of suffix pattern-matching. */
 export const CONTACT_HISTORY_SENT_TYPES: string[] = Object.values(ContactHistoryChannelEnum).map(

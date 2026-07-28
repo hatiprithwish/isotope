@@ -520,6 +520,15 @@ export default class ContactsDAL {
         metadata: { count: params.ids.length, createdBy: params.createdBy },
       });
 
+      // Captured before the UPDATE so the caller can tell an actual status transition from a
+      // no-op re-save (e.g. re-saving an already-Dead contact shouldn't re-fire cleanup side effects).
+      const before = await this.db
+        .select({ id: contacts.id, status: contacts.status })
+        .from(contacts)
+        .where(and(eq(contacts.createdBy, params.createdBy), inArray(contacts.id, params.ids)));
+      const previousStatusById: Record<number, Schemas.ContactStatusIntEnum> = {};
+      for (const row of before) previousStatusById[row.id] = row.status;
+
       const result = await this.db
         .update(contacts)
         .set({ ...params.updates, updatedAt: Utility.getCurrentISOTimestamp() })
@@ -529,6 +538,8 @@ export default class ContactsDAL {
       response.isSuccess = true;
       response.message = `${result.length} contact(s) updated`;
       response.updatedCount = result.length;
+      response.updatedIds = result.map((row) => row.id);
+      response.previousStatusById = previousStatusById;
     } catch (error) {
       const message = "Unknown error in bulk updating contacts";
       AppLogger.error({

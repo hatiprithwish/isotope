@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type * as Schemas from "@app/schemas";
+import { useQuery } from "@tanstack/react-query";
+import * as Schemas from "@app/schemas"; // runtime `import *`: consumes CONTACT_HISTORY_CHANNEL_LABEL_MAP alongside types.
 import {
   ArrowLeftIcon,
   ArrowsOutSimpleIcon,
@@ -9,7 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { StatusBadge } from "./-StatusBadge";
-import { useDeleteContact } from "./-data";
+import { ContactsQueries, useDeleteContact } from "./-data";
 import Utilities from "@/utils";
 import { DraftTab } from "./-DraftTab";
 import { HistoryTab } from "./-HistoryTab";
@@ -59,6 +60,16 @@ export function ContactDetailContent({
 }: ContactDetailContentProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const deleteContact = useDeleteContact();
+
+  // Shares HistoryTab's query key, so mounting both never double-fetches.
+  const { data: historyData } = useQuery(ContactsQueries.history(contact.id, getToken));
+  const sentHistory = (historyData?.history ?? []).filter((h) =>
+    Schemas.CONTACT_HISTORY_SENT_TYPES.includes(h.type),
+  );
+  const lastSent = sentHistory[sentHistory.length - 1];
+  const touchLabel = lastSent
+    ? `Touch ${lastSent.sequencePosition ?? 0} · ${Schemas.CONTACT_HISTORY_CHANNEL_LABEL_MAP[lastSent.channel]}`
+    : "No messages yet";
 
   function handleDelete() {
     deleteContact.mutateAsync(contact.id).then(onDeleted);
@@ -155,9 +166,7 @@ export function ContactDetailContent({
                 Variant {contact.abVariant}
               </span>
             )}
-            <span className="ml-auto text-[11px] text-(--text-secondary)">
-              Touch {contact.sequencePosition ?? 0} · {contact.abVariable ?? "Email"}
-            </span>
+            <span className="ml-auto text-[11px] text-(--text-secondary)">{touchLabel}</span>
           </div>
         </div>
 

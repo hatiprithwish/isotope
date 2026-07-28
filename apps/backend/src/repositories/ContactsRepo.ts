@@ -154,11 +154,24 @@ export default class ContactsRepo {
   }
 
   async bulkUpdateContacts(params: Schemas.BulkUpdateContactsApiRequest & { userId: string }) {
-    return await this.dal.bulkUpdateContacts({
+    const response = await this.dal.bulkUpdateContacts({
       ids: params.ids,
       createdBy: params.userId,
       updates: params.updates,
     });
+
+    if (response.isSuccess) {
+      // Only the ids the DAL actually confirmed updated — not the raw request list, which may
+      // include ids that matched no row (wrong owner, already deleted, stale client state).
+      await this.clearFollowUpTasksIfTerminal({
+        userId: params.userId,
+        status: params.updates.status,
+        contactIds: response.updatedIds ?? [],
+        previousStatusById: response.previousStatusById,
+      });
+    }
+
+    return response;
   }
 
   async getContactHistory(params: { userId: string; contactId: number }) {
@@ -345,6 +358,20 @@ export default class ContactsRepo {
     contactId: number;
     channel: Schemas.ContactHistoryChannelEnum;
   }) {
+    // A contact already in a terminal status (Dead/Failed/Closed) has no active sequence to
+    // advance — resyncing here would silently recreate the follow-up task that status transition
+    // cleared. Checked centrally so every call site (log/update/delete history) is covered.
+    const contactResponse = await this.dal.getContactDetails({
+      id: params.contactId,
+      createdBy: params.userId,
+    });
+    if (
+      contactResponse.contact?.status != null &&
+      Schemas.CONTACT_TERMINAL_STATUSES.includes(contactResponse.contact.status)
+    ) {
+      return;
+    }
+
     const lastSentResponse = await this.dal.getLastSentHistory({
       contactId: params.contactId,
       createdBy: params.userId,
@@ -538,20 +565,58 @@ export default class ContactsRepo {
   }
 
   /**
-   * Deletes any active Pending/Paused follow-up task the moment the contact transitions into Dead,
-   * and auto-stamps deadAt on that same transition (never trusted from the client as-is — see plan §8a).
+   * Single owner of the "terminal status → clear follow-up tasks" rule — called from both
+   * updateContact and bulkUpdateContacts so the two paths can never drift out of sync.
+   * No-ops if the new status isn't terminal or contactIds is empty. Each id whose
+   * previousStatusById entry was already terminal is skipped too — re-saving an
+   * already-Dead/Failed/Closed contact has no follow-up tasks left to clear.
+   */
+  private async clearFollowUpTasksIfTerminal(params: {
+    userId: string;
+    status: Schemas.ContactStatusIntEnum | null | undefined;
+    contactIds: number[];
+    previousStatusById?: Record<number, Schemas.ContactStatusIntEnum>;
+  }) {
+    if (params.status == null || !Schemas.CONTACT_TERMINAL_STATUSES.includes(params.status)) return;
+
+    const targetIds = params.previousStatusById
+      ? params.contactIds.filter((id) => {
+          const previous = params.previousStatusById?.[id];
+          return previous == null || !Schemas.CONTACT_TERMINAL_STATUSES.includes(previous);
+        })
+      : params.contactIds;
+    if (targetIds.length === 0) return;
+
+    const tasksRepo = new TasksRepo(this.env);
+    // Sequential, not Promise.all — bulk requests are capped at BULK_CONTACT_IDS_MAX_ENTRIES but
+    // this avoids fanning out unbounded concurrent DELETEs to D1 regardless of caller.
+    // No channel = clears the follow-up task on every channel (email and linkedin sequences alike).
+    for (const contactId of targetIds) {
+      await tasksRepo.deleteFollowUpTasks({ userId: params.userId, contactId });
+    }
+  }
+
+  /**
+   * Deletes any active Pending/Paused follow-up task the moment the contact transitions into a
+   * terminal status (Dead, Failed, Closed), and auto-stamps deadAt on the Dead transition specifically
+   * (never trusted from the client as-is — see plan §8a).
    */
   async updateContact(params: Schemas.UpdateContactApiRequest & { userId: string; id: number }) {
     let deadAt = params.contact.deadAt ?? null;
 
-    if (params.contact.status === Schemas.ContactStatusIntEnum.Dead && deadAt === null) {
-      const existing = await this.dal.getContactDetails({
-        id: params.id,
-        createdBy: params.userId,
-      });
-      const wasAlreadyDead = existing.contact?.status === Schemas.ContactStatusIntEnum.Dead;
+    // Fetched once up front whenever the incoming status is terminal — feeds both the deadAt
+    // stamping below (Dead only) and the previous-status check before clearing follow-up tasks.
+    const newStatus = params.contact.status;
+    const existing =
+      newStatus != null && Schemas.CONTACT_TERMINAL_STATUSES.includes(newStatus)
+        ? await this.dal.getContactDetails({ id: params.id, createdBy: params.userId })
+        : null;
+    const previousStatus = existing?.contact?.status;
+
+    if (newStatus === Schemas.ContactStatusIntEnum.Dead && deadAt === null) {
+      const wasAlreadyDead = previousStatus === Schemas.ContactStatusIntEnum.Dead;
       deadAt = wasAlreadyDead
-        ? (existing.contact?.deadAt ?? null)
+        ? (existing?.contact?.deadAt ?? null)
         : Utility.getCurrentISOTimestamp();
     }
 
@@ -586,10 +651,12 @@ export default class ContactsRepo {
       updatedAt: null,
     });
 
-    if (response.isSuccess && params.contact.status === Schemas.ContactStatusIntEnum.Dead) {
-      await new TasksRepo(this.env).deleteFollowUpTasks({
+    if (response.isSuccess) {
+      await this.clearFollowUpTasksIfTerminal({
         userId: params.userId,
-        contactId: params.id,
+        status: newStatus,
+        contactIds: [params.id],
+        previousStatusById: previousStatus != null ? { [params.id]: previousStatus } : undefined,
       });
     }
 

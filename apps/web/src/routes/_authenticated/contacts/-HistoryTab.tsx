@@ -17,6 +17,7 @@ export function HistoryTab({
   const deleteHistory = useDeleteContactHistory();
   const [editingId, setEditingId] = useState<number | null>(null);
   const history = data?.history ?? [];
+  const isTerminal = Schemas.CONTACT_TERMINAL_STATUSES.includes(contact.status);
 
   const replyCount = history.filter((h) =>
     h.type.endsWith(Schemas.CONTACT_HISTORY_RECEIVED_SUFFIX),
@@ -112,12 +113,18 @@ export function HistoryTab({
         );
       })}
 
-      <AddOrEditContactHistoryForm
-        mode="add"
-        contactId={contact.id}
-        getToken={getToken}
-        onSaved={() => {}}
-      />
+      {isTerminal ? (
+        <div className="text-center text-(--text-secondary) text-[12px] py-2 border-t border-border">
+          {Schemas.contactStatusIntToLabel[contact.status]} contacts don't log new messages here.
+        </div>
+      ) : (
+        <AddOrEditContactHistoryForm
+          mode="add"
+          contactId={contact.id}
+          getToken={getToken}
+          onSaved={() => {}}
+        />
+      )}
     </div>
   );
 }
