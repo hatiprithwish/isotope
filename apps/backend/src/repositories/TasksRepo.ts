@@ -90,13 +90,20 @@ export default class TasksRepo {
     return response;
   }
 
-  /** Invoked from ContactsRepo after a sent message is logged — keeps that channel's follow-up task in sync with the contact's next touch date. Email and linkedin sequences are independent. */
+  /**
+   * Invoked from ContactsRepo to keep a channel's follow-up task in sync with the contact's next
+   * touch date. Email and linkedin sequences are independent. `completePriorStep` must be true
+   * only when called for a genuinely new outbound message (marks the prior active row Completed
+   * and inserts a fresh Pending row); false for a recompute after editing/undoing an existing
+   * message's sentAt, which only moves the due date on the same row.
+   */
   async syncFollowUpForContact(params: {
     userId: string;
     contactId: number;
     channel: Schemas.ContactHistoryChannelEnum;
     dueAt: string;
     stepNumber: number;
+    completePriorStep: boolean;
   }) {
     return await this.dal.syncFollowUpForContact({
       createdBy: params.userId,
@@ -104,6 +111,20 @@ export default class TasksRepo {
       channel: params.channel,
       dueAt: params.dueAt,
       stepNumber: params.stepNumber,
+      completePriorStep: params.completePriorStep,
+    });
+  }
+
+  /** Invoked from ContactsRepo when an outbound message finishes a sequence (no further steps configured) — marks the active row Completed instead of deleting it. */
+  async completeActiveFollowUp(params: {
+    userId: string;
+    contactId: number;
+    channel: Schemas.ContactHistoryChannelEnum;
+  }) {
+    return await this.dal.completeActiveFollowUp({
+      createdBy: params.userId,
+      contactId: params.contactId,
+      channel: params.channel,
     });
   }
 
@@ -114,19 +135,6 @@ export default class TasksRepo {
     channel: Schemas.ContactHistoryChannelEnum;
   }) {
     return await this.dal.pauseFollowUpForContact({
-      createdBy: params.userId,
-      contactId: params.contactId,
-      channel: params.channel,
-    });
-  }
-
-  /** Shifts a Paused follow-up's dueAt forward by the paused duration, for one channel. Implemented but not yet wired into the automatic flow (see followup-sequences-plan.md §5). */
-  async resumeFollowUpForContact(params: {
-    userId: string;
-    contactId: number;
-    channel: Schemas.ContactHistoryChannelEnum;
-  }) {
-    return await this.dal.resumeFollowUpForContact({
       createdBy: params.userId,
       contactId: params.contactId,
       channel: params.channel,

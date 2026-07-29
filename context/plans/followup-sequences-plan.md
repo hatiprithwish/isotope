@@ -920,4 +920,53 @@ idempotent, so this guard is about `deadAt` correctness primarily, not delete-sa
 - apps/backend/src/data-access-layer/TasksDAL.ts
 - apps/backend/src/db/tables.ts
 - packages/schemas/src/tasks/TasksCommon.ts
+
+## Addendum (2026-07-29): auto-complete on outbound log supersedes decision #3
+
+Decision #3 above ("one task row at a time... UPDATE-not-INSERT") is now **overturned**. The user
+asked for a logged outbound message to auto-complete the contact's follow-up task instead of
+requiring a manual checkbox — "advance" alone (silently moving `dueAt`/`stepNumber` on the same row)
+never produced a visible completion, so it didn't satisfy the ask.
+
+New model, confirmed with user:
+
+- Logging an **outbound** message (`direction=Me`) for a contact+channel now marks that channel's
+  active (Pending or Paused) task row `Completed` (stamping `completedAt`) **and inserts a new
+  Pending row** for the next step — `TasksDAL.syncFollowUpForContact`, gated by a new
+  `completePriorStep: boolean` param threaded from `ContactsRepo.logContactHistory` →
+  `resyncFollowUp` → `TasksRepo`/`TasksDAL`.
+- `completePriorStep` is `true` only for a genuine new outbound log. Recomputes triggered by editing
+  or undoing (hard-deleting) an existing message's `sentAt` (`updateContactHistory`,
+  `hardDeleteContactHistory`) pass `completePriorStep: false` — those still do the old in-place UPDATE
+  (move `dueAt`/`stepNumber`, no completion), since they don't represent a new touch.
+  **Inbound replies are unaffected** — still paused via `pauseFollowUpForContact`, never completed.
+- When an outbound message finishes the sequence (`stepNumber > offsetDays.length`) with
+  `completePriorStep: true`, the dangling active row is now marked `Completed` via the new
+  `TasksDAL.updateActiveFollowUpStatus`/`TasksRepo.updateActiveFollowUpStatus`, instead of deleted —
+  so the finished sequence stays visible in Past tasks. The edit/undo recompute path still deletes the
+  dangling row in this case (no real completion occurred).
+- `IDX_tasks_contact_id_channel` (`apps/backend/src/db/tables.ts`) was already a plain index, not
+  unique, so no migration was needed — a contact+channel now naturally accumulates one `Completed` row
+  per finished step plus at most one active (Pending/Paused) row.
+- New correctness guard added in `TasksDAL.updateTaskStatus`: un-completing (`Completed` → any other
+  status) a task row is now blocked if a newer row exists for the same contact+channel, to prevent the
+  manual Tasks-tab checkbox from resurrecting a superseded historical step into a second
+  simultaneously-active row (which every follow-up DAL method assumes cannot happen).
+- **Known limitation carried over, not introduced**: `getPastTasks` filters `dueAt < today`. A task
+  completed before its original scheduled `dueAt` (e.g. user logs a follow-up early) won't appear in
+  Past tasks until that date passes, and won't appear in the day view either since it's no longer
+  Pending — it's briefly invisible. This edge case already existed for manual checkbox completion of a
+  future-dated task; auto-complete just makes it more likely to occur. Not fixed here — flagged as a
+  pre-existing gap in `getPastTasks`'s query design if it becomes a real complaint.
+- **`resumeFollowUpForContact` removed (2026-07-29, code review)**: this method (§5/§9 of the original
+  plan — shift a Paused task's `dueAt` forward by the paused duration, flip back to Pending) was
+  confirmed to still have zero callers anywhere, exactly as its own doc comment admitted ("implemented
+  but not yet wired into the automatic flow"). Auto-complete-on-log (this addendum) already resolves a
+  Paused row via a fresh outbound message, so nothing filled this gap in the meantime either. Deleted
+  the DAL method (`TasksDAL.ts`), Repo wrapper (`TasksRepo.ts`), `ResumeFollowUpDALRequest` type, and
+  the never-actually-logged `LogAction.ResumeFollowUpTask` enum value, per CLAUDE.md's stance against
+  code that exists but is never called. If time-based resume is wanted later (e.g. a cron sweep that
+  resumes long-Paused tasks), it needs a real trigger designed and confirmed with the user first — this
+  removal doesn't change the conclusion reached earlier in this addendum that a Paused row is currently
+  meant to sit indefinitely until a new message or a terminal status resolves it.
 - apps/backend/src/data-access-layer/FrameworksDAL.ts

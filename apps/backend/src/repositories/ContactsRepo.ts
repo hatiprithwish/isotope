@@ -232,14 +232,15 @@ export default class ContactsRepo {
     }
 
     // direction === Me: outbound message sent. A Paused row existing here means the contact replied
-    // since the last resync; the new outbound message supersedes it. resyncFollowUp's UPDATE-not-INSERT
-    // semantics (widened to match Paused rows too, see TasksDAL.syncFollowUpForContact) unconditionally
-    // advance it to Pending + the newly computed dueAt + stepNumber, naturally clearing Paused state.
-    // Email and linkedin run independent sequences, so this resyncs only this message's channel.
+    // since the last resync; the new outbound message supersedes it. This is a genuine new touch,
+    // so the prior active row (Pending or Paused) is marked Completed and a fresh Pending row is
+    // inserted for the next step. Email and linkedin run independent sequences, so this resyncs
+    // only this message's channel.
     await this.resyncFollowUp({
       userId: params.userId,
       contactId: params.contactId,
       channel: params.channel,
+      completePriorStep: true,
     });
     return response;
   }
@@ -294,11 +295,13 @@ export default class ContactsRepo {
 
     // sentAt is editable, so the follow-up schedule may no longer be derived from the latest sent message.
     // Resyncs only the edited message's own channel — email and linkedin sequences are independent.
+    // Not a new touch, so completePriorStep=false: only the due date moves, no row is completed.
     if (response.isSuccess && response.history) {
       await this.resyncFollowUp({
         userId: params.userId,
         contactId: params.contactId,
         channel: response.history.channel,
+        completePriorStep: false,
       });
     }
 
@@ -357,10 +360,12 @@ export default class ContactsRepo {
     });
 
     if (response.isSuccess && response.channel) {
+      // Not a new touch, so completePriorStep=false: only the due date moves, no row is completed.
       await this.resyncFollowUp({
         userId: params.userId,
         contactId: params.contactId,
         channel: response.channel,
+        completePriorStep: false,
       });
 
       // Hard-deleting the last remaining LIVE message reverts the auto-bump from logContactHistory —
@@ -399,11 +404,16 @@ export default class ContactsRepo {
    * Email and linkedin each run their own independent sequence/task, so this only ever touches the
    * channel of the message that triggered it. Must NOT run as a side effect of an inbound reply —
    * that is the separate pause path in logContactHistory.
+   *
+   * `completePriorStep` must be true only when called for a genuinely new outbound message (marks
+   * the prior active row Completed before advancing); false for a recompute after editing/undoing
+   * an existing message's sentAt, where the due date moves but nothing gets marked Completed.
    */
   private async resyncFollowUp(params: {
     userId: string;
     contactId: number;
     channel: Schemas.ContactHistoryChannelEnum;
+    completePriorStep: boolean;
   }) {
     // A contact already in a terminal status (Dead/Failed/Closed) has no active sequence to
     // advance — resyncing here would silently recreate the follow-up task that status transition
@@ -460,13 +470,25 @@ export default class ContactsRepo {
     // stepNumber of the NEXT follow-up to schedule = sentCount (1-based; see plan §0 derivation).
     const stepNumber = sentCount;
 
-    // Sequence complete — no more offsets configured for this step. Clear any dangling task for this channel.
+    // Sequence complete — no more offsets configured for this step.
     if (stepNumber > offsetDays.length) {
-      await tasksRepo.deleteFollowUpTasks({
-        userId: params.userId,
-        contactId: params.contactId,
-        channel: params.channel,
-      });
+      if (params.completePriorStep) {
+        // This outbound message was the final configured touch — mark the active row Completed
+        // rather than deleting it, so the finished sequence is still visible in Past tasks.
+        await tasksRepo.completeActiveFollowUp({
+          userId: params.userId,
+          contactId: params.contactId,
+          channel: params.channel,
+        });
+      } else {
+        // A recompute (edit/undo) that no longer has enough steps to justify an active task —
+        // no real completion happened, so just clear the dangling row.
+        await tasksRepo.deleteFollowUpTasks({
+          userId: params.userId,
+          contactId: params.contactId,
+          channel: params.channel,
+        });
+      }
       return;
     }
 
@@ -481,6 +503,7 @@ export default class ContactsRepo {
       channel: params.channel,
       dueAt,
       stepNumber,
+      completePriorStep: params.completePriorStep,
     });
   }
 

@@ -98,7 +98,6 @@ export enum LogAction {
   SyncFollowUpTask = "SyncFollowUpTask",
   DeleteFollowUpTasks = "DeleteFollowUpTasks",
   PauseFollowUpTask = "PauseFollowUpTask",
-  ResumeFollowUpTask = "ResumeFollowUpTask",
   SweepOverdueTasks = "SweepOverdueTasks",
 
   // Follow-up settings

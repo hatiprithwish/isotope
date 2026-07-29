@@ -22,17 +22,21 @@ export type SyncFollowUpDALRequest = {
   channel: ContactHistoryChannelEnum;
   dueAt: string;
   stepNumber: number;
+  // true only when a genuinely new outbound message was just logged — stamps the prior active row
+  // Completed and inserts a fresh Pending row. false for recomputes after an edit/undo of an
+  // existing message's sentAt, which must only move the due date, never fabricate a completion.
+  completePriorStep: boolean;
 };
 
 export type SweepOverdueDALRequest = { today: string };
 
-export type PauseFollowUpDALRequest = {
+export type CompleteActiveFollowUpDALRequest = {
   createdBy: string;
   contactId: number;
   channel: ContactHistoryChannelEnum;
 };
 
-export type ResumeFollowUpDALRequest = {
+export type PauseFollowUpDALRequest = {
   createdBy: string;
   contactId: number;
   channel: ContactHistoryChannelEnum;
@@ -61,4 +65,9 @@ export interface UpdateTaskStatusDALResponse extends ApiResponse {
 
 export interface SweepOverdueTasksDALResponse extends ApiResponse {
   sweptCount?: number;
+}
+
+export interface CompleteActiveFollowUpDALResponse extends ApiResponse {
+  /** True if an active (Pending/Paused/Missed) row actually existed and was completed; false on a no-op. */
+  completed?: boolean;
 }

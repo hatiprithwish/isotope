@@ -52,10 +52,11 @@ function SectionBody({
   emptyLabel,
   onToggleTask,
   updatingTaskId,
+  showDate,
 }: Pick<
   TaskSectionProps,
   "tasks" | "isLoading" | "isError" | "emptyLabel" | "onToggleTask" | "updatingTaskId"
->) {
+> & { showDate: boolean }) {
   if (isError) {
     return <p className="px-4 py-3 text-[13px] text-(--danger-text)">Failed to load.</p>;
   }
@@ -81,6 +82,7 @@ function SectionBody({
           task={task}
           onToggle={onToggleTask}
           isUpdating={updatingTaskId === task.id}
+          showDate={showDate}
         />
       ))}
     </>
@@ -109,6 +111,7 @@ export function TaskSection({
       emptyLabel={emptyLabel}
       onToggleTask={onToggleTask}
       updatingTaskId={updatingTaskId}
+      showDate={!dateLabel}
     />
   );
 

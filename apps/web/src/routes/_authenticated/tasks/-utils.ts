@@ -36,6 +36,12 @@ export function formatSectionDate(date: Date): string {
   return `${date.getDate()} ${date.toLocaleDateString("en-US", { month: "long" })}, ${date.getFullYear()}`;
 }
 
+/** "4 Jul" — compact inline form for rows in a mixed-date list (search results, Past tasks). */
+export function formatRowDate(dateKey: string): string {
+  const date = fromDateKey(dateKey);
+  return `${date.getDate()} ${date.toLocaleDateString("en-US", { month: "short" })}`;
+}
+
 export function getSectionLabel(dateKey: string, todayKey: string): string {
   const today = fromDateKey(todayKey);
   const date = fromDateKey(dateKey);
