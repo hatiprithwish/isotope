@@ -24,7 +24,7 @@ interface Props {
   onOpenPanel: (id: number) => void;
   onClosePanel: () => void;
   onAddClick: () => void;
-  onBulkDelete: (ids: number[]) => void;
+  onBulkDelete: (ids: number[]) => Promise<unknown>;
   isBulkPending: boolean;
   searchQuery: string;
   onSearchChange: (value: string) => void;
@@ -73,9 +73,13 @@ export function DesktopCompaniesTable({
     setSelectedIds(new Set());
   }
 
-  function handleBulkDelete() {
-    onBulkDelete(Array.from(selectedIds));
-    clearSelection();
+  async function handleBulkDelete() {
+    try {
+      await onBulkDelete(Array.from(selectedIds));
+      clearSelection();
+    } catch {
+      // error toast already shown by the mutation's onError — keep selection so the user can retry
+    }
   }
 
   const COLUMNS: AppTableColumn<Schemas.Company>[] = [
@@ -176,7 +180,7 @@ export function DesktopCompaniesTable({
         size="xs"
         variant="outline"
         disabled={isBulkPending}
-        onClick={handleBulkDelete}
+        onClick={() => void handleBulkDelete()}
         className="text-destructive border-destructive/40 hover:bg-destructive/10"
       >
         <TrashIcon size={12} />

@@ -296,7 +296,7 @@ Inactive item: `border-transparent text-(--text-secondary) hover:text-foreground
 - **Global desktop:** Fixed sidebar (196px) + fluid main. Sidebar has `border-r border-border`.
 - **Table + panel:** `flex` row — table takes remaining space, panel is 400px. Panel pushes table, does not overlay.
 - **Today desktop:** `grid` with `gridTemplateColumns: 1fr 320px`, gap 32px. Right column sticky.
-- **Mobile:** Bottom tab bar (`MTabBar`) replaces sidebar for Today/Companies/Contacts/Jobs. Tables become card stacks. Detail panel becomes full-screen drawer. FAB (56px circle, `bg-primary`) on list screens.
+- **Mobile:** Bottom tab bar (`MobileTabBar`) replaces sidebar for the 4 primary items — Tasks/Jobs/Companies/Contacts — plus a 5th "More" tab that opens a bottom-sheet drawer (`Drawer` from `vaul`) listing Settings and Sign out, mirroring the desktop sidebar footer. Notes is intentionally excluded from all nav — it's a hidden/internal feature, not user-facing. Tables become card stacks. Detail panel becomes full-screen or bottom-sheet drawer. FAB (56px circle, `bg-primary`) on list screens. Viewport detection goes through the shared `useIsMobile()` hook (`src/hooks/useIsMobile.ts`, `md` / 768px breakpoint) — never inline `matchMedia` calls.
 - **`?panel=[id]` URL param** controls panel open state — panel state must always be derivable from the URL.
 
 ## Transitions

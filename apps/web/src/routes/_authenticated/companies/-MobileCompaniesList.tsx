@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
+import { MagnifyingGlassIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 import MobileCompanyRow from "./-MobileCompanyRow";
@@ -36,6 +36,8 @@ interface Props {
   onAddClick: () => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  onBulkDelete: (ids: number[]) => Promise<unknown>;
+  isBulkPending: boolean;
 }
 
 export function MobileCompaniesList({
@@ -45,8 +47,12 @@ export function MobileCompaniesList({
   onAddClick,
   searchQuery,
   onSearchChange,
+  onBulkDelete,
+  isBulkPending,
 }: Props) {
   const [mobileSearch, setMobileSearch] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   function toggleSearch() {
     setMobileSearch((s) => {
@@ -69,6 +75,30 @@ export function MobileCompaniesList({
   const filtered = applyMobileFilter(companies, mobileFilter);
   const needsReview = filtered.filter((c) => c.status === 1);
   const inProgress = filtered.filter((c) => c.status !== 1);
+  const someSelected = selectedIds.size > 0;
+
+  function toggleOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }
+
+  async function handleBulkDelete() {
+    try {
+      await onBulkDelete(Array.from(selectedIds));
+      clearSelection();
+    } catch {
+      // error toast already shown by the mutation's onError — keep selection so the user can retry
+    }
+  }
 
   return (
     <div className="flex flex-col h-full md:hidden overflow-hidden">
@@ -77,9 +107,28 @@ export function MobileCompaniesList({
           <span className="flex-1 text-[17px] font-semibold text-foreground tracking-tight">
             Companies
           </span>
-          <Button type="button" variant="ghost" size="icon" onClick={toggleSearch}>
-            <MagnifyingGlassIcon size={18} />
-          </Button>
+          {selectMode ? (
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-[13px] text-primary font-medium"
+            >
+              Done
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setSelectMode(true)}
+                className="text-[13px] text-primary font-medium"
+              >
+                Select
+              </button>
+              <Button type="button" variant="ghost" size="icon" onClick={toggleSearch}>
+                <MagnifyingGlassIcon size={18} />
+              </Button>
+            </>
+          )}
         </div>
 
         {mobileSearch && (
@@ -100,14 +149,16 @@ export function MobileCompaniesList({
         )}
       </header>
 
-      <button
-        type="button"
-        onClick={onAddClick}
-        className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg"
-        aria-label="Add company"
-      >
-        <PlusIcon size={22} />
-      </button>
+      {!selectMode && (
+        <button
+          type="button"
+          onClick={onAddClick}
+          className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg"
+          aria-label="Add company"
+        >
+          <PlusIcon size={22} />
+        </button>
+      )}
 
       <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-border bg-background shrink-0 no-scrollbar">
         {chips.map(({ label, filter }) => {
@@ -176,7 +227,13 @@ export function MobileCompaniesList({
                   </span>
                 </div>
                 {needsReview.map((co) => (
-                  <MobileCompanyRow key={co.id} company={co} />
+                  <MobileCompanyRow
+                    key={co.id}
+                    company={co}
+                    selectMode={selectMode}
+                    selected={selectedIds.has(co.id)}
+                    onToggleSelect={toggleOne}
+                  />
                 ))}
               </>
             )}
@@ -191,13 +248,38 @@ export function MobileCompaniesList({
                   </span>
                 </div>
                 {inProgress.map((co) => (
-                  <MobileCompanyRow key={co.id} company={co} />
+                  <MobileCompanyRow
+                    key={co.id}
+                    company={co}
+                    selectMode={selectMode}
+                    selected={selectedIds.has(co.id)}
+                    onToggleSelect={toggleOne}
+                  />
                 ))}
               </>
             )}
           </>
         )}
       </div>
+
+      {selectMode && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 py-3 flex items-center justify-between gap-2.5 shadow-lg">
+          <span className="text-[13px] font-semibold text-foreground">
+            {someSelected ? `${selectedIds.size} selected` : "Select companies"}
+          </span>
+          <Button
+            type="button"
+            size="xs"
+            variant="outline"
+            disabled={!someSelected || isBulkPending}
+            onClick={() => void handleBulkDelete()}
+            className="text-destructive border-destructive/40 hover:bg-destructive/10"
+          >
+            <TrashIcon size={12} />
+            Delete
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

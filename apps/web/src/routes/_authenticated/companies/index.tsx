@@ -65,6 +65,8 @@ function CompaniesPage() {
         onAddClick={() => setShowAddModal(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onBulkDelete={handleBulkDelete}
+        isBulkPending={bulkDeleteMutation.isPending}
       />
 
       <DesktopCompaniesTable
@@ -75,7 +77,7 @@ function CompaniesPage() {
         onOpenPanel={openPanel}
         onClosePanel={closePanel}
         onAddClick={() => setShowAddModal(true)}
-        onBulkDelete={(ids) => void handleBulkDelete(ids)}
+        onBulkDelete={handleBulkDelete}
         isBulkPending={bulkDeleteMutation.isPending}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

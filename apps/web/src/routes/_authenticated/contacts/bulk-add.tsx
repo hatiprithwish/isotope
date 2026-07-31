@@ -9,6 +9,7 @@ import { Button } from "@/shadcn/ui/button";
 import { ApiError } from "@/providers/apiClient";
 import { useBulkCreateContacts } from "./-data";
 import { BulkAddRow, makeEmptyRow, type BulkAddRowState } from "./-BulkAddRow";
+import { MobileBulkAddCard } from "./-MobileBulkAddCard";
 
 export const Route = createFileRoute("/_authenticated/contacts/bulk-add")({
   head: () => ({ meta: [{ title: "Bulk add contacts · Isotope" }] }),
@@ -148,7 +149,7 @@ function BulkAddPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-330 mx-auto px-6 py-6 flex flex-col gap-4">
+        <div className="max-w-330 mx-auto px-4 md:px-6 py-6 flex flex-col gap-4">
           <div>
             <h1 className="text-lg font-semibold text-foreground">Add contacts in bulk</h1>
             <p className="text-[12px] text-(--text-secondary) mt-0.5">
@@ -156,7 +157,7 @@ function BulkAddPage() {
             </p>
           </div>
 
-          <div className="border border-border rounded-lg bg-card">
+          <div className="hidden md:block border border-border rounded-lg bg-card">
             <table className="w-full border-collapse table-fixed">
               <colgroup>
                 <col className="w-7" />
@@ -225,7 +226,31 @@ function BulkAddPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 px-4 py-3 border border-border rounded-lg bg-card">
+          <div className="flex flex-col gap-3 md:hidden">
+            {rows.map((row, index) => (
+              <MobileBulkAddCard
+                key={row.rowId}
+                row={row}
+                index={index}
+                onChange={(patch) => patchRow(row.rowId, patch)}
+                onToggleSkipped={() => handleToggleSkipped(row.rowId)}
+                onDelete={() => handleDeleteRow(row.rowId)}
+                getToken={getToken}
+              />
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddRow}
+              disabled={remainingCapacity <= 0}
+              className="w-full"
+            >
+              <PlusIcon size={12} /> Add row ({rows.length} / {BULK_CREATE_CONTACTS_MAX_ENTRIES})
+            </Button>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center gap-3 px-4 py-3 border border-border rounded-lg bg-card">
             <span className="text-[12px] text-(--text-secondary)">
               <b className="text-foreground font-semibold">{activeRows.length}</b> will be added
               {rows.length !== activeRows.length && (
@@ -239,12 +264,18 @@ function BulkAddPage() {
                 </>
               )}
             </span>
-            <div className="ml-auto flex gap-2">
-              <Button type="button" variant="outline" onClick={() => navigate({ to: "/contacts" })}>
+            <div className="md:ml-auto flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 md:flex-none"
+                onClick={() => navigate({ to: "/contacts" })}
+              >
                 Cancel
               </Button>
               <Button
                 type="button"
+                className="flex-1 md:flex-none"
                 onClick={handleSubmit}
                 disabled={!canSubmit || bulkCreate.isPending}
               >

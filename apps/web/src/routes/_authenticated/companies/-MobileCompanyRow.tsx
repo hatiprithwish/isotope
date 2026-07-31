@@ -2,19 +2,36 @@ import { Link } from "@tanstack/react-router";
 import { WarningIcon } from "@phosphor-icons/react";
 import { StatusBadge } from "./-StatusBadge";
 import Avatar from "./-Avatar";
+import {
+  MOBILE_LIST_ROW_CLASS,
+  MobileListRowCheckbox,
+  MobileListRowChevron,
+  MobileListRowShell,
+} from "../-MobileListRow";
 import type * as Schemas from "@app/schemas";
 
-function MobileCompanyRow({ company }: { company: Schemas.Company }) {
+interface MobileCompanyRowProps {
+  company: Schemas.Company;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: number) => void;
+}
+
+function MobileCompanyRow({
+  company,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
+}: MobileCompanyRowProps) {
   const score = company.weightedScore ?? 0;
   const max = 135;
   const hasEthicsFlag = company.isEthicsCompliant === false;
 
-  return (
-    <Link
-      to="/companies/$companyId"
-      params={{ companyId: String(company.id) }}
-      className="flex items-center gap-3 py-3.5 px-4 bg-sidebar border-b border-border cursor-pointer active:bg-(--surface-raised)"
-    >
+  const content = (
+    <>
+      {selectMode && (
+        <MobileListRowCheckbox selected={selected} onToggle={() => onToggleSelect?.(company.id)} />
+      )}
       <Avatar name={company.name} />
       <div className="flex flex-col min-w-0 grow">
         <div className="flex items-center gap-1.5">
@@ -31,19 +48,25 @@ function MobileCompanyRow({ company }: { company: Schemas.Company }) {
           {score}/{max}
         </span>
       </div>
-      <svg
-        width={16}
-        height={16}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-(--text-secondary) shrink-0"
-      >
-        <path d="M9 6l6 6l-6 6" />
-      </svg>
+      {!selectMode && <MobileListRowChevron />}
+    </>
+  );
+
+  if (selectMode) {
+    return (
+      <MobileListRowShell role="button" onActivate={() => onToggleSelect?.(company.id)}>
+        {content}
+      </MobileListRowShell>
+    );
+  }
+
+  return (
+    <Link
+      to="/companies/$companyId"
+      params={{ companyId: String(company.id) }}
+      className={MOBILE_LIST_ROW_CLASS}
+    >
+      {content}
     </Link>
   );
 }

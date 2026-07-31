@@ -1,15 +1,44 @@
-import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { CopyIcon } from "@phosphor-icons/react";
 import type * as Schemas from "@app/schemas";
 import { StatusBadge } from "./-StatusBadge";
 import Utilities from "@/utils";
+import {
+  MobileListRowCheckbox,
+  MobileListRowChevron,
+  MobileListRowLinkShell,
+  MobileListRowShell,
+} from "../-MobileListRow";
 
-function MobileContactRow({ contact }: { contact: Schemas.Contact }) {
-  return (
-    <Link
-      to="/contacts/$contactId"
-      params={{ contactId: String(contact.id) }}
-      className="flex items-center gap-3 py-3.5 px-4 bg-sidebar border-b border-border cursor-pointer active:bg-(--surface-raised)"
-    >
+interface MobileContactRowProps {
+  contact: Schemas.Contact;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: number) => void;
+}
+
+function copyToClipboard(e: React.MouseEvent, value: string, label: string) {
+  e.preventDefault();
+  e.stopPropagation();
+  void navigator.clipboard.writeText(value).then(() => {
+    toast.success(`${label} copied`);
+  });
+}
+
+function MobileContactRow({
+  contact,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
+}: MobileContactRowProps) {
+  const email = contact.email;
+  const linkedinUrl = contact.linkedinUrl;
+
+  const content = (
+    <>
+      {selectMode && (
+        <MobileListRowCheckbox selected={selected} onToggle={() => onToggleSelect?.(contact.id)} />
+      )}
       <span className="w-9 h-9 rounded-full inline-flex items-center justify-center font-semibold shrink-0 text-[13px] bg-(--surface-raised) text-(--text-secondary)">
         {Utilities.getInitials(contact.name)}
       </span>
@@ -19,33 +48,53 @@ function MobileContactRow({ contact }: { contact: Schemas.Contact }) {
           {[contact.companyName, contact.designation].filter(Boolean).join(" · ")}
         </span>
         <div className="flex gap-2 mt-1">
-          {contact.email && (
-            <span className="text-[11px] text-(--text-secondary) truncate max-w-36">
-              {contact.email}
-            </span>
+          {email && (
+            <button
+              type="button"
+              onClick={(e) => copyToClipboard(e, email, "Email")}
+              className="group inline-flex items-center gap-1 text-[11px] text-(--text-secondary) truncate max-w-36"
+              title="Copy email"
+            >
+              <span className="truncate">{email}</span>
+              <CopyIcon size={10} className="shrink-0 opacity-60 group-active:opacity-100" />
+            </button>
           )}
-          {contact.linkedinUrl && (
-            <span className="text-[11px] text-primary truncate max-w-36">LinkedIn</span>
+          {linkedinUrl && (
+            <button
+              type="button"
+              onClick={(e) => copyToClipboard(e, linkedinUrl, "LinkedIn URL")}
+              className="group inline-flex items-center gap-1 text-[11px] text-primary truncate max-w-36"
+              title="Copy LinkedIn URL"
+            >
+              LinkedIn
+              <CopyIcon size={10} className="shrink-0 opacity-60 group-active:opacity-100" />
+            </button>
           )}
         </div>
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
         <StatusBadge status={contact.status} sm />
       </div>
-      <svg
-        width={16}
-        height={16}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-(--text-secondary) shrink-0"
-      >
-        <path d="M9 6l6 6l-6 6" />
-      </svg>
-    </Link>
+      {!selectMode && <MobileListRowChevron />}
+    </>
+  );
+
+  if (selectMode) {
+    return (
+      <MobileListRowShell role="button" onActivate={() => onToggleSelect?.(contact.id)}>
+        {content}
+      </MobileListRowShell>
+    );
+  }
+
+  return (
+    <MobileListRowLinkShell
+      to="/contacts/$contactId"
+      params={{ contactId: String(contact.id) }}
+      label={`Open ${contact.name}`}
+    >
+      {content}
+    </MobileListRowLinkShell>
   );
 }
 

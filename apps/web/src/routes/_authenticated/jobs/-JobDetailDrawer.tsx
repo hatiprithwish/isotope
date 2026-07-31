@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type * as Schemas from "@app/schemas";
 import { JobPanelContent } from "./-JobPanelContent";
 
@@ -30,17 +30,7 @@ export function JobDetailPanel({ jobId, onClose, onEdit, onDelete }: JobDetailDr
 }
 
 export function JobDetailMobileDrawer({ jobId, onClose, onEdit, onDelete }: JobDetailDrawerProps) {
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
+  const isMobile = useIsMobile();
   const isOpen = jobId != null && isMobile;
 
   return (

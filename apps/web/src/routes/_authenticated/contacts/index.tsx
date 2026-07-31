@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useAddShortcut } from "@/hooks/useAddShortcut";
 import { ContactsQueries, useBulkDeleteContacts, useBulkUpdateContacts } from "./-data";
-import AddOrEditContactModal from "./-AddOrEditContactModal";
 import { MobileContactsList } from "./-MobileContactsList";
 import { DesktopContactsTable } from "./-DesktopContactsTable";
 import type * as Schemas from "@app/schemas";
@@ -29,23 +28,13 @@ function ContactsPage() {
   const queryClient = useQueryClient();
   const { panel } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedQuery = useDebouncedValue(searchQuery, 300);
   const bulkDeleteMutation = useBulkDeleteContacts();
   const bulkUpdateMutation = useBulkUpdateContacts();
 
-  useAddShortcut(() => {
-    // Desktop's "Add" button navigates to the bulk-add page; mobile has no button of its own and
-    // relies solely on this shortcut, so it must fork the same way by viewport (Tailwind's default
-    // `md` breakpoint, matching the CSS that already hides/shows DesktopContactsTable/MobileContactsList).
-    if (window.matchMedia("(min-width: 768px)").matches) {
-      navigate({ to: "/contacts/bulk-add" });
-    } else {
-      setShowAddModal(true);
-    }
-  });
+  useAddShortcut(() => navigate({ to: "/contacts/bulk-add" }));
 
   const { data, isPending, isError } = useQuery(
     ContactsQueries.list(
@@ -111,6 +100,10 @@ function ContactsPage() {
         isError={isError}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onAddClick={() => navigate({ to: "/contacts/bulk-add" })}
+        onBulkDelete={handleBulkDelete}
+        onBulkUpdate={handleBulkUpdate}
+        isBulkPending={bulkDeleteMutation.isPending || bulkUpdateMutation.isPending}
       />
 
       <DesktopContactsTable
@@ -131,8 +124,6 @@ function ContactsPage() {
         }}
         pagination={pagination}
       />
-
-      {showAddModal && <AddOrEditContactModal mode="add" onClose={() => setShowAddModal(false)} />}
     </>
   );
 }
