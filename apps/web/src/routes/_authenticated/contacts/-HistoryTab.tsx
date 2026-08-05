@@ -10,6 +10,7 @@ import {
 } from "./-data";
 import { AddOrEditContactHistoryForm } from "./-AddOrEditContactHistoryForm";
 import { Button } from "@/shadcn/ui/button";
+import { StatusChangeNotesQueries } from "../-status-change-notes-data";
 
 /**
  * Once a tombstone's undo window has elapsed, the queued HardDeleteContactHistoryHandler has run
@@ -54,10 +55,14 @@ export function HistoryTab({
   getToken: () => Promise<string | null>;
 }) {
   const { data, isPending } = useQuery(ContactsQueries.history(contact.id, getToken));
+  const { data: statusChangeData } = useQuery(
+    StatusChangeNotesQueries.list(Schemas.StatusChangeEntityTypeEnum.Contact, contact.id, getToken),
+  );
   const deleteHistory = useDeleteContactHistory();
   const restoreHistory = useRestoreContactHistory();
   const [editingId, setEditingId] = useState<number | null>(null);
   const history = data?.history ?? [];
+  const statusChangeNotes = statusChangeData?.statusChangeNotes ?? [];
   const isTerminal = Schemas.CONTACT_TERMINAL_STATUSES.includes(contact.status);
 
   const deletedRows = history.filter((h) => h.deletedAt != null);
@@ -67,6 +72,17 @@ export function HistoryTab({
   const replyCount = visibleHistory.filter((h) =>
     h.type.endsWith(Schemas.CONTACT_HISTORY_RECEIVED_SUFFIX),
   ).length;
+
+  type TimelineEvent =
+    | { kind: "message"; at: string; entry: Schemas.ContactHistory }
+    | { kind: "status"; at: string; entry: Schemas.StatusChangeNote };
+
+  const timeline: TimelineEvent[] = [
+    ...history.map((entry): TimelineEvent => ({ kind: "message", at: entry.sentAt, entry })),
+    ...statusChangeNotes.map(
+      (entry): TimelineEvent => ({ kind: "status", at: entry.createdAt, entry }),
+    ),
+  ].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
 
   if (isPending)
     return <div className="px-5 py-6 text-(--text-secondary) text-sm">Loading history…</div>;
@@ -89,13 +105,49 @@ export function HistoryTab({
         </div>
       )}
 
-      {history.map((h) => {
+      {timeline.map((event) => {
+        if (event.kind === "status") {
+          const s = event.entry;
+          return (
+            <div key={`status-${s.id}`} className="flex flex-col items-center gap-0.5 py-1">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-(--text-secondary)">
+                {s.fromStatus != null && (
+                  <>
+                    <span>
+                      {Schemas.contactStatusIntToLabel[
+                        s.fromStatus as Schemas.ContactStatusIntEnum
+                      ] ?? s.fromStatus}
+                    </span>
+                    <span>→</span>
+                  </>
+                )}
+                <span className="text-foreground">
+                  {Schemas.contactStatusIntToLabel[s.toStatus as Schemas.ContactStatusIntEnum] ??
+                    s.toStatus}
+                </span>
+                <span>· {new Date(s.createdAt).toLocaleDateString()}</span>
+              </div>
+              {s.note && (
+                <div className="max-w-[82%] text-[12px] text-(--text-secondary) italic text-center">
+                  {s.note}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        const h = event.entry;
         const isSent = Schemas.CONTACT_HISTORY_SENT_TYPES.includes(h.type);
         const channelLabel = Schemas.CONTACT_HISTORY_CHANNEL_LABEL_MAP[h.channel];
         const touchLabel =
           isSent && h.sequencePosition != null ? `Touch ${h.sequencePosition}` : null;
 
         if (h.deletedAt != null) {
+          // Undo is only ever valid within the same window the server enforces — if a refetch is
+          // slow to reflect the queued hard-delete (or that delivery is delayed/lost), the button
+          // must still disappear on schedule rather than staying clickable indefinitely.
+          const canUndo = Date.now() - Date.parse(h.deletedAt) < CONTACT_HISTORY_UNDO_WINDOW_MS;
+
           return (
             <div
               key={h.id}
@@ -106,17 +158,21 @@ export function HistoryTab({
               </span>
               <div className="max-w-[82%] px-3.5 py-2.5 text-[13px] leading-[1.7] flex items-center gap-2 text-(--text-secondary) italic border border-dashed border-border rounded-[16px]">
                 <span>This message was deleted</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => restoreHistory.mutate({ contactId: contact.id, historyId: h.id })}
-                  disabled={restoreHistory.isPending}
-                  className="not-italic text-primary hover:text-primary"
-                >
-                  <ArrowCounterClockwiseIcon size={11} />
-                  Undo
-                </Button>
+                {canUndo && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() =>
+                      restoreHistory.mutate({ contactId: contact.id, historyId: h.id })
+                    }
+                    disabled={restoreHistory.isPending}
+                    className="not-italic text-primary hover:text-primary"
+                  >
+                    <ArrowCounterClockwiseIcon size={11} />
+                    Undo
+                  </Button>
+                )}
               </div>
             </div>
           );

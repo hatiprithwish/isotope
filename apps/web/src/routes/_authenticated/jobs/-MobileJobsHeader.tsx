@@ -1,49 +1,29 @@
-import { MagnifyingGlassIcon, FunnelIcon } from "@phosphor-icons/react";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
-import type { JobStatusIntEnum } from "@app/schemas";
-import type * as Schemas from "@app/schemas";
-
-const STATUS_TABS: { key: string; label: string; statuses: JobStatusIntEnum[] | null }[] = [
-  { key: "all", label: "All", statuses: null },
-  { key: "review", label: "Needs review", statuses: [2] },
-  { key: "accepted", label: "Accepted", statuses: [3] },
-  { key: "applied", label: "Applied", statuses: [4] },
-  { key: "interviewing", label: "Interviewing", statuses: [6] },
-  { key: "offer", label: "Offer", statuses: [7] },
-  { key: "rejected", label: "Rejected", statuses: [8] },
-];
 
 interface Props {
-  allJobs: Schemas.Job[];
   searchQuery: string;
   mobileSearch: boolean;
-  mobileStatusFilter: string;
+  /** Shared status filter + saved filter controls — identical to the desktop table's. */
+  filterBar: React.ReactNode;
   onSearchToggle: () => void;
   onSearchChange: (v: string) => void;
-  onStatusFilterChange: (v: string) => void;
 }
 
 export function MobileJobsHeader({
-  allJobs,
   searchQuery,
   mobileSearch,
-  mobileStatusFilter,
+  filterBar,
   onSearchToggle,
   onSearchChange,
-  onStatusFilterChange,
 }: Props) {
   return (
     <header className="px-4 pt-4 pb-0 bg-background shrink-0">
       <div className="flex items-center justify-between mb-3">
         <span className="text-[22px] font-semibold text-foreground tracking-tight">Jobs</span>
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" size="icon" onClick={onSearchToggle}>
-            <MagnifyingGlassIcon size={18} />
-          </Button>
-          <Button type="button" variant="ghost" size="icon">
-            <FunnelIcon size={18} />
-          </Button>
-        </div>
+        <Button type="button" variant="ghost" size="icon" onClick={onSearchToggle}>
+          <MagnifyingGlassIcon size={18} />
+        </Button>
       </div>
 
       {mobileSearch && (
@@ -63,43 +43,7 @@ export function MobileJobsHeader({
         </div>
       )}
 
-      <div className="flex gap-1.5 overflow-x-auto pb-3 scrollbar-none">
-        {STATUS_TABS.map((tab) => {
-          const count =
-            tab.statuses === null
-              ? allJobs.length
-              : allJobs.filter((j) => tab.statuses!.includes(j.status as JobStatusIntEnum)).length;
-          const isActive = mobileStatusFilter === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => onStatusFilterChange(tab.key)}
-              className={[
-                "shrink-0 h-7 px-3 rounded-full text-[12px] font-medium transition-colors flex items-center gap-1.5",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background border border-border text-(--text-secondary) hover:bg-(--surface-raised)",
-              ].join(" ")}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span
-                  className={[
-                    "text-[11px] font-semibold",
-                    isActive ? "opacity-80" : "text-muted-foreground",
-                  ].join(" ")}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <div className="flex items-center gap-2 flex-wrap pb-3">{filterBar}</div>
     </header>
   );
 }
-
-export { STATUS_TABS };
-export type { JobStatusIntEnum };

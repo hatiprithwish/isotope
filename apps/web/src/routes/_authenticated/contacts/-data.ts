@@ -7,8 +7,8 @@ import { toast } from "sonner";
 export class ContactsQueries {
   static readonly keys = {
     all: () => ["contacts"] as const,
-    list: (search: string, pageNo: number, pageSize: number) =>
-      ["contacts", "list", search, pageNo, pageSize] as const,
+    list: (search: string, statuses: number[], pageNo: number, pageSize: number) =>
+      ["contacts", "list", search, statuses, pageNo, pageSize] as const,
     detail: (id: number) => ["contacts", id] as const,
     history: (id: number) => ["contacts", id, "history"] as const,
     messageTemplate: (id: number) => ["contacts", id, "message-template"] as const,
@@ -20,11 +20,14 @@ export class ContactsQueries {
     const pageNo = params.pageNo ?? 1;
     const pageSize = params.pageSize ?? 20;
 
+    const statuses = params.statuses ?? [];
+
     return queryOptions({
-      queryKey: ContactsQueries.keys.list(params.search ?? "", pageNo, pageSize),
+      queryKey: ContactsQueries.keys.list(params.search ?? "", statuses, pageNo, pageSize),
       queryFn: ({ signal }) => {
         const query = new URLSearchParams();
         if (params.search) query.set("search", params.search);
+        if (statuses.length > 0) query.set("statuses", statuses.join(","));
         query.set("pageNo", String(pageNo));
         query.set("pageSize", String(pageSize));
         return apiClient<Schemas.GetContactsApiResponse>(

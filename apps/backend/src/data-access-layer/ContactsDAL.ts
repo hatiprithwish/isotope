@@ -6,6 +6,7 @@ import { contacts, contactHistory, companies } from "@/db/tables";
 import * as Schemas from "@app/schemas";
 import AppLogger from "@/providers/AppLogger";
 import Utility from "@/utils";
+import Constants from "@/config/Constants";
 
 const contactStatusLabelExpr = sql<Schemas.ContactStatusLabelEnum>`CASE
   WHEN ${contacts.status} = ${Schemas.ContactStatusIntEnum.NotStarted} THEN ${Schemas.ContactStatusLabelEnum.NotStarted}
@@ -262,17 +263,23 @@ export default class ContactsDAL {
       const term = params.search?.trim();
       const pattern = term ? `%${Utility.escapeLikePattern(term)}%` : undefined;
 
-      const whereClause = pattern
-        ? and(
-            eq(contacts.createdBy, params.createdBy),
-            or(
-              sql`${contacts.name} LIKE ${pattern} ESCAPE '\\'`,
-              sql`${contacts.email} LIKE ${pattern} ESCAPE '\\'`,
-              sql`${contacts.designation} LIKE ${pattern} ESCAPE '\\'`,
-              sql`${companies.name} LIKE ${pattern} ESCAPE '\\'`,
-            ),
-          )
-        : eq(contacts.createdBy, params.createdBy);
+      const conditions: SQL[] = [eq(contacts.createdBy, params.createdBy)];
+
+      if (pattern) {
+        const searchCondition = or(
+          sql`${contacts.name} LIKE ${pattern} ESCAPE '\\'`,
+          sql`${contacts.email} LIKE ${pattern} ESCAPE '\\'`,
+          sql`${contacts.designation} LIKE ${pattern} ESCAPE '\\'`,
+          sql`${companies.name} LIKE ${pattern} ESCAPE '\\'`,
+        );
+        if (searchCondition) conditions.push(searchCondition);
+      }
+
+      if (params.statuses && params.statuses.length > 0) {
+        conditions.push(inArray(contacts.status, params.statuses));
+      }
+
+      const whereClause = and(...conditions);
 
       const [countRow] = await this.db
         .select({ count: count() })
@@ -886,11 +893,19 @@ export default class ContactsDAL {
     return response;
   }
 
-  /** Undo — clears deletedAt within the 15 min window. No-ops (0 rows) once the sweep has hard-deleted the row. */
+  /**
+   * Undo — clears deletedAt within the 15 min window. Also enforced here (not just via the queued
+   * hard-delete sweep) so a delayed/lost/retried queue delivery can never leave a restore possible
+   * past the advertised window — the row simply stops matching once deletedAt is older than the window.
+   */
   async restoreContactHistory(params: Schemas.RestoreContactHistoryDALRequest) {
     const response: Schemas.RestoreContactHistoryApiResponse = { isSuccess: false };
 
     try {
+      const windowCutoff = new Date(
+        Date.now() - Constants.CONTACT_HISTORY_UNDO_WINDOW_SECONDS * 1000,
+      ).toISOString();
+
       const [restored] = await this.db
         .update(contactHistory)
         .set({ deletedAt: null })
@@ -900,12 +915,13 @@ export default class ContactsDAL {
             eq(contactHistory.contactId, params.contactId),
             eq(contactHistory.createdBy, params.createdBy),
             sql`${contactHistory.deletedAt} is not null`,
+            sql`${contactHistory.deletedAt} > ${windowCutoff}`,
           ),
         )
         .returning({ channel: contactHistory.channel });
 
       if (!restored) {
-        response.message = "History entry not found";
+        response.message = "History entry not found or undo window has expired";
         return response;
       }
 
@@ -969,5 +985,28 @@ export default class ContactsDAL {
     }
 
     return response;
+  }
+
+  /** Returns the subset of `ids` that exist and belong to `createdBy` — one query, no row data. */
+  async getOwnedIds(createdBy: string, ids: number[]): Promise<number[]> {
+    if (ids.length === 0) return [];
+
+    try {
+      const rows = await this.db
+        .select({ id: contacts.id })
+        .from(contacts)
+        .where(and(eq(contacts.createdBy, createdBy), inArray(contacts.id, ids)));
+
+      return rows.map((row) => row.id);
+    } catch (error) {
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.ListContacts,
+        message: "Unknown error in checking contact ownership",
+        error,
+        metadata: { createdBy, ids },
+      });
+      return [];
+    }
   }
 }

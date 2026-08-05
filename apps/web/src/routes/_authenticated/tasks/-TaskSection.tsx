@@ -13,6 +13,10 @@ interface TaskSectionProps {
   emptyLabel: string;
   onToggleTask: (task: Schemas.TaskWithMeta) => void;
   updatingTaskId: number | null;
+  /** Opens the contact's conversation in the side panel. */
+  onOpenConversation: (contactId: number) => void;
+  /** Contact currently shown in the side panel. */
+  selectedContactId: number | null;
   /** Collapsible with a caret trigger when true; a plain always-open card when false. */
   collapsible?: boolean;
   defaultOpen?: boolean;
@@ -52,10 +56,19 @@ function SectionBody({
   emptyLabel,
   onToggleTask,
   updatingTaskId,
+  onOpenConversation,
+  selectedContactId,
   showDate,
 }: Pick<
   TaskSectionProps,
-  "tasks" | "isLoading" | "isError" | "emptyLabel" | "onToggleTask" | "updatingTaskId"
+  | "tasks"
+  | "isLoading"
+  | "isError"
+  | "emptyLabel"
+  | "onToggleTask"
+  | "updatingTaskId"
+  | "onOpenConversation"
+  | "selectedContactId"
 > & { showDate: boolean }) {
   if (isError) {
     return <p className="px-4 py-3 text-[13px] text-(--danger-text)">Failed to load.</p>;
@@ -83,6 +96,8 @@ function SectionBody({
           onToggle={onToggleTask}
           isUpdating={updatingTaskId === task.id}
           showDate={showDate}
+          onOpenConversation={onOpenConversation}
+          selectedContactId={selectedContactId}
         />
       ))}
     </>
@@ -98,6 +113,8 @@ export function TaskSection({
   emptyLabel,
   onToggleTask,
   updatingTaskId,
+  onOpenConversation,
+  selectedContactId,
   collapsible = true,
   defaultOpen = true,
 }: TaskSectionProps) {
@@ -111,6 +128,8 @@ export function TaskSection({
       emptyLabel={emptyLabel}
       onToggleTask={onToggleTask}
       updatingTaskId={updatingTaskId}
+      onOpenConversation={onOpenConversation}
+      selectedContactId={selectedContactId}
       showDate={!dateLabel}
     />
   );

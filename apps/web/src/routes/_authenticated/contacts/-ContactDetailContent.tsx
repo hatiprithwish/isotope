@@ -10,12 +10,14 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { StatusBadge } from "./-StatusBadge";
-import { ContactsQueries, useDeleteContact } from "./-data";
+import { ContactsQueries, useDeleteContact, useUpdateContact } from "./-data";
 import Utilities from "@/utils";
 import { DraftTab } from "./-DraftTab";
 import { HistoryTab } from "./-HistoryTab";
 import { AboutTab } from "./-AboutTab";
-import AddOrEditContactModal from "./-AddOrEditContactModal";
+import AddOrEditContactModal, { STATUS_OPTIONS } from "./-AddOrEditContactModal";
+import { StatusChangePopover } from "../-StatusChangePopover";
+import { StatusNoteInfoIcon } from "../-StatusNoteInfoIcon";
 
 export type ContactDetailTab = "history" | "about" | "draft";
 
@@ -60,6 +62,20 @@ export function ContactDetailContent({
 }: ContactDetailContentProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const deleteContact = useDeleteContact();
+  const updateContact = useUpdateContact();
+
+  function handleStatusChange(newStatus: number) {
+    return updateContact.mutateAsync({
+      id: contact.id,
+      body: { contact: { status: newStatus as Schemas.ContactStatusIntEnum } },
+    });
+  }
+
+  function statusLabel(status: number) {
+    return (
+      Schemas.contactStatusIntToLabel[status as Schemas.ContactStatusIntEnum] ?? String(status)
+    );
+  }
 
   // Shares HistoryTab's query key, so mounting both never double-fetches.
   const { data: historyData } = useQuery(ContactsQueries.history(contact.id, getToken));
@@ -159,7 +175,25 @@ export function ContactDetailContent({
             </div>
           </div>
           <div className="flex gap-2 items-center mt-3 flex-wrap">
-            <StatusBadge status={contact.status} />
+            <StatusChangePopover
+              entityType={Schemas.StatusChangeEntityTypeEnum.Contact}
+              entityId={contact.id}
+              currentStatus={contact.status}
+              statusOptions={STATUS_OPTIONS}
+              onStatusChange={handleStatusChange}
+              isPending={updateContact.isPending}
+              trigger={
+                <button type="button" className="cursor-pointer">
+                  <StatusBadge status={contact.status} />
+                </button>
+              }
+            />
+            <StatusNoteInfoIcon
+              entityType={Schemas.StatusChangeEntityTypeEnum.Contact}
+              entityId={contact.id}
+              currentStatus={contact.status}
+              getToken={getToken}
+            />
             {contact.abVariant && (
               <span className="inline-flex items-center gap-1 h-5.5 px-2 rounded-full bg-(--warning-bg) text-(--warning-text) text-[11px] font-semibold">
                 <span className="text-[11px]">✦</span>
@@ -191,7 +225,9 @@ export function ContactDetailContent({
         <div className="flex-1 overflow-y-auto">
           {activeTab === "draft" && <DraftTab contact={contact} />}
           {activeTab === "history" && <HistoryTab contact={contact} getToken={getToken} />}
-          {activeTab === "about" && <AboutTab contact={contact} />}
+          {activeTab === "about" && (
+            <AboutTab contact={contact} getToken={getToken} statusLabel={statusLabel} />
+          )}
         </div>
       </div>
     </>

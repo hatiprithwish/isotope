@@ -44,10 +44,10 @@ ContactsRoutes.get(
   zValidator("query", Schemas.ZGetContactsApiRequest),
   async (c) => {
     const userId = c.get("clerkUserId");
-    const { search, pageNo, pageSize } = c.req.valid("query");
+    const { search, statuses, pageNo, pageSize } = c.req.valid("query");
 
     const repo = new ContactsRepo(c.env);
-    const response = await repo.getContacts({ userId, search, pageNo, pageSize });
+    const response = await repo.getContacts({ userId, search, statuses, pageNo, pageSize });
 
     return c.json(response, response.isSuccess ? 200 : 500);
   },

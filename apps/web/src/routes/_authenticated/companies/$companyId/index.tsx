@@ -11,7 +11,11 @@ import Utilities from "@/utils";
 import { MAX_SCORE } from "../-criteria";
 import { ScoredCriteriaCard } from "./-ScoredCriteriaCard";
 import { PreFiltersCard } from "./-PreFiltersCard";
-import AddOrEditCompanyModal from "../-AddOrEditCompanyModal";
+import AddOrEditCompanyModal, { STATUS_OPTIONS } from "../-AddOrEditCompanyModal";
+import { StatusChangePopover } from "../../-StatusChangePopover";
+import { StatusChangeHistory } from "../../-StatusChangeHistory";
+import { StatusNoteInfoIcon } from "../../-StatusNoteInfoIcon";
+import * as Schemas from "@app/schemas";
 
 export const Route = createFileRoute("/_authenticated/companies/$companyId/")({
   component: CompanyDetailPage,
@@ -33,16 +37,22 @@ function CompanyDetailPage() {
   if (isError || !company)
     return <div className="p-6 text-(--text-secondary) text-sm">Company not found.</div>;
 
+  const resolvedCompanyId = company.id;
   const hasEthicsFlag = company.isEthicsCompliant === false;
   const isWaitingHuman = company.status === 1;
   const displayScore = company.weightedScore ?? 0;
 
-  function handleAccept() {
-    updateCompany.mutate({ id: company!.id, body: { company: { status: 2 } } });
+  function handleStatusChange(newStatus: number) {
+    return updateCompany.mutateAsync({
+      id: resolvedCompanyId,
+      body: { company: { status: newStatus } },
+    });
   }
 
-  function handleReject() {
-    updateCompany.mutate({ id: company!.id, body: { company: { status: 4 } } });
+  function statusLabel(status: number) {
+    return (
+      Schemas.companyStatusIntToLabel[status as Schemas.CompanyStatusIntEnum] ?? String(status)
+    );
   }
 
   return (
@@ -96,7 +106,29 @@ function CompanyDetailPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   {company.fitBand && <StatusBadge fit={company.fitBand} />}
-                  {company.status && <StatusBadge status={company.status} sm />}
+                  {company.status && (
+                    <StatusChangePopover
+                      entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+                      entityId={company.id}
+                      currentStatus={company.status}
+                      statusOptions={STATUS_OPTIONS}
+                      onStatusChange={handleStatusChange}
+                      isPending={updateCompany.isPending}
+                      trigger={
+                        <button type="button" className="cursor-pointer">
+                          <StatusBadge status={company.status} sm />
+                        </button>
+                      }
+                    />
+                  )}
+                  {company.status && (
+                    <StatusNoteInfoIcon
+                      entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+                      entityId={company.id}
+                      currentStatus={company.status}
+                      getToken={getToken}
+                    />
+                  )}
                 </div>
                 <div className="text-xs text-(--text-secondary) mt-2">
                   {company.website && <span className="text-primary">{company.website}</span>}
@@ -163,29 +195,53 @@ function CompanyDetailPage() {
             </div>
           )}
 
+          <div className="-mx-1">
+            <StatusChangeHistory
+              entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+              entityId={company.id}
+              getToken={getToken}
+              statusLabel={statusLabel}
+            />
+          </div>
+
           <div className="h-4" />
         </div>
 
         <div className="flex gap-2 px-4 py-3 bg-sidebar border-t border-border shrink-0">
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            onClick={handleReject}
-            disabled={updateCompany.isPending}
-            className="text-(--danger) hover:bg-(--danger-bg) hover:text-(--danger)"
-          >
-            Reject
-          </Button>
-          <Button
-            type="button"
-            size="lg"
-            onClick={handleAccept}
-            disabled={updateCompany.isPending}
-            className="flex-1"
-          >
-            Accept · find contacts
-          </Button>
+          <StatusChangePopover
+            entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+            entityId={company.id}
+            currentStatus={company.status}
+            statusOptions={STATUS_OPTIONS}
+            onStatusChange={handleStatusChange}
+            isPending={updateCompany.isPending}
+            initialStatus={Schemas.CompanyStatusIntEnum.RejectedHuman}
+            trigger={
+              <Button
+                type="button"
+                variant="ghost"
+                size="lg"
+                disabled={updateCompany.isPending}
+                className="text-(--danger) hover:bg-(--danger-bg) hover:text-(--danger)"
+              >
+                Reject
+              </Button>
+            }
+          />
+          <StatusChangePopover
+            entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+            entityId={company.id}
+            currentStatus={company.status}
+            statusOptions={STATUS_OPTIONS}
+            onStatusChange={handleStatusChange}
+            isPending={updateCompany.isPending}
+            initialStatus={Schemas.CompanyStatusIntEnum.Accepted}
+            trigger={
+              <Button type="button" size="lg" disabled={updateCompany.isPending} className="flex-1">
+                Accept · find contacts
+              </Button>
+            }
+          />
         </div>
       </div>
     </>

@@ -3,8 +3,16 @@ import { AppTable, AppTablePagination } from "@/components/app-table";
 import type { AppTableColumn, AppTablePaginationProps } from "@/components/app-table";
 import type * as Schemas from "@app/schemas";
 import { JobStatusBadge, JobTypeBadge } from "./-JobStatusBadge";
-import { MagnifyingGlassIcon, TrashIcon, CheckSquareIcon, SquareIcon } from "@phosphor-icons/react";
+import {
+  MagnifyingGlassIcon,
+  TrashIcon,
+  CheckSquareIcon,
+  SquareIcon,
+  NotePencilIcon,
+} from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
+import { Textarea } from "@/shadcn/ui/textarea";
 import { JobStatusIntEnum, JobStatusLabelEnum } from "@app/schemas";
 
 interface JobsTableProps {
@@ -15,9 +23,15 @@ interface JobsTableProps {
   onRowClick: (job: Schemas.Job) => void;
   pagination: AppTablePaginationProps;
   searchQuery: string;
+  /** Shared status filter + saved filter controls — identical to the mobile list's. */
+  filterBar: React.ReactNode;
   onSearchChange: (value: string) => void;
   onBulkDelete: (ids: number[]) => void;
-  onBulkStatusUpdate: (ids: number[], status: Schemas.JobStatusIntEnum) => void;
+  onBulkStatusUpdate: (
+    ids: number[],
+    status: Schemas.JobStatusIntEnum,
+    note: string | null,
+  ) => Promise<unknown>;
   isBulkPending: boolean;
 }
 
@@ -40,6 +54,7 @@ export function JobsTable({
   onRowClick,
   pagination,
   searchQuery,
+  filterBar,
   onSearchChange,
   onBulkDelete,
   onBulkStatusUpdate,
@@ -47,6 +62,8 @@ export function JobsTable({
 }: JobsTableProps) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>("");
+  const [bulkNote, setBulkNote] = useState<string>("");
+  const [bulkPopoverOpen, setBulkPopoverOpen] = useState(false);
 
   const allPageIds = jobs.map((j) => j.id);
   const allSelected = allPageIds.length > 0 && allPageIds.every((id) => selectedIds.has(id));
@@ -72,6 +89,7 @@ export function JobsTable({
   function clearSelection() {
     setSelectedIds(new Set());
     setBulkStatus("");
+    setBulkNote("");
   }
 
   function handleBulkDelete() {
@@ -79,10 +97,19 @@ export function JobsTable({
     clearSelection();
   }
 
-  function handleBulkStatusApply() {
+  async function handleBulkStatusApply() {
     if (!bulkStatus) return;
-    onBulkStatusUpdate(Array.from(selectedIds), Number(bulkStatus) as Schemas.JobStatusIntEnum);
-    clearSelection();
+    try {
+      await onBulkStatusUpdate(
+        Array.from(selectedIds),
+        Number(bulkStatus) as Schemas.JobStatusIntEnum,
+        bulkNote.trim() ? bulkNote.trim() : null,
+      );
+      setBulkPopoverOpen(false);
+      clearSelection();
+    } catch {
+      // error toast already shown by the mutation's onError — keep selection so the user can retry
+    }
   }
 
   const COLUMNS: AppTableColumn<Schemas.Job>[] = [
@@ -193,15 +220,47 @@ export function JobsTable({
             </option>
           ))}
         </select>
-        <Button
-          type="button"
-          size="xs"
-          variant="outline"
-          disabled={!bulkStatus || isBulkPending}
-          onClick={handleBulkStatusApply}
-        >
-          Apply
-        </Button>
+        <Popover open={bulkPopoverOpen} onOpenChange={setBulkPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button type="button" size="xs" variant="outline" disabled={!bulkStatus}>
+              <NotePencilIcon size={12} />
+              Apply
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-3.5" align="start">
+            <div className="flex flex-col gap-3">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-1.5">
+                  Note (optional)
+                </div>
+                <Textarea
+                  value={bulkNote}
+                  onChange={(e) => setBulkNote(e.target.value)}
+                  placeholder="Applied to all selected jobs…"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setBulkPopoverOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void handleBulkStatusApply()}
+                  disabled={isBulkPending}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
       <Button
         type="button"
@@ -246,6 +305,7 @@ export function JobsTable({
           className="w-full h-6.5 pl-8 pr-3 rounded-md bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
         />
       </div>
+      {filterBar}
     </div>
   );
 

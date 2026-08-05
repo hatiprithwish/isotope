@@ -4,37 +4,14 @@ import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 import MobileCompanyRow from "./-MobileCompanyRow";
 
-type MobileFilter =
-  | "all"
-  | "needs_review"
-  | "strong_fit"
-  | "accepted"
-  | "contacts_added"
-  | "disqualified";
-
-function applyMobileFilter(companies: Schemas.Company[], filter: MobileFilter): Schemas.Company[] {
-  switch (filter) {
-    case "needs_review":
-      return companies.filter((c) => c.status === 1);
-    case "strong_fit":
-      return companies.filter((c) => c.fitBand === 1);
-    case "accepted":
-      return companies.filter((c) => c.status === 2);
-    case "contacts_added":
-      return companies.filter((c) => c.status === 3);
-    case "disqualified":
-      return companies.filter((c) => c.fitBand === 4);
-    default:
-      return companies;
-  }
-}
-
 interface Props {
   companies: Schemas.Company[];
   isLoading: boolean;
   isError: boolean;
   onAddClick: () => void;
   searchQuery: string;
+  /** Shared status/fit filter + saved filter controls — identical to the desktop table's. */
+  filterBar: React.ReactNode;
   onSearchChange: (value: string) => void;
   onBulkDelete: (ids: number[]) => Promise<unknown>;
   isBulkPending: boolean;
@@ -46,6 +23,7 @@ export function MobileCompaniesList({
   isError,
   onAddClick,
   searchQuery,
+  filterBar,
   onSearchChange,
   onBulkDelete,
   isBulkPending,
@@ -61,20 +39,6 @@ export function MobileCompaniesList({
     });
   }
 
-  const chips: { label: string; filter: MobileFilter }[] = [
-    { label: "All", filter: "all" },
-    { label: "Needs review", filter: "needs_review" },
-    { label: "Strong fit", filter: "strong_fit" },
-    { label: "Accepted", filter: "accepted" },
-    { label: "Contacts added", filter: "contacts_added" },
-    { label: "Disqualified", filter: "disqualified" },
-  ];
-
-  const [mobileFilter, setMobileFilter] = useState<MobileFilter>("all");
-
-  const filtered = applyMobileFilter(companies, mobileFilter);
-  const needsReview = filtered.filter((c) => c.status === 1);
-  const inProgress = filtered.filter((c) => c.status !== 1);
   const someSelected = selectedIds.size > 0;
 
   function toggleOne(id: number) {
@@ -160,39 +124,8 @@ export function MobileCompaniesList({
         </button>
       )}
 
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-border bg-background shrink-0 no-scrollbar">
-        {chips.map(({ label, filter }) => {
-          const count =
-            filter === "all" ? companies.length : applyMobileFilter(companies, filter).length;
-          const active = mobileFilter === filter;
-          return (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => setMobileFilter(filter)}
-              className={[
-                "inline-flex items-center gap-1 h-8 px-3 rounded-full border text-[13px] font-medium whitespace-nowrap shrink-0 transition-colors",
-                active
-                  ? "bg-primary/10 border-primary text-primary font-semibold"
-                  : "bg-sidebar border-border text-(--text-secondary)",
-              ].join(" ")}
-            >
-              {label}
-              {count > 0 && (
-                <span
-                  className={[
-                    "inline-flex items-center justify-center min-w-4.5 h-4 px-1 rounded text-[10px] font-semibold",
-                    active
-                      ? "text-primary opacity-70"
-                      : "bg-(--surface-raised) text-(--text-secondary)",
-                  ].join(" ")}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="flex items-center gap-2 flex-wrap px-4 py-3 border-b border-border bg-background shrink-0">
+        {filterBar}
       </div>
 
       <div className="flex-1 overflow-y-auto bg-sidebar">
@@ -204,62 +137,24 @@ export function MobileCompaniesList({
             Failed to load companies.
           </div>
         )}
-        {!isLoading && !isError && filtered.length === 0 && (
+        {!isLoading && !isError && companies.length === 0 && (
           <div className="px-4 py-8 text-center text-(--text-secondary) text-sm">
             {searchQuery.trim()
               ? "No companies match your search."
               : "No companies match this filter."}
           </div>
         )}
-        {!isLoading && !isError && filtered.length > 0 && (
-          <>
-            {needsReview.length > 0 && (
-              <>
-                <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
-                    Needs review{" "}
-                    <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-(--surface-raised) text-(--text-secondary) text-[10px] font-semibold ml-1">
-                      {needsReview.length}
-                    </span>
-                  </span>
-                  <span className="text-[11px] font-medium text-(--text-secondary)">
-                    Sort: Updated
-                  </span>
-                </div>
-                {needsReview.map((co) => (
-                  <MobileCompanyRow
-                    key={co.id}
-                    company={co}
-                    selectMode={selectMode}
-                    selected={selectedIds.has(co.id)}
-                    onToggleSelect={toggleOne}
-                  />
-                ))}
-              </>
-            )}
-            {inProgress.length > 0 && (
-              <>
-                <div className="px-4 pt-5 pb-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
-                    In progress{" "}
-                    <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-(--surface-raised) text-(--text-secondary) text-[10px] font-semibold ml-1">
-                      {inProgress.length}
-                    </span>
-                  </span>
-                </div>
-                {inProgress.map((co) => (
-                  <MobileCompanyRow
-                    key={co.id}
-                    company={co}
-                    selectMode={selectMode}
-                    selected={selectedIds.has(co.id)}
-                    onToggleSelect={toggleOne}
-                  />
-                ))}
-              </>
-            )}
-          </>
-        )}
+        {!isLoading &&
+          !isError &&
+          companies.map((co) => (
+            <MobileCompanyRow
+              key={co.id}
+              company={co}
+              selectMode={selectMode}
+              selected={selectedIds.has(co.id)}
+              onToggleSelect={toggleOne}
+            />
+          ))}
       </div>
 
       {selectMode && (

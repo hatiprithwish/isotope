@@ -13,8 +13,6 @@ import type { AppTableColumn } from "@/components/app-table";
 import type * as Schemas from "@app/schemas";
 import { StatusBadge } from "./-StatusBadge";
 import { CompanyDetailPanel } from "./-DesktopPanel";
-import { CompaniesFilterBar, applyFilters } from "./-CompaniesFilterBar";
-import type { StatusFilter, FitFilter } from "./-CompaniesFilterBar";
 
 interface Props {
   companies: Schemas.Company[];
@@ -27,6 +25,8 @@ interface Props {
   onBulkDelete: (ids: number[]) => Promise<unknown>;
   isBulkPending: boolean;
   searchQuery: string;
+  /** Shared status/fit filter + saved filter controls — identical to the mobile list's. */
+  filterBar: React.ReactNode;
   onSearchChange: (value: string) => void;
 }
 
@@ -41,14 +41,13 @@ export function DesktopCompaniesTable({
   onBulkDelete,
   isBulkPending,
   searchQuery,
+  filterBar,
   onSearchChange,
 }: Props) {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [fitFilter, setFitFilter] = useState<FitFilter>("all");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
 
-  const filtered = applyFilters(companies, statusFilter, fitFilter);
-  const allPageIds = filtered.map((c) => c.id);
+  // Filtering is server-side — `companies` already holds exactly the matching rows.
+  const allPageIds = companies.map((c) => c.id);
   const allSelected = allPageIds.length > 0 && allPageIds.every((id) => selectedIds.has(id));
   const someSelected = selectedIds.size > 0;
 
@@ -209,19 +208,7 @@ export function DesktopCompaniesTable({
           <SquareIcon size={16} />
         )}
       </button>
-      <CompaniesFilterBar
-        companies={companies}
-        statusFilter={statusFilter}
-        fitFilter={fitFilter}
-        filteredCount={filtered.length}
-        onStatusChange={setStatusFilter}
-        onFitChange={setFitFilter}
-        onClear={() => {
-          setStatusFilter("all");
-          setFitFilter("all");
-        }}
-        inline
-      />
+      {filterBar}
       <div className="relative w-56">
         <MagnifyingGlassIcon
           size={14}
@@ -254,7 +241,7 @@ export function DesktopCompaniesTable({
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <AppTable<Schemas.Company>
             columns={COLUMNS}
-            data={filtered}
+            data={companies}
             keyExtractor={(row) => String(row.id)}
             isLoading={isLoading}
             skeletonRows={5}

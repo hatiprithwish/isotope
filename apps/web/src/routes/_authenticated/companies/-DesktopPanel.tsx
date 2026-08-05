@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@clerk/tanstack-react-start";
 import { useUpdateCompany } from "./-data";
-import type * as Schemas from "@app/schemas";
+import * as Schemas from "@app/schemas";
 import Avatar from "./-Avatar";
 import {
   ArrowsOutSimpleIcon,
@@ -10,13 +11,16 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
-import AddOrEditCompanyModal from "./-AddOrEditCompanyModal";
+import AddOrEditCompanyModal, { STATUS_OPTIONS } from "./-AddOrEditCompanyModal";
 import { StatusBadge } from "./-StatusBadge";
 import ScoreBar from "./-ScoreBar";
 import { MAX_SCORE } from "./-criteria";
 import { ScoredCriteria } from "./-ScoredCriteria";
 import { LinkedContacts } from "./-LinkedContacts";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
+import { StatusChangePopover } from "../-StatusChangePopover";
+import { StatusChangeHistory } from "../-StatusChangeHistory";
+import { StatusNoteInfoIcon } from "../-StatusNoteInfoIcon";
 
 interface CompanyPanelProps {
   company: Schemas.Company;
@@ -25,18 +29,21 @@ interface CompanyPanelProps {
 
 function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const updateCompany = useUpdateCompany();
   const [showEditModal, setShowEditModal] = useState(false);
   const score = company.weightedScore ?? 0;
   const hasEthicsFlag = company.isEthicsCompliant === false;
   const isWaitingHuman = company.status === 1;
 
-  function handleAccept() {
-    updateCompany.mutate({ id: company.id, body: { company: { status: 2 } } });
+  function handleStatusChange(newStatus: number) {
+    return updateCompany.mutateAsync({ id: company.id, body: { company: { status: newStatus } } });
   }
 
-  function handleReject() {
-    updateCompany.mutate({ id: company.id, body: { company: { status: 4 } } });
+  function statusLabel(status: number) {
+    return (
+      Schemas.companyStatusIntToLabel[status as Schemas.CompanyStatusIntEnum] ?? String(status)
+    );
   }
 
   return (
@@ -100,7 +107,29 @@ function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
             </div>
           </div>
           <div className="flex gap-2 items-center mt-3 flex-wrap">
-            {company.status && <StatusBadge status={company.status} />}
+            {company.status && (
+              <StatusChangePopover
+                entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+                entityId={company.id}
+                currentStatus={company.status}
+                statusOptions={STATUS_OPTIONS}
+                onStatusChange={handleStatusChange}
+                isPending={updateCompany.isPending}
+                trigger={
+                  <button type="button" className="cursor-pointer">
+                    <StatusBadge status={company.status} />
+                  </button>
+                }
+              />
+            )}
+            {company.status && (
+              <StatusNoteInfoIcon
+                entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+                entityId={company.id}
+                currentStatus={company.status}
+                getToken={getToken}
+              />
+            )}
             {company.fitBand && <StatusBadge fit={company.fitBand} />}
             {(company.updatedAt ?? company.createdAt) && (
               <span className="ml-auto text-[11px] text-(--text-secondary)">
@@ -177,32 +206,51 @@ function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
           <ScoredCriteria companyId={company.id} isWaitingHuman={isWaitingHuman} />
 
           <LinkedContacts companyId={company.id} />
+
+          <StatusChangeHistory
+            entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+            entityId={company.id}
+            getToken={getToken}
+            statusLabel={statusLabel}
+          />
         </div>
 
         <div className="px-5 py-3.5 border-t border-border bg-card flex gap-2 shrink-0">
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            onClick={handleReject}
-            disabled={updateCompany.isPending}
-            className="text-(--danger) hover:bg-(--danger-bg) hover:text-(--danger)"
-          >
-            Reject
-          </Button>
+          <StatusChangePopover
+            entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+            entityId={company.id}
+            currentStatus={company.status}
+            statusOptions={STATUS_OPTIONS}
+            onStatusChange={handleStatusChange}
+            isPending={updateCompany.isPending}
+            initialStatus={Schemas.CompanyStatusIntEnum.RejectedHuman}
+            trigger={
+              <Button
+                type="button"
+                variant="ghost"
+                size="lg"
+                disabled={updateCompany.isPending}
+                className="text-(--danger) hover:bg-(--danger-bg) hover:text-(--danger)"
+              >
+                Reject
+              </Button>
+            }
+          />
           <div className="flex-1" />
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={handleAccept}
-            disabled={updateCompany.isPending}
-          >
-            Accept
-          </Button>
-          <Button type="button" size="lg" onClick={handleAccept} disabled={updateCompany.isPending}>
-            Accept · find contacts
-          </Button>
+          <StatusChangePopover
+            entityType={Schemas.StatusChangeEntityTypeEnum.Company}
+            entityId={company.id}
+            currentStatus={company.status}
+            statusOptions={STATUS_OPTIONS}
+            onStatusChange={handleStatusChange}
+            isPending={updateCompany.isPending}
+            initialStatus={Schemas.CompanyStatusIntEnum.Accepted}
+            trigger={
+              <Button type="button" size="lg" disabled={updateCompany.isPending}>
+                Accept · find contacts
+              </Button>
+            }
+          />
         </div>
       </div>
     </>

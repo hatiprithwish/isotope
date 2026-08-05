@@ -61,6 +61,7 @@ export default class ContactsRepo {
     return await this.dal.getContacts({
       createdBy: params.userId,
       search: params.search ?? null,
+      statuses: params.statuses ?? null,
       pageNo: params.pageNo ?? Constants.DEFAULT_PAGE_NO,
       pageSize: params.pageSize ?? Constants.DEFAULT_PAGE_SIZE,
     });

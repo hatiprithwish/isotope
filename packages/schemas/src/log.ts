@@ -120,4 +120,15 @@ export enum LogAction {
 
   // Search
   GlobalSearch = "GlobalSearch",
+
+  // Status change notes
+  CreateStatusChangeNote = "CreateStatusChangeNote",
+  BulkCreateStatusChangeNotes = "BulkCreateStatusChangeNotes",
+  GetStatusChangeNotes = "GetStatusChangeNotes",
+
+  // Saved filters
+  CreateSavedFilter = "CreateSavedFilter",
+  ListSavedFilters = "ListSavedFilters",
+  UpdateSavedFilter = "UpdateSavedFilter",
+  DeleteSavedFilter = "DeleteSavedFilter",
 }

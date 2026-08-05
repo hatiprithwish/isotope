@@ -8,6 +8,7 @@ export type FindJobDetailsDALRequest = Pick<Job, "id" | "createdBy">;
 
 export type GetJobsDALRequest = Pick<Job, "createdBy"> & {
   searchText: string | null;
+  statuses: Job["status"][] | null;
   pageNo: number;
   pageSize: number;
   sortColumn: JobSortColumn;
@@ -16,6 +17,7 @@ export type GetJobsDALRequest = Pick<Job, "createdBy"> & {
 
 export type GetJobsCountDALRequest = Pick<Job, "createdBy"> & {
   searchText: string | null;
+  statuses: Job["status"][] | null;
 };
 
 export type GetJobsByCompanyDALRequest = Pick<Job, "createdBy"> & { companyId: number };

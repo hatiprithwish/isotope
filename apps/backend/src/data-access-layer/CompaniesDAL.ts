@@ -151,6 +151,25 @@ export default class CompaniesDAL {
       const term = params.search?.trim();
       const pattern = term ? `%${Utility.escapeLikePattern(term)}%` : undefined;
 
+      const conditions: SQL[] = [eq(companies.createdBy, params.createdBy)];
+
+      if (pattern) {
+        const searchCondition = or(
+          sql`${companies.name} LIKE ${pattern} ESCAPE '\\'`,
+          sql`${companies.industry} LIKE ${pattern} ESCAPE '\\'`,
+          sql`${companies.location} LIKE ${pattern} ESCAPE '\\'`,
+        );
+        if (searchCondition) conditions.push(searchCondition);
+      }
+
+      if (params.statuses && params.statuses.length > 0) {
+        conditions.push(inArray(companies.status, params.statuses));
+      }
+
+      if (params.fitBands && params.fitBands.length > 0) {
+        conditions.push(inArray(companies.fitBand, params.fitBands));
+      }
+
       const companiesResponse = await this.db
         .select({
           id: companies.id,
@@ -184,18 +203,7 @@ export default class CompaniesDAL {
         })
         .from(companies)
         .innerJoin(users, eq(companies.createdBy, users.clerkId))
-        .where(
-          pattern
-            ? and(
-                eq(companies.createdBy, params.createdBy),
-                or(
-                  sql`${companies.name} LIKE ${pattern} ESCAPE '\\'`,
-                  sql`${companies.industry} LIKE ${pattern} ESCAPE '\\'`,
-                  sql`${companies.location} LIKE ${pattern} ESCAPE '\\'`,
-                ),
-              )
-            : eq(companies.createdBy, params.createdBy),
-        )
+        .where(and(...conditions))
         .orderBy(desc(companies.createdAt));
 
       response.isSuccess = true;
@@ -363,5 +371,28 @@ export default class CompaniesDAL {
     }
 
     return response;
+  }
+
+  /** Returns the subset of `ids` that exist and belong to `createdBy` — one query, no row data. */
+  async getOwnedIds(createdBy: string, ids: number[]): Promise<number[]> {
+    if (ids.length === 0) return [];
+
+    try {
+      const rows = await this.db
+        .select({ id: companies.id })
+        .from(companies)
+        .where(and(eq(companies.createdBy, createdBy), inArray(companies.id, ids)));
+
+      return rows.map((row) => row.id);
+    } catch (error) {
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.ListCompanies,
+        message: "Unknown error in checking company ownership",
+        error,
+        metadata: { createdBy, ids },
+      });
+      return [];
+    }
   }
 }

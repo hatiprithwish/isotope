@@ -35,20 +35,28 @@ JobsRoutes.post("/", checkAuth, zValidator("json", Schemas.ZCreateJobApiRequest)
 
 JobsRoutes.post("/count", checkAuth, zValidator("json", Schemas.ZGetJobsApiRequest), async (c) => {
   const clerkUserId = c.get("clerkUserId");
-  const { searchText } = c.req.valid("json");
+  const { searchText, statuses } = c.req.valid("json");
 
   const repo = new JobsRepo(c.env);
-  const response = await repo.countJobs({ userId: clerkUserId, searchText });
+  const response = await repo.countJobs({ userId: clerkUserId, searchText, statuses });
 
   return c.json(response, response.isSuccess ? 200 : 500);
 });
 
 JobsRoutes.post("/list", checkAuth, zValidator("json", Schemas.ZGetJobsApiRequest), async (c) => {
   const clerkUserId = c.get("clerkUserId");
-  const { searchText } = c.req.valid("json");
+  const { searchText, statuses, pageNo, pageSize, sortColumn, sortDirection } = c.req.valid("json");
 
   const repo = new JobsRepo(c.env);
-  const response = await repo.getJobs({ userId: clerkUserId, searchText });
+  const response = await repo.getJobs({
+    userId: clerkUserId,
+    searchText,
+    statuses,
+    pageNo,
+    pageSize,
+    sortColumn,
+    sortDirection,
+  });
 
   return c.json(response, response.isSuccess ? 200 : 500);
 });

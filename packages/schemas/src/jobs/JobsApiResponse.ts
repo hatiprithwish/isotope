@@ -33,4 +33,5 @@ export interface BulkDeleteJobsApiResponse extends ApiResponse {
 
 export interface BulkUpdateJobsApiResponse extends ApiResponse {
   updatedCount?: number;
+  updatedIds?: number[];
 }

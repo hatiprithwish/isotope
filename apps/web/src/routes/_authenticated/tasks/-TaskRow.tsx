@@ -1,5 +1,3 @@
-import { Link } from "@tanstack/react-router";
-import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import * as Schemas from "@app/schemas"; // runtime `import *`: consumes CONTACT_HISTORY_CHANNEL_LABEL_MAP alongside types.
 import { formatRowDate } from "./-utils";
@@ -10,20 +8,41 @@ interface TaskRowProps {
   isUpdating: boolean;
   /** Shown when the row sits in a mixed-date list (search results, Past tasks) with no single section date to rely on. */
   showDate?: boolean;
+  /** Opens the contact's conversation in the side panel; toggles closed when the same contact is already shown. */
+  onOpenConversation: (contactId: number) => void;
+  /** Contact currently shown in the side panel, so the open row can be highlighted. */
+  selectedContactId: number | null;
 }
 
-export function TaskRow({ task, onToggle, isUpdating, showDate = false }: TaskRowProps) {
+export function TaskRow({
+  task,
+  onToggle,
+  isUpdating,
+  showDate = false,
+  onOpenConversation,
+  selectedContactId,
+}: TaskRowProps) {
   const isCompleted = task.status === Schemas.TaskStatusIntEnum.Completed;
   const isPaused = task.status === Schemas.TaskStatusIntEnum.Paused;
   const isOverdue = task.overdueByDays > 0 && !isCompleted && !isPaused;
   const metaLine = [task.companyName, task.designation].filter(Boolean).join(" · ");
+  const contactId = task.contactId;
+  const isPanelOpen = contactId != null && contactId === selectedContactId;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-(--surface-raised)">
+    <div
+      onClick={contactId != null ? () => onOpenConversation(contactId) : undefined}
+      className={[
+        "group flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0",
+        contactId != null ? "cursor-pointer" : "",
+        isPanelOpen ? "bg-sidebar" : "hover:bg-(--surface-raised)",
+      ].join(" ")}
+    >
       <Checkbox
         checked={isCompleted}
         disabled={isUpdating}
         onCheckedChange={() => onToggle(task)}
+        onClick={(e) => e.stopPropagation()}
       />
       <div className="flex-1 min-w-0">
         <p
@@ -59,18 +78,19 @@ export function TaskRow({ task, onToggle, isUpdating, showDate = false }: TaskRo
           Overdue {task.overdueByDays}d
         </span>
       )}
-      {task.contactId != null && (
-        <Link
-          to="/contacts/$contactId"
-          params={{ contactId: String(task.contactId) }}
-          search={{ tab: "history" }}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 inline-flex items-center gap-1 text-[13px] font-medium text-primary hover:underline"
+      {contactId != null && (
+        <button
+          type="button"
+          onClick={(e) => {
+            // The row div above already opens the conversation on click; stopPropagation just
+            // avoids double-firing onOpenConversation when this button's own click bubbles.
+            e.stopPropagation();
+            onOpenConversation(contactId);
+          }}
+          className="shrink-0 inline-flex items-center gap-1 text-[13px] font-medium text-primary hover:underline focus-visible:underline focus-visible:outline-none"
         >
-          View conversation
-          <ArrowUpRightIcon size={13} />
-        </Link>
+          {isPanelOpen ? "Hide conversation" : "View conversation"}
+        </button>
       )}
     </div>
   );

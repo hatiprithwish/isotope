@@ -8,9 +8,11 @@ import {
   BULK_CREATE_CONTACTS_MAX_ENTRIES,
   BULK_CONTACT_IDS_MAX_ENTRIES,
 } from "./ContactsCommon";
+import { ZIntFilterList } from "../common";
 
 export const ZGetContactsApiRequest = z.object({
   search: z.string().nullable().optional(),
+  statuses: ZIntFilterList.optional(),
   pageNo: z.coerce.number().int().positive().optional(),
   pageSize: z.coerce.number().int().positive().max(100).optional(),
 });

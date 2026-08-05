@@ -1,4 +1,5 @@
 import { and, asc, count, desc, eq, inArray, like, or } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import getDbClient from "@/db/dbClient";
 import { jobs, companies } from "@/db/tables";
@@ -393,6 +394,7 @@ export default class JobsDAL {
       response.isSuccess = true;
       response.message = `${result.length} job(s) updated`;
       response.updatedCount = result.length;
+      response.updatedIds = result.map((row) => row.id);
     } catch (error) {
       const message = "Unknown error in bulk updating jobs";
       AppLogger.error({
@@ -408,6 +410,32 @@ export default class JobsDAL {
     return response;
   }
 
+  /**
+   * Shared WHERE clause for the jobs list and its count, so a filtered page and its total
+   * can never diverge. Both callers join `companies`, which the search term relies on.
+   */
+  private static buildJobsFilter(params: Schemas.GetJobsCountDALRequest): SQL | undefined {
+    const conditions: SQL[] = [eq(jobs.createdBy, params.createdBy)];
+
+    const term = params.searchText?.trim();
+    if (term) {
+      const pattern = `%${term}%`;
+      const searchCondition = or(
+        like(jobs.title, pattern),
+        like(companies.location, pattern),
+        like(jobs.salary, pattern),
+        like(companies.name, pattern),
+      );
+      if (searchCondition) conditions.push(searchCondition);
+    }
+
+    if (params.statuses && params.statuses.length > 0) {
+      conditions.push(inArray(jobs.status, params.statuses));
+    }
+
+    return and(...conditions);
+  }
+
   async getJobsCount(params: Schemas.GetJobsCountDALRequest) {
     const response: Schemas.GetJobsCountApiResponse = { isSuccess: false };
 
@@ -419,26 +447,11 @@ export default class JobsDAL {
         metadata: params,
       });
 
-      const term = params.searchText?.trim();
-      const pattern = term ? `%${term}%` : undefined;
-
       const [row] = await this.db
         .select({ count: count() })
         .from(jobs)
         .leftJoin(companies, eq(jobs.companyId, companies.id))
-        .where(
-          pattern
-            ? and(
-                eq(jobs.createdBy, params.createdBy),
-                or(
-                  like(jobs.title, pattern),
-                  like(companies.location, pattern),
-                  like(jobs.salary, pattern),
-                  like(companies.name, pattern),
-                ),
-              )
-            : eq(jobs.createdBy, params.createdBy),
-        );
+        .where(JobsDAL.buildJobsFilter(params));
 
       response.isSuccess = true;
       response.message = "Jobs counted successfully";
@@ -468,9 +481,6 @@ export default class JobsDAL {
         message: "Fetching jobs",
         metadata: params,
       });
-
-      const term = params.searchText?.trim();
-      const pattern = term ? `%${term}%` : undefined;
 
       const sortColumnMap = {
         [Schemas.JobSortColumn.CreatedAt]: jobs.createdAt,
@@ -504,19 +514,7 @@ export default class JobsDAL {
         })
         .from(jobs)
         .leftJoin(companies, eq(jobs.companyId, companies.id))
-        .where(
-          pattern
-            ? and(
-                eq(jobs.createdBy, params.createdBy),
-                or(
-                  like(jobs.title, pattern),
-                  like(companies.location, pattern),
-                  like(jobs.salary, pattern),
-                  like(companies.name, pattern),
-                ),
-              )
-            : eq(jobs.createdBy, params.createdBy),
-        )
+        .where(JobsDAL.buildJobsFilter(params))
         .orderBy(orderExpr)
         .limit(params.pageSize)
         .offset(offset);
@@ -596,5 +594,28 @@ export default class JobsDAL {
     }
 
     return response;
+  }
+
+  /** Returns the subset of `ids` that exist and belong to `createdBy` — one query, no row data. */
+  async getOwnedIds(createdBy: string, ids: number[]): Promise<number[]> {
+    if (ids.length === 0) return [];
+
+    try {
+      const rows = await this.db
+        .select({ id: jobs.id })
+        .from(jobs)
+        .where(and(eq(jobs.createdBy, createdBy), inArray(jobs.id, ids)));
+
+      return rows.map((row) => row.id);
+    } catch (error) {
+      AppLogger.error({
+        category: Schemas.LogCategory.DAL,
+        action: Schemas.LogAction.ListJobs,
+        message: "Unknown error in checking job ownership",
+        error,
+        metadata: { createdBy, ids },
+      });
+      return [];
+    }
   }
 }

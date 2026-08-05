@@ -5,7 +5,11 @@ export type CreateCompanyDALRequest = CompanyBase & Pick<Company, "createdBy">;
 
 export type FindCompanyDALRequest = Pick<Company, "id" | "createdBy">;
 
-export type GetCompaniesDALRequest = Pick<Company, "createdBy"> & { search: string | null };
+export type GetCompaniesDALRequest = Pick<Company, "createdBy"> & {
+  search: string | null;
+  statuses: Company["status"][] | null;
+  fitBands: NonNullable<Company["fitBand"]>[] | null;
+};
 
 export type UpdateCompanyDALRequest = FindCompanyDALRequest &
   NullableDALFields<Omit<Company, "id" | "createdBy" | "createdAt" | "statusLabel">>;

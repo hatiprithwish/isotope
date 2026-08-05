@@ -1,7 +1,8 @@
-import type * as Schemas from "@app/schemas";
+import * as Schemas from "@app/schemas";
 import { useState } from "react";
 import Utilities from "@/utils";
 import { CompanyContext } from "./-CompanyContext";
+import { StatusChangeHistory } from "../-StatusChangeHistory";
 
 function Avatar({ name }: { name: string }) {
   return (
@@ -11,7 +12,13 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-export function AboutTab({ contact }: { contact: Schemas.Contact }) {
+interface AboutTabProps {
+  contact: Schemas.Contact;
+  getToken: () => Promise<string | null>;
+  statusLabel: (status: number) => string;
+}
+
+export function AboutTab({ contact, getToken, statusLabel }: AboutTabProps) {
   const [emailCopied, setEmailCopied] = useState(false);
 
   const copyEmail = () => {
@@ -144,6 +151,13 @@ export function AboutTab({ contact }: { contact: Schemas.Contact }) {
       </div>
 
       <CompanyContext companyId={contact.companyId} contactId={contact.id} />
+
+      <StatusChangeHistory
+        entityType={Schemas.StatusChangeEntityTypeEnum.Contact}
+        entityId={contact.id}
+        getToken={getToken}
+        statusLabel={statusLabel}
+      />
     </div>
   );
 }

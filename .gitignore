@@ -8,3 +8,4 @@ dist/
 routeTree.gen.ts
 .dev.vars
 .tanstack/
+linkedin-dom.html

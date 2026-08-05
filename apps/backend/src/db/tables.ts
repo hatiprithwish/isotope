@@ -265,6 +265,43 @@ export const messageTemplates = table(
   ],
 );
 
+export const statusChangeNotes = table(
+  "status_change_notes",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    entityType: t.text("entity_type").$type<Schemas.StatusChangeEntityTypeEnum>().notNull(),
+    entityId: t.int("entity_id").notNull(),
+    fromStatus: t.integer("from_status"),
+    toStatus: t.integer("to_status").notNull(),
+    note: t.text(),
+    createdAt: t.text("created_at").notNull(),
+  },
+  (table) => [
+    t.index("IDX_status_change_notes_entity").on(table.entityType, table.entityId),
+    t.index("IDX_status_change_notes_created_by").on(table.createdBy),
+  ],
+);
+
+export const savedFilters = table(
+  "saved_filters",
+  {
+    id: t.int().primaryKey({ autoIncrement: true }),
+    createdBy: t.text("created_by").notNull(),
+    name: t.text().notNull(),
+    entityType: t.integer("entity_type").$type<Schemas.SavedFilterEntityTypeIntEnum>().notNull(),
+    // Serialised SavedFilterCriteria — JSON so new filter dimensions need no migration
+    criteria: t.text().notNull(),
+    createdAt: t.text("created_at").notNull(),
+    updatedAt: t.text("updated_at"),
+  },
+  (table) => [
+    t.index("IDX_saved_filters_created_by").on(table.createdBy),
+    t.index("IDX_saved_filters_entity_type").on(table.createdBy, table.entityType),
+    t.uniqueIndex("UNQ_saved_filters_name").on(table.createdBy, table.entityType, table.name),
+  ],
+);
+
 // Single-row global table — id is always 1
 export const browserRunBudget = table("browser_run_budget", {
   id: t.int().primaryKey({ autoIncrement: true }),

@@ -3,57 +3,23 @@ import { Link } from "@tanstack/react-router";
 import { ChatsCircleIcon, MagnifyingGlassIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
-import { ContactStatusIntEnum } from "@app/schemas";
 import { STATUS_OPTIONS } from "./-AddOrEditContactModal";
 import MobileContactRow from "./-MobileContactRow";
-
-type MobileFilter =
-  | "all"
-  | "draft_ready"
-  | "in_pipeline"
-  | "needs_input"
-  | "replied"
-  | "re_engage"
-  | "dead";
-
-function needsInput(c: Schemas.Contact): boolean {
-  return (
-    c.status === ContactStatusIntEnum.NotStarted &&
-    !c.personalizationNotes &&
-    !c.manualPersonalizationNotes
-  );
-}
-
-function applyMobileFilter(contacts: Schemas.Contact[], filter: MobileFilter): Schemas.Contact[] {
-  switch (filter) {
-    case "draft_ready":
-      return contacts.filter((c) => c.status === ContactStatusIntEnum.DraftReady);
-    case "in_pipeline":
-      return contacts.filter((c) => c.status === ContactStatusIntEnum.InPipeline);
-    case "needs_input":
-      return contacts.filter(needsInput);
-    case "replied":
-      return contacts.filter((c) => c.status === ContactStatusIntEnum.Replied);
-    case "re_engage":
-      return contacts.filter((c) => c.status === ContactStatusIntEnum.ReEngage);
-    case "dead":
-      return contacts.filter((c) => c.status === ContactStatusIntEnum.Dead);
-    default:
-      return contacts;
-  }
-}
 
 interface Props {
   contacts: Schemas.Contact[];
   isLoading: boolean;
   isError: boolean;
   searchQuery: string;
+  /** Shared status filter + saved filter controls — identical to the desktop table's. */
+  filterBar: React.ReactNode;
   onSearchChange: (value: string) => void;
   onAddClick: () => void;
   onBulkDelete: (ids: number[]) => Promise<unknown>;
   onBulkUpdate: (
     ids: number[],
     updates: Schemas.BulkUpdateContactsApiRequest["updates"],
+    statusNote: string | null,
   ) => Promise<unknown>;
   isBulkPending: boolean;
 }
@@ -63,6 +29,7 @@ export function MobileContactsList({
   isLoading,
   isError,
   searchQuery,
+  filterBar,
   onSearchChange,
   onAddClick,
   onBulkDelete,
@@ -70,10 +37,10 @@ export function MobileContactsList({
   isBulkPending,
 }: Props) {
   const [mobileSearch, setMobileSearch] = useState(false);
-  const [mobileFilter, setMobileFilter] = useState<MobileFilter>("all");
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>("");
+  const [bulkNote, setBulkNote] = useState<string>("");
 
   function toggleSearch() {
     setMobileSearch((s) => {
@@ -82,23 +49,6 @@ export function MobileContactsList({
     });
   }
 
-  const chips: { label: string; filter: MobileFilter }[] = [
-    { label: "All", filter: "all" },
-    { label: "Draft ready", filter: "draft_ready" },
-    { label: "In pipeline", filter: "in_pipeline" },
-    { label: "Needs input", filter: "needs_input" },
-    { label: "Replied", filter: "replied" },
-    { label: "Re-engage", filter: "re_engage" },
-    { label: "Dead", filter: "dead" },
-  ];
-
-  const filtered = applyMobileFilter(contacts, mobileFilter);
-  const draftReady = filtered.filter((c) => c.status === ContactStatusIntEnum.DraftReady);
-  const inPipeline = filtered.filter((c) => c.status === ContactStatusIntEnum.InPipeline);
-  const other = filtered.filter(
-    (c) =>
-      c.status !== ContactStatusIntEnum.DraftReady && c.status !== ContactStatusIntEnum.InPipeline,
-  );
   const someSelected = selectedIds.size > 0;
 
   function toggleOne(id: number) {
@@ -113,6 +63,7 @@ export function MobileContactsList({
   function clearSelection() {
     setSelectedIds(new Set());
     setBulkStatus("");
+    setBulkNote("");
     setSelectMode(false);
   }
 
@@ -128,7 +79,11 @@ export function MobileContactsList({
   async function handleBulkStatusApply() {
     if (!bulkStatus) return;
     try {
-      await onBulkUpdate(Array.from(selectedIds), { status: Number(bulkStatus) });
+      await onBulkUpdate(
+        Array.from(selectedIds),
+        { status: Number(bulkStatus) },
+        bulkNote.trim() ? bulkNote.trim() : null,
+      );
       clearSelection();
     } catch {
       // error toast already shown by the mutation's onError — keep selection so the user can retry
@@ -200,39 +155,8 @@ export function MobileContactsList({
         </button>
       )}
 
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-border bg-background shrink-0 no-scrollbar">
-        {chips.map(({ label, filter }) => {
-          const count =
-            filter === "all" ? contacts.length : applyMobileFilter(contacts, filter).length;
-          const active = mobileFilter === filter;
-          return (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => setMobileFilter(filter)}
-              className={[
-                "inline-flex items-center gap-1 h-8 px-3 rounded-full border text-[13px] font-medium whitespace-nowrap shrink-0 transition-colors",
-                active
-                  ? "bg-primary/10 border-primary text-primary font-semibold"
-                  : "bg-sidebar border-border text-(--text-secondary)",
-              ].join(" ")}
-            >
-              {label}
-              {count > 0 && (
-                <span
-                  className={[
-                    "inline-flex items-center justify-center min-w-4.5 h-4 px-1 rounded text-[10px] font-semibold",
-                    active
-                      ? "text-primary opacity-70"
-                      : "bg-(--surface-raised) text-(--text-secondary)",
-                  ].join(" ")}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="flex items-center gap-2 flex-wrap px-4 py-3 border-b border-border bg-background shrink-0">
+        {filterBar}
       </div>
 
       <div className="flex-1 overflow-y-auto bg-sidebar pb-6">
@@ -244,80 +168,24 @@ export function MobileContactsList({
             Failed to load contacts.
           </div>
         )}
-        {!isLoading && !isError && filtered.length === 0 && (
+        {!isLoading && !isError && contacts.length === 0 && (
           <div className="px-4 py-8 text-center text-(--text-secondary) text-sm">
             {searchQuery.trim()
               ? "No contacts match your search."
               : "No contacts match this filter."}
           </div>
         )}
-        {!isLoading && !isError && filtered.length > 0 && (
-          <>
-            {draftReady.length > 0 && (
-              <>
-                <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
-                    Drafts ready · ready to send{" "}
-                    <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-(--surface-raised) text-(--text-secondary) text-[10px] font-semibold ml-1">
-                      {draftReady.length}
-                    </span>
-                  </span>
-                </div>
-                {draftReady.map((co) => (
-                  <MobileContactRow
-                    key={co.id}
-                    contact={co}
-                    selectMode={selectMode}
-                    selected={selectedIds.has(co.id)}
-                    onToggleSelect={toggleOne}
-                  />
-                ))}
-              </>
-            )}
-            {inPipeline.length > 0 && (
-              <>
-                <div className="px-4 pt-5 pb-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
-                    In pipeline{" "}
-                    <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-(--surface-raised) text-(--text-secondary) text-[10px] font-semibold ml-1">
-                      {inPipeline.length}
-                    </span>
-                  </span>
-                </div>
-                {inPipeline.map((co) => (
-                  <MobileContactRow
-                    key={co.id}
-                    contact={co}
-                    selectMode={selectMode}
-                    selected={selectedIds.has(co.id)}
-                    onToggleSelect={toggleOne}
-                  />
-                ))}
-              </>
-            )}
-            {other.length > 0 && (
-              <>
-                <div className="px-4 pt-5 pb-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary)">
-                    Other{" "}
-                    <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-(--surface-raised) text-(--text-secondary) text-[10px] font-semibold ml-1">
-                      {other.length}
-                    </span>
-                  </span>
-                </div>
-                {other.map((co) => (
-                  <MobileContactRow
-                    key={co.id}
-                    contact={co}
-                    selectMode={selectMode}
-                    selected={selectedIds.has(co.id)}
-                    onToggleSelect={toggleOne}
-                  />
-                ))}
-              </>
-            )}
-          </>
-        )}
+        {!isLoading &&
+          !isError &&
+          contacts.map((co) => (
+            <MobileContactRow
+              key={co.id}
+              contact={co}
+              selectMode={selectMode}
+              selected={selectedIds.has(co.id)}
+              onToggleSelect={toggleOne}
+            />
+          ))}
       </div>
 
       {selectMode && (
@@ -328,39 +196,50 @@ export function MobileContactsList({
             </span>
           </div>
           {someSelected && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <select
-                value={bulkStatus}
-                onChange={(e) => setBulkStatus(e.target.value)}
-                className="flex-1 h-8 px-2 rounded-md border border-border bg-background text-[12px] text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="">Set status…</option>
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={String(opt.value)}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                disabled={!bulkStatus || isBulkPending}
-                onClick={() => void handleBulkStatusApply()}
-              >
-                Apply
-              </Button>
-              <Button
-                type="button"
-                size="xs"
-                variant="outline"
-                disabled={isBulkPending}
-                onClick={() => void handleBulkDelete()}
-                className="text-destructive border-destructive/40 hover:bg-destructive/10"
-              >
-                <TrashIcon size={12} />
-                Delete
-              </Button>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <select
+                  value={bulkStatus}
+                  onChange={(e) => setBulkStatus(e.target.value)}
+                  className="flex-1 h-8 px-2 rounded-md border border-border bg-background text-[12px] text-foreground focus:outline-none focus:border-primary"
+                >
+                  <option value="">Set status…</option>
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={String(opt.value)}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  disabled={!bulkStatus || isBulkPending}
+                  onClick={() => void handleBulkStatusApply()}
+                >
+                  Apply
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="outline"
+                  disabled={isBulkPending}
+                  onClick={() => void handleBulkDelete()}
+                  className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                >
+                  <TrashIcon size={12} />
+                  Delete
+                </Button>
+              </div>
+              {bulkStatus && (
+                <textarea
+                  value={bulkNote}
+                  onChange={(e) => setBulkNote(e.target.value)}
+                  placeholder="Note (optional) — applied to all selected contacts…"
+                  rows={2}
+                  className="w-full bg-background border border-border rounded-md px-2.5 py-2 text-[12px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors resize-none"
+                />
+              )}
             </div>
           )}
         </div>

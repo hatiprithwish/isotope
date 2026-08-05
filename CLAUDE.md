@@ -281,7 +281,7 @@ private withStatusLabel(note: Schemas.Note): Schemas.NoteWithStatus {
 After ANY change to a Drizzle schema file:
 
 1. Run `pnpm db:generate` immediately — not later, not after the next feature
-2. Run `pnpm db:migrate` (or `pnpm db:migrate:local` for local dev)
+2. Run `pnpm db:migrate` — there is no separate local D1; `dev:api` runs `wrangler dev --env staging`, so staging IS the dev database. `db:migrate` targets it directly (`--remote --env staging`)
 3. Commit the generated migration file alongside the schema change — never in a separate commit
 
 If you write a schema change and do not emit these commands as the next step, the implementation is incomplete.

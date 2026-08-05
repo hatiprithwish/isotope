@@ -14,6 +14,7 @@ export type FindContactDALRequest = Pick<Contact, "id" | "createdBy">;
 
 export type GetContactsDALRequest = Pick<Contact, "createdBy"> & {
   search: string | null;
+  statuses: ContactStatusIntEnum[] | null;
   pageNo: number;
   pageSize: number;
 };

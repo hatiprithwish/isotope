@@ -122,6 +122,7 @@ export default class JobsRepo {
     return await this.dal.getJobsCount({
       createdBy: params.userId,
       searchText: params.searchText ?? null,
+      statuses: params.statuses ?? null,
     });
   }
 
@@ -165,6 +166,7 @@ export default class JobsRepo {
     return await this.dal.getJobs({
       createdBy: params.userId,
       searchText: params.searchText ?? null,
+      statuses: params.statuses ?? null,
       pageNo: params.pageNo ?? Constants.DEFAULT_PAGE_NO,
       pageSize: params.pageSize ?? Constants.DEFAULT_PAGE_SIZE,
       sortColumn: params.sortColumn ?? Schemas.JobSortColumn.CreatedAt,

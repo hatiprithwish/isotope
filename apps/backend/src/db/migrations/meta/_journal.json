@@ -169,6 +169,20 @@
       "when": 1785222249774,
       "tag": "0023_isotope",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1785815228747,
+      "tag": "0024_isotope",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1785852677010,
+      "tag": "0025_isotope",
+      "breakpoints": true
     }
   ]
 }

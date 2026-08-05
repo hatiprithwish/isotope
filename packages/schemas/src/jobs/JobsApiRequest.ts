@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { ZJobStatusIntEnum, ZJobBase, ZJobSortColumn } from "./JobsCommon";
-import { ZSortDirection } from "../common";
+import { ZSortDirection, ZIntFilterList } from "../common";
 
 export const ZGetJobsApiRequest = z.object({
   searchText: z.string().nullable().optional(),
-  pageNo: z.number().int().positive().optional(),
-  pageSize: z.number().int().positive().max(100).optional(),
+  statuses: ZIntFilterList.optional(),
+  pageNo: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().max(100).optional(),
   sortColumn: ZJobSortColumn.optional(),
   sortDirection: ZSortDirection.optional(),
 });

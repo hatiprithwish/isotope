@@ -78,7 +78,7 @@ function JobDetailPage() {
             </div>
           )}
 
-          {job && !isPending && <JobDetailBody job={job} />}
+          {job && !isPending && <JobDetailBody job={job} getToken={getToken} />}
         </div>
       </div>
     </>

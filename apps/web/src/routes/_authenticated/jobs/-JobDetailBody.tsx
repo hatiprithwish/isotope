@@ -1,6 +1,11 @@
 import { CaretRightIcon, LinkIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { JobStatusBadge, JobTypeBadge } from "./-JobStatusBadge";
-import type * as Schemas from "@app/schemas";
+import { STATUS_OPTIONS } from "./-AddOrEditJobModal";
+import { useUpdateJob } from "./-data";
+import { StatusChangePopover } from "../-StatusChangePopover";
+import { StatusChangeHistory } from "../-StatusChangeHistory";
+import { StatusNoteInfoIcon } from "../-StatusNoteInfoIcon";
+import * as Schemas from "@app/schemas";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -12,9 +17,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 interface Props {
   job: Schemas.Job;
+  getToken: () => Promise<string | null>;
 }
 
-export function JobDetailBody({ job }: Props) {
+export function JobDetailBody({ job, getToken }: Props) {
+  const updateJob = useUpdateJob();
+
+  function handleStatusChange(newStatus: number) {
+    return updateJob.mutateAsync({
+      id: job.id,
+      body: { job: { status: newStatus as Schemas.JobStatusIntEnum } },
+    });
+  }
+
   return (
     <div className="max-w-2xl px-6 py-6 flex flex-col gap-6">
       <div>
@@ -24,7 +39,29 @@ export function JobDetailBody({ job }: Props) {
           {job.salary ? ` · ${job.salary}` : ""}
         </p>
         <div className="flex gap-2 items-center mt-3 flex-wrap">
-          {job.status != null && <JobStatusBadge status={job.status} />}
+          {job.status != null && (
+            <StatusChangePopover
+              entityType={Schemas.StatusChangeEntityTypeEnum.Job}
+              entityId={job.id}
+              currentStatus={job.status}
+              statusOptions={STATUS_OPTIONS}
+              onStatusChange={handleStatusChange}
+              isPending={updateJob.isPending}
+              trigger={
+                <button type="button" className="cursor-pointer">
+                  <JobStatusBadge status={job.status} />
+                </button>
+              }
+            />
+          )}
+          {job.status != null && (
+            <StatusNoteInfoIcon
+              entityType={Schemas.StatusChangeEntityTypeEnum.Job}
+              entityId={job.id}
+              currentStatus={job.status}
+              getToken={getToken}
+            />
+          )}
           {job.type != null && <JobTypeBadge type={job.type} />}
           {job.source && (
             <span className="inline-flex items-center h-5 px-1.75 rounded-md text-[11px] font-semibold bg-(--surface-raised) text-(--text-secondary)">
@@ -148,6 +185,17 @@ export function JobDetailBody({ job }: Props) {
             </p>
           </div>
         )}
+      </div>
+
+      <div className="-mx-6">
+        <StatusChangeHistory
+          entityType={Schemas.StatusChangeEntityTypeEnum.Job}
+          entityId={job.id}
+          getToken={getToken}
+          statusLabel={(status) =>
+            Schemas.jobStatusIntToLabel[status as Schemas.JobStatusIntEnum] ?? String(status)
+          }
+        />
       </div>
     </div>
   );

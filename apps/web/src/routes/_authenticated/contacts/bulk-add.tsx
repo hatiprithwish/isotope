@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate, useBlocker, Link } from "@tanstack/react-router";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { toast } from "sonner";
@@ -71,7 +71,7 @@ function BulkAddPage() {
     });
   }
 
-  function handleAddRow() {
+  const handleAddRow = useCallback(() => {
     setRows((prev) => {
       if (prev.length >= BULK_CREATE_CONTACTS_MAX_ENTRIES) return prev;
       const lastFilled = [...prev]
@@ -86,7 +86,18 @@ function BulkAddPage() {
         }),
       ];
     });
-  }
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        event.preventDefault();
+        handleAddRow();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleAddRow]);
 
   async function handleSubmit() {
     const entries = activeRows.map((r) => ({

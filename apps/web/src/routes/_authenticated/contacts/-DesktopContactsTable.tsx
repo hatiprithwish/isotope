@@ -11,6 +11,8 @@ import {
   CopyIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shadcn/ui/popover";
+import { Textarea } from "@/shadcn/ui/textarea";
 import { AppTable, AppTablePagination } from "@/components/app-table";
 import type { AppTableColumn, AppTablePaginationProps } from "@/components/app-table";
 import type * as Schemas from "@app/schemas";
@@ -39,9 +41,12 @@ interface Props {
   onBulkUpdate: (
     ids: number[],
     updates: Schemas.BulkUpdateContactsApiRequest["updates"],
+    statusNote: string | null,
   ) => Promise<unknown>;
   isBulkPending: boolean;
   searchQuery: string;
+  /** Shared status filter + saved filter controls — identical to the mobile list's. */
+  filterBar: React.ReactNode;
   onSearchChange: (value: string) => void;
   pagination: AppTablePaginationProps;
 }
@@ -58,12 +63,15 @@ export function DesktopContactsTable({
   onBulkUpdate,
   isBulkPending,
   searchQuery,
+  filterBar,
   onSearchChange,
   pagination,
 }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
   const [bulkField, setBulkField] = useState<BulkField>("");
   const [bulkValue, setBulkValue] = useState<number | null>(null);
+  const [bulkStatusNote, setBulkStatusNote] = useState("");
+  const [bulkPopoverOpen, setBulkPopoverOpen] = useState(false);
 
   const allPageIds = contacts.map((c) => c.id);
   const allSelected = allPageIds.length > 0 && allPageIds.every((id) => selectedIds.has(id));
@@ -97,6 +105,8 @@ export function DesktopContactsTable({
     setSelectedIds(new Set());
     setBulkField("");
     setBulkValue(null);
+    setBulkStatusNote("");
+    setBulkPopoverOpen(false);
   }
 
   async function handleBulkDelete() {
@@ -112,12 +122,18 @@ export function DesktopContactsTable({
   function handleBulkFieldChange(field: BulkField) {
     setBulkField(field);
     setBulkValue(null);
+    setBulkStatusNote("");
   }
 
   async function handleBulkApply() {
     if (!bulkField || bulkValue == null) return;
     try {
-      await onBulkUpdate(Array.from(selectedIds), { [bulkField]: bulkValue });
+      await onBulkUpdate(
+        Array.from(selectedIds),
+        { [bulkField]: bulkValue },
+        bulkField === "status" ? (bulkStatusNote.trim() ? bulkStatusNote.trim() : null) : null,
+      );
+      setBulkPopoverOpen(false);
       clearSelection();
     } catch {
       // error toast already shown by the mutation's onError — keep selection so the user can retry
@@ -271,7 +287,50 @@ export function DesktopContactsTable({
           </div>
         )}
 
-        {bulkField && (
+        {bulkField === "status" && (
+          <Popover open={bulkPopoverOpen} onOpenChange={setBulkPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button type="button" size="xs" variant="outline" disabled={bulkValue == null}>
+                Apply
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3.5" align="start">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-1.5">
+                    Note (optional)
+                  </div>
+                  <Textarea
+                    value={bulkStatusNote}
+                    onChange={(e) => setBulkStatusNote(e.target.value)}
+                    placeholder="Applied to all selected contacts…"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setBulkPopoverOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => void handleBulkApply()}
+                    disabled={isBulkPending}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        {bulkField && bulkField !== "status" && (
           <Button
             type="button"
             size="xs"
@@ -330,6 +389,7 @@ export function DesktopContactsTable({
           className="w-full h-6.5 pl-8 pr-3 rounded-md bg-background border border-border text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
         />
       </div>
+      {filterBar}
     </div>
   );
 

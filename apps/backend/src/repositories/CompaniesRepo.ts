@@ -23,6 +23,8 @@ export default class CompaniesRepo {
     return await this.dal.getCompanies({
       createdBy: params.userId,
       search: params.search ?? null,
+      statuses: params.statuses ?? null,
+      fitBands: params.fitBands ?? null,
     });
   }
 

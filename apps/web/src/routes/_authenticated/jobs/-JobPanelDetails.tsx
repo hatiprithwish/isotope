@@ -1,5 +1,6 @@
 import { CaretRightIcon, LinkIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import type * as Schemas from "@app/schemas";
+import * as Schemas from "@app/schemas";
+import { StatusChangeHistory } from "../-StatusChangeHistory";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -11,9 +12,10 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 interface Props {
   job: Schemas.Job;
+  getToken: () => Promise<string | null>;
 }
 
-export function JobPanelDetails({ job }: Props) {
+export function JobPanelDetails({ job, getToken }: Props) {
   return (
     <>
       {job.companyId != null && (
@@ -131,6 +133,15 @@ export function JobPanelDetails({ job }: Props) {
           </div>
         )}
       </div>
+
+      <StatusChangeHistory
+        entityType={Schemas.StatusChangeEntityTypeEnum.Job}
+        entityId={job.id}
+        getToken={getToken}
+        statusLabel={(status) =>
+          Schemas.jobStatusIntToLabel[status as Schemas.JobStatusIntEnum] ?? String(status)
+        }
+      />
     </>
   );
 }

@@ -39,7 +39,7 @@ const formSchema = z.object({
   roleType: z.string().nullable(),
 });
 
-const STATUS_OPTIONS: { value: JobStatusIntEnum; label: string }[] = [
+export const STATUS_OPTIONS: { value: JobStatusIntEnum; label: string }[] = [
   { value: JobStatusIntEnum.NotStarted, label: JobStatusLabelEnum.NotStarted },
   { value: JobStatusIntEnum.WaitingForHuman, label: JobStatusLabelEnum.WaitingForHuman },
   { value: JobStatusIntEnum.Accepted, label: JobStatusLabelEnum.Accepted },
@@ -256,34 +256,6 @@ export default function AddOrEditJobModal({ mode, job, onSuccess, onClose }: Pro
                         );
                       })}
                     </div>
-                  </Field>
-                )}
-              </form.Field>
-            )}
-
-            {/* Status */}
-            {mode === "edit" && (
-              <form.Field name="status">
-                {(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name} className={labelCls}>
-                      Status
-                    </FieldLabel>
-                    <select
-                      id={field.name}
-                      value={field.state.value}
-                      onChange={(e) =>
-                        field.handleChange(Number(e.target.value) as Schemas.JobStatusIntEnum)
-                      }
-                      onBlur={field.handleBlur}
-                      className={inputCls}
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
                   </Field>
                 )}
               </form.Field>

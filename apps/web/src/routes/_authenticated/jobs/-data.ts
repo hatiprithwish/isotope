@@ -6,17 +6,28 @@ import type * as Schemas from "@app/schemas";
 import { toast } from "sonner";
 
 export class JobsQueries {
+  // DEV_NOTE: list/count keys carry every server-side parameter — filters and paging included —
+  // so a filtered page never reads another selection's cached rows.
   static readonly keys = {
     all: () => ["jobs"] as const,
-    list: (searchText: string) => ["jobs", "list", searchText] as const,
-    count: (searchText: string) => ["jobs", "count", searchText] as const,
+    list: (params: Schemas.GetJobsApiRequest) =>
+      [
+        "jobs",
+        "list",
+        params.searchText ?? "",
+        params.statuses ?? [],
+        params.pageNo ?? 1,
+        params.pageSize ?? null,
+      ] as const,
+    count: (params: Schemas.GetJobsApiRequest) =>
+      ["jobs", "count", params.searchText ?? "", params.statuses ?? []] as const,
     detail: (id: number) => ["jobs", id] as const,
     byCompany: (companyId: number) => ["jobs", "company", companyId] as const,
   };
 
   static list(params: Schemas.GetJobsApiRequest, getToken: () => Promise<string | null>) {
     return queryOptions({
-      queryKey: JobsQueries.keys.list(params.searchText ?? ""),
+      queryKey: JobsQueries.keys.list(params),
       queryFn: ({ signal }) =>
         apiClient<Schemas.GetJobsApiResponse>("/jobs/list", getToken, {
           signal,
@@ -29,7 +40,7 @@ export class JobsQueries {
 
   static count(params: Schemas.GetJobsApiRequest, getToken: () => Promise<string | null>) {
     return queryOptions({
-      queryKey: JobsQueries.keys.count(params.searchText ?? ""),
+      queryKey: JobsQueries.keys.count(params),
       queryFn: ({ signal }) =>
         apiClient<Schemas.GetJobsCountApiResponse>("/jobs/count", getToken, {
           signal,

@@ -20,7 +20,7 @@ const formSchema = z.object({
   status: z.enum(CompanyStatusIntEnum),
 });
 
-const STATUS_OPTIONS: { value: CompanyStatusIntEnum; label: string }[] = [
+export const STATUS_OPTIONS: { value: CompanyStatusIntEnum; label: string }[] = [
   { value: CompanyStatusIntEnum.WaitingHuman, label: CompanyStatusLabelEnum.WaitingHuman },
   { value: CompanyStatusIntEnum.Accepted, label: CompanyStatusLabelEnum.Accepted },
   { value: CompanyStatusIntEnum.ContactsAdded, label: CompanyStatusLabelEnum.ContactsAdded },
@@ -204,34 +204,6 @@ export default function AddOrEditCompanyModal({ mode, company, onClose }: Props)
               </Field>
             )}
           </form.Field>
-
-          {/* Status */}
-          {mode === "edit" && (
-            <form.Field name="status">
-              {(field) => (
-                <Field>
-                  <FieldLabel htmlFor={field.name} className={labelCls}>
-                    Status
-                  </FieldLabel>
-                  <select
-                    id={field.name}
-                    value={field.state.value}
-                    onChange={(e) =>
-                      field.handleChange(Number(e.target.value) as Schemas.CompanyStatusIntEnum)
-                    }
-                    onBlur={field.handleBlur}
-                    className={inputCls}
-                  >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              )}
-            </form.Field>
-          )}
 
           {/* Actions */}
           <div className="flex gap-2 pt-1">

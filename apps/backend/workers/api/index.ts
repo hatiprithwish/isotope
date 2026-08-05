@@ -21,6 +21,8 @@ import SearchRoutes from "@/routes/SearchRoutes";
 import AuthRoutes from "@/routes/AuthRoutes";
 import EmailInboundRoutes from "@/routes/EmailInboundRoutes";
 import SettingsRoutes from "@/routes/SettingsRoutes";
+import StatusChangeNotesRoutes from "@/routes/StatusChangeNotesRoutes";
+import SavedFiltersRoutes from "@/routes/SavedFiltersRoutes";
 import TaskMissedSweepHandler from "@/handlers/TaskMissedSweepHandler";
 export { JobDiscoveryWorkflow } from "@/workflows/JobDiscoveryWorkflow";
 
@@ -72,6 +74,8 @@ app.route("/jobs", JobsRoutes);
 app.route("/tasks", TasksRoutes);
 app.route("/search", SearchRoutes);
 app.route("/settings", SettingsRoutes);
+app.route("/status-change-notes", StatusChangeNotesRoutes);
+app.route("/saved-filters", SavedFiltersRoutes);
 
 export default {
   fetch(req: Request, env: Env, ctx: ExecutionContext) {

@@ -347,34 +347,6 @@ export default function AddOrEditContactModal({ mode, contact, onClose }: Props)
             )}
           </form.Subscribe>
 
-          {/* Status */}
-          {mode === "edit" && (
-            <form.Field name="status">
-              {(field) => (
-                <Field>
-                  <FieldLabel htmlFor={field.name} className={labelCls}>
-                    Status
-                  </FieldLabel>
-                  <select
-                    id={field.name}
-                    value={field.state.value}
-                    onChange={(e) =>
-                      field.handleChange(Number(e.target.value) as Schemas.ContactStatusIntEnum)
-                    }
-                    onBlur={field.handleBlur}
-                    className={inputCls}
-                  >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              )}
-            </form.Field>
-          )}
-
           {/* Actions */}
           <div className="flex gap-2 pt-1">
             <Button

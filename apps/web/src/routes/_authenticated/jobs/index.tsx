@@ -12,6 +12,8 @@ import {
   useBulkDeleteJobs,
   useBulkUpdateJobs,
 } from "./-data";
+import { useBulkCreateStatusChangeNotes } from "../-status-change-notes-data";
+import { StatusChangeEntityTypeEnum } from "@app/schemas";
 import { FrameworkQueries } from "../../_without_nav/onboarding/job-search-framework/-data";
 import { ApiError } from "@/providers/apiClient";
 import { JobsTable } from "./-JobsTable";
@@ -22,14 +24,29 @@ import { useAddShortcut } from "@/hooks/useAddShortcut";
 import { SparkleIcon, PlusIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
-import { type JobStatusIntEnum } from "@app/schemas";
+import { JobStatusIntEnum, JobStatusLabelEnum, SavedFilterEntityTypeIntEnum } from "@app/schemas";
+import { SavedFilterBar } from "../-SavedFilterBar";
+import { parseFilterParam, serializeFilterParam, type FilterOption } from "../-table-filters";
 
 const PAGE_SIZE = 20;
 
 const searchSchema = z.object({
   panel: z.number().optional(),
   framework_saved: z.string().optional(),
+  statuses: z.string().optional(),
+  savedFilter: z.number().optional(),
 });
+
+const STATUS_FILTER_OPTIONS: FilterOption[] = [
+  { value: JobStatusIntEnum.NotStarted, label: JobStatusLabelEnum.NotStarted },
+  { value: JobStatusIntEnum.WaitingForHuman, label: JobStatusLabelEnum.WaitingForHuman },
+  { value: JobStatusIntEnum.Accepted, label: JobStatusLabelEnum.Accepted },
+  { value: JobStatusIntEnum.Applied, label: JobStatusLabelEnum.Applied },
+  { value: JobStatusIntEnum.CompanyAdded, label: JobStatusLabelEnum.CompanyAdded },
+  { value: JobStatusIntEnum.Interviewing, label: JobStatusLabelEnum.Interviewing },
+  { value: JobStatusIntEnum.Offer, label: JobStatusLabelEnum.Offer },
+  { value: JobStatusIntEnum.Rejected, label: JobStatusLabelEnum.Rejected },
+];
 
 export const Route = createFileRoute("/_authenticated/jobs/")({
   validateSearch: searchSchema,
@@ -40,31 +57,70 @@ export const Route = createFileRoute("/_authenticated/jobs/")({
 function JobsPage() {
   const queryClient = useQueryClient();
   const { getToken } = useAuth();
-  const { panel, framework_saved } = Route.useSearch();
+  const { panel, framework_saved, statuses: statusesParam, savedFilter } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
+  const statuses = parseFilterParam(statusesParam);
 
   const frameworkQuery = useQuery(FrameworkQueries.latest(getToken));
   const hasFramework = Boolean(frameworkQuery.data?.framework?.isCustomized);
   const discoverMutation = useDiscoverJobs();
   const bulkDeleteMutation = useBulkDeleteJobs();
   const bulkUpdateMutation = useBulkUpdateJobs();
+  const bulkCreateStatusChangeNotes = useBulkCreateStatusChangeNotes();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const deferredQuery = useDeferredValue(searchQuery);
   const [formMode, setFormMode] = useState<null | "create" | Schemas.Job>(null);
   const [mobileSearch, setMobileSearch] = useState(false);
-  const [mobileStatusFilter, setMobileStatusFilter] = useState("all");
 
-  const searchParams: Schemas.GetJobsApiRequest = { searchText: deferredQuery || undefined };
-  const { data, isPending, isError } = useJobs(searchParams);
-  const { data: countData } = useJobsCount(searchParams);
+  const countParams: Schemas.GetJobsApiRequest = {
+    searchText: deferredQuery || undefined,
+    statuses: statuses.length > 0 ? statuses : undefined,
+  };
+  const { data: countData } = useJobsCount(countParams);
 
-  const allJobs: Schemas.Job[] = data?.jobs ?? [];
-  const totalRecords = countData?.count ?? allJobs.length;
+  const totalRecords = countData?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
-  const pageJobs = allJobs.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Paging is server-side: the API returns exactly the rows for `safePage`.
+  const { data, isPending, isError } = useJobs({
+    ...countParams,
+    pageNo: safePage,
+    pageSize: PAGE_SIZE,
+  });
+
+  const pageJobs: Schemas.Job[] = data?.jobs ?? [];
+
+  function handleStatusesChange(next: number[]) {
+    setCurrentPage(1);
+    void navigate({
+      search: (prev) => ({ ...prev, statuses: serializeFilterParam(next) }),
+    });
+  }
+
+  function handleApplySavedFilter(applied: Schemas.SavedFilterWithLabel | null) {
+    setCurrentPage(1);
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        statuses: applied ? serializeFilterParam(applied.criteria.statuses ?? []) : undefined,
+        savedFilter: applied?.id,
+      }),
+    });
+  }
+
+  const filterBar = (
+    <SavedFilterBar
+      entityType={SavedFilterEntityTypeIntEnum.Job}
+      statusOptions={STATUS_FILTER_OPTIONS}
+      statuses={statuses}
+      onStatusesChange={handleStatusesChange}
+      activeSavedFilterId={savedFilter ?? null}
+      onApplySavedFilter={handleApplySavedFilter}
+    />
+  );
 
   useEffect(() => {
     if (framework_saved === "1") {
@@ -108,9 +164,24 @@ function JobsPage() {
     }
   }
 
-  async function handleBulkStatusUpdate(ids: number[], status: JobStatusIntEnum) {
+  async function handleBulkStatusUpdate(
+    ids: number[],
+    status: JobStatusIntEnum,
+    note: string | null,
+  ) {
     const response = await bulkUpdateMutation.mutateAsync({ ids, status });
     toast.success(`${response.updatedCount ?? ids.length} job(s) updated.`);
+    // Only the ids the DAL actually confirmed updated — not the raw request list, which may
+    // include ids that matched no row (wrong owner, already deleted, stale client state).
+    const updatedIds = response.updatedIds ?? [];
+    if (updatedIds.length > 0) {
+      await bulkCreateStatusChangeNotes.mutateAsync({
+        entityType: StatusChangeEntityTypeEnum.Job,
+        entityIds: updatedIds,
+        toStatus: status,
+        note,
+      });
+    }
   }
 
   function handlePanelDelete(_id: number) {
@@ -148,13 +219,13 @@ function JobsPage() {
         ))}
 
       <MobileJobsList
-        allJobs={allJobs}
+        allJobs={pageJobs}
         isPending={isPending}
         isError={isError}
         searchQuery={searchQuery}
         deferredQuery={deferredQuery}
         mobileSearch={mobileSearch}
-        mobileStatusFilter={mobileStatusFilter}
+        filterBar={filterBar}
         discoverPending={discoverMutation.isPending}
         isBulkPending={bulkDeleteMutation.isPending || bulkUpdateMutation.isPending}
         onSearchToggle={() => setMobileSearch((s) => !s)}
@@ -162,12 +233,11 @@ function JobsPage() {
           setSearchQuery(v);
           setCurrentPage(1);
         }}
-        onStatusFilterChange={setMobileStatusFilter}
         onDiscoverClick={() => void handleDiscoverClick()}
         onRowClick={(job) => navigate({ to: "/jobs/$jobId", params: { jobId: String(job.id) } })}
         onAddClick={() => setFormMode("create")}
         onBulkDelete={(ids) => void handleBulkDelete(ids)}
-        onBulkStatusUpdate={(ids, status) => void handleBulkStatusUpdate(ids, status)}
+        onBulkStatusUpdate={(ids, status, note) => handleBulkStatusUpdate(ids, status, note)}
       />
 
       <div className="hidden md:flex h-full overflow-hidden relative">
@@ -203,12 +273,13 @@ function JobsPage() {
             }}
             pagination={pagination}
             searchQuery={searchQuery}
+            filterBar={filterBar}
             onSearchChange={(v) => {
               setSearchQuery(v);
               setCurrentPage(1);
             }}
             onBulkDelete={(ids) => void handleBulkDelete(ids)}
-            onBulkStatusUpdate={(ids, status) => void handleBulkStatusUpdate(ids, status)}
+            onBulkStatusUpdate={(ids, status, note) => handleBulkStatusUpdate(ids, status, note)}
             isBulkPending={bulkDeleteMutation.isPending || bulkUpdateMutation.isPending}
           />
         </div>

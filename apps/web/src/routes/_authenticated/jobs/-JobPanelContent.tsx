@@ -4,10 +4,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowsOutSimpleIcon, XIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { toast } from "sonner";
-import { JobsQueries, useDeleteJob } from "./-data";
+import { JobsQueries, useDeleteJob, useUpdateJob } from "./-data";
 import { JobStatusBadge, JobTypeBadge } from "./-JobStatusBadge";
 import { JobPanelDetails } from "./-JobPanelDetails";
-import type * as Schemas from "@app/schemas";
+import { STATUS_OPTIONS } from "./-AddOrEditJobModal";
+import { StatusChangePopover } from "../-StatusChangePopover";
+import { StatusNoteInfoIcon } from "../-StatusNoteInfoIcon";
+import * as Schemas from "@app/schemas";
 
 interface Props {
   jobId: number;
@@ -21,7 +24,15 @@ export function JobPanelContent({ jobId, onClose, onEdit, onDelete }: Props) {
   const navigate = useNavigate();
   const { data, isPending, isError } = useQuery(JobsQueries.detail(jobId, getToken));
   const deleteMutation = useDeleteJob();
+  const updateJob = useUpdateJob();
   const job = data?.job;
+
+  function handleStatusChange(newStatus: number) {
+    return updateJob.mutateAsync({
+      id: jobId,
+      body: { job: { status: newStatus as Schemas.JobStatusIntEnum } },
+    });
+  }
 
   async function handleDelete() {
     if (!job) return;
@@ -94,7 +105,29 @@ export function JobPanelContent({ jobId, onClose, onEdit, onDelete }: Props) {
           </div>
         </div>
         <div className="flex gap-2 items-center mt-3 flex-wrap">
-          {job?.status != null && <JobStatusBadge status={job.status} />}
+          {job?.status != null && (
+            <StatusChangePopover
+              entityType={Schemas.StatusChangeEntityTypeEnum.Job}
+              entityId={jobId}
+              currentStatus={job.status}
+              statusOptions={STATUS_OPTIONS}
+              onStatusChange={handleStatusChange}
+              isPending={updateJob.isPending}
+              trigger={
+                <button type="button" className="cursor-pointer">
+                  <JobStatusBadge status={job.status} />
+                </button>
+              }
+            />
+          )}
+          {job?.status != null && (
+            <StatusNoteInfoIcon
+              entityType={Schemas.StatusChangeEntityTypeEnum.Job}
+              entityId={jobId}
+              currentStatus={job.status}
+              getToken={getToken}
+            />
+          )}
           {job?.type != null && <JobTypeBadge type={job.type} />}
           {job?.source && (
             <span className="inline-flex items-center h-5 px-1.75 rounded-md text-[11px] font-semibold bg-(--surface-raised) text-(--text-secondary)">
@@ -121,7 +154,7 @@ export function JobPanelContent({ jobId, onClose, onEdit, onDelete }: Props) {
             Failed to load job details.
           </div>
         )}
-        {job && !isPending && <JobPanelDetails job={job} />}
+        {job && !isPending && <JobPanelDetails job={job} getToken={getToken} />}
       </div>
     </div>
   );
