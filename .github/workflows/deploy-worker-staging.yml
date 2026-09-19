@@ -6,6 +6,9 @@ on:
     paths:
       - "apps/backend/**"
       - "packages/schemas/**"
+  # Path-filtered pushes can't be retried once a fix lands outside the filter (re-running a failed
+  # run re-checks-out the same broken commit), so allow a manual run against the current branch tip.
+  workflow_dispatch:
 
 permissions:
   contents: read
