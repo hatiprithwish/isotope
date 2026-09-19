@@ -9,3 +9,9 @@ routeTree.gen.ts
 .dev.vars
 .tanstack/
 linkedin-dom.html
+
+# WXT (apps/extension) — generated types and build output
+.wxt/
+.output/
+# Private key that pins the extension's CRX ID — never commit
+key.pem

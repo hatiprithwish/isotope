@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/*
+ * Mirrors the subset of apps/web/src/styles.css the panel actually uses. Kept as a copy rather
+ * than an import because the extension builds standalone — if a token changes in the web app,
+ * change it here too.
+ */
+@theme inline {
+  --font-sans: "Figtree Variable", sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.971 0.004 78.2); /* #F7F5F2 warm off-white */
+  --foreground: oklch(0.216 0.006 56); /* #1C1917 stone-brown */
+  --card: oklch(1 0 263.3); /* #FFFFFF */
+  --primary: oklch(0.532 0.141 131.6); /* #4D7C0F moss */
+  --primary-foreground: oklch(1 0 263.3);
+  --muted: oklch(0.965 0.006 84.6); /* #F5F3EF */
+  --muted-foreground: oklch(0.716 0.009 56.1); /* #A8A29E */
+  --destructive: oklch(0.455 0.171 13.7); /* #9F1239 wine red */
+  --border: oklch(0.9 0.011 76.5); /* #E2DDD6 */
+  --input: oklch(0.9 0.011 76.5);
+  --ring: oklch(0.532 0.141 131.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.216 0.006 56); /* #1C1917 */
+    --foreground: oklch(0.982 0.003 84.6); /* #FAF9F7 */
+    --card: oklch(0.268 0.006 34.1); /* #292524 */
+    --primary: oklch(0.849 0.207 128.9); /* #A3E635 lime */
+    --primary-foreground: oklch(0.216 0.006 56);
+    --muted: oklch(0.268 0.006 34.1);
+    --muted-foreground: oklch(0.444 0.01 73.6); /* #57534E */
+    --destructive: oklch(0.719 0.169 13.4); /* #FB7185 rose */
+    --border: oklch(0.341 0.009 53.1); /* #3C3734 */
+    --input: oklch(0.341 0.009 53.1);
+    --ring: oklch(0.849 0.207 128.9);
+  }
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

@@ -4,6 +4,8 @@ import FollowUpSettingsRepo from "@/repositories/FollowUpSettingsRepo";
 import MessageTemplateRepo from "@/repositories/MessageTemplateRepo";
 import RoleTypesRepo from "@/repositories/RoleTypesRepo";
 import JobsRepo from "@/repositories/JobsRepo";
+import CompaniesRepo from "@/repositories/CompaniesRepo";
+import AppLogger from "@/providers/AppLogger";
 import Constants from "@/config/Constants";
 import Utility from "@/utils";
 import * as Schemas from "@app/schemas"; // runtime `import *` (not `import type`): this repo consumes buildContactHistoryType for the history-type convention.
@@ -22,6 +24,74 @@ export default class ContactsRepo {
       createdBy: params.userId,
       ...params.contact,
     });
+  }
+
+  /**
+   * One-shot capture used by the browser extension. The caller has a scraped company *name*
+   * rather than an id, so this resolves the company itself, and it treats re-capturing a profile
+   * that's already in the pipeline as a success (returning the existing row) rather than an error
+   * — re-opening a known profile is the common case, not a mistake.
+   */
+  async captureContact(
+    params: Schemas.CaptureContactApiRequest & { userId: string },
+  ): Promise<Schemas.CaptureContactApiResponse> {
+    const response: Schemas.CaptureContactApiResponse = { isSuccess: false };
+
+    const duplicateResponse = await this.checkDuplicateContact({
+      userId: params.userId,
+      linkedinUrl: params.linkedinUrl,
+    });
+
+    if (!duplicateResponse.isSuccess) {
+      response.message = duplicateResponse.message;
+      return response;
+    }
+
+    if (duplicateResponse.match) {
+      response.isSuccess = true;
+      response.isDuplicate = true;
+      response.contact = duplicateResponse.match;
+      response.message = "Contact already exists";
+      return response;
+    }
+
+    const companiesRepo = new CompaniesRepo(this.env);
+    const companyResponse = await companiesRepo.findOrCreateByName({
+      userId: params.userId,
+      name: params.companyName,
+    });
+
+    if (!companyResponse.isSuccess || companyResponse.companyId === undefined) {
+      const message = companyResponse.message ?? "Could not resolve company";
+      AppLogger.error({
+        category: Schemas.LogCategory.Repo,
+        action: Schemas.LogAction.CaptureContact,
+        message,
+        metadata: { userId: params.userId, companyName: params.companyName },
+      });
+      response.message = message;
+      return response;
+    }
+
+    const createResponse = await this.createContact({
+      userId: params.userId,
+      contact: {
+        name: params.name,
+        companyId: companyResponse.companyId,
+        status: Schemas.ContactStatusIntEnum.NotStarted,
+        source: Schemas.ContactSourceIntEnum.Manual,
+        designation: params.designation ?? null,
+        linkedinUrl: params.linkedinUrl,
+        notes: params.notes ?? null,
+      },
+    });
+
+    response.isSuccess = createResponse.isSuccess;
+    response.message = createResponse.message;
+    response.contact = createResponse.contact;
+    response.isDuplicate = false;
+    response.isNewCompany = companyResponse.isNew;
+    return response;
   }
 
   /**

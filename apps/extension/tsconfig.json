@@ -1,0 +1,14 @@
+{
+  // DEV_NOTE: `include` and `types` are deliberately not set here. WXT's generated config pulls in
+  // `.wxt/wxt.d.ts`, which supplies the auto-import declarations (defineBackground, …) and
+  // `vite/client` (import.meta.env, CSS side-effect imports). Overriding either one drops them.
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "strictNullChecks": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@app/schemas": ["../../packages/schemas/src/index.ts"]
+    }
+  }
+}

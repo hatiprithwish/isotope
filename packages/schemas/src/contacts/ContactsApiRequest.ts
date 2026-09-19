@@ -30,6 +30,20 @@ export const ZCreateContactApiRequest = z.object({
 });
 export type CreateContactApiRequest = z.infer<typeof ZCreateContactApiRequest>;
 
+/**
+ * One-shot capture from the browser extension: the caller has a company *name* scraped off a
+ * page, not a companyId, so the server resolves (or creates) the company itself. Status and
+ * source are server-owned defaults, never sent by the client.
+ */
+export const ZCaptureContactApiRequest = z.object({
+  name: z.string().trim().min(1),
+  companyName: z.string().trim().min(1),
+  linkedinUrl: z.string().trim().min(1),
+  designation: z.string().trim().nullable().optional(),
+  notes: z.string().trim().nullable().optional(),
+});
+export type CaptureContactApiRequest = z.infer<typeof ZCaptureContactApiRequest>;
+
 export const ZUpdateContactApiRequest = z.object({
   contact: ZContactBase.partial(),
 });

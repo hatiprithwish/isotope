@@ -23,6 +23,14 @@ export interface CheckDuplicateContactApiResponse extends ApiResponse {
   match?: Contact | null;
 }
 
+export interface CaptureContactApiResponse extends ApiResponse {
+  contact?: Contact;
+  /** True when the profile was already in the pipeline — `contact` is the pre-existing row and nothing was created. */
+  isDuplicate?: boolean;
+  /** True when the contact's company had to be created as part of this capture. */
+  isNewCompany?: boolean;
+}
+
 export interface UpdateContactApiResponse extends ApiResponse {
   contact?: Contact;
 }

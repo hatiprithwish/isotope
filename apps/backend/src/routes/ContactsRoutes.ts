@@ -23,6 +23,23 @@ ContactsRoutes.post(
   },
 );
 
+ContactsRoutes.post(
+  "/capture",
+  checkAuth,
+  zValidator("json", Schemas.ZCaptureContactApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.captureContact({ ...body, userId });
+
+    if (!response.isSuccess) return c.json(response, 500);
+    // A duplicate is a successful no-op, not a creation — 200 so the caller can tell them apart.
+    return c.json(response, response.isDuplicate ? 200 : 201);
+  },
+);
+
 ContactsRoutes.delete(
   "/bulk",
   checkAuth,
