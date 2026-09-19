@@ -1,4 +1,4 @@
-// DEV_NOTE: Tanstack Start Server entry point
+// DEV_NOTE: Tanstack Start Server entry point.
 
 import * as Sentry from "@sentry/tanstackstart-react";
 import { wrapFetchWithSentry } from "@sentry/tanstackstart-react";
