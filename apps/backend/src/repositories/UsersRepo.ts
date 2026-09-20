@@ -1,4 +1,3 @@
-import FrameworksDAL from "@/data-access-layer/FrameworksDAL";
 import FollowUpSettingsDAL from "@/data-access-layer/FollowUpSettingsDAL";
 import ContactRolePillsDAL from "@/data-access-layer/ContactRolePillsDAL";
 import RoleTypesDAL from "@/data-access-layer/RoleTypesDAL";
@@ -17,8 +16,6 @@ export default class UsersRepo {
   async syncClerkUser(params: Schemas.SyncClerkUserApiRequest) {
     const result = await this.dal.upsertUser(params);
     if (result.isSuccess && result.user) {
-      const frameworksDAL = new FrameworksDAL(this.env);
-      await frameworksDAL.createDefaultIfAbsent(params.clerkId);
       const followUpSettingsDAL = new FollowUpSettingsDAL(this.env);
       await followUpSettingsDAL.createDefaultIfAbsent(params.clerkId);
       const contactRolePillsDAL = new ContactRolePillsDAL(this.env);

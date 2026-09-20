@@ -12,7 +12,6 @@ const STATUS_META: Record<ContactStatusIntEnum, { label: string; cls: string }> 
 };
 
 const SOURCE_META: Record<ContactSourceIntEnum, { label: string; cls: string }> = {
-  1: { label: "Apollo", cls: "neutral" },
   2: { label: "Manual", cls: "neutral" },
 };
 

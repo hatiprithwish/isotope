@@ -9,13 +9,12 @@ Isotope is a multi-user, AI-assisted job-search operations app for software engi
 **Built**
 
 - **Companies** — pipeline with AI research (3-stage: pre-filter, ethics gate, scored criteria), fit bands, user-context field, score override.
-- **Contacts & outreach** — Apollo enrichment, contact history (email + LinkedIn), configurable multi-step follow-up sequences, log-message templates with `[Name]`/`[Company]` substitution and Day-0 role-type variants.
-- **Jobs** — manual entry, AI job discovery, inbound job-alert email ingestion (Browser Run scrape), server-side search/sort/pagination.
+- **Contacts & outreach** — contact history (email + LinkedIn), configurable multi-step follow-up sequences, log-message templates with `[Name]`/`[Company]` substitution and Day-0 role-type variants.
+- **Jobs** — manual entry, inbound job-alert email ingestion (Browser Run scrape), server-side search/sort/pagination.
 - **Tasks** (`/tasks`) — follow-up tasks per contact + channel, week strip, overdue rollup onto Today, daily missed-sweep cron.
 - **Status-change notes** — optional note on any Company/Contact/Job status change, shown as history in the detail panel.
-- **Settings** — Frameworks (user-owned, versioned), follow-up settings, role types.
+- **Settings** — follow-up settings, contact role pills, role types, message templates, account.
 - **Capture extension** (`apps/extension`) — private, unpacked Chrome MV3 side panel: capture a LinkedIn profile as a contact, log a LinkedIn conversation to a contact's history.
-- **Notes** — hidden, LLM-only context storage. **Never add Notes to any nav** (`HomeUtils.NAV_ITEMS`, `MORE_NAV_ITEMS`, `-DesktopSidebar.tsx`, `-MobileTabBar.tsx`, More sheet).
 
 **Out of scope (V1):** LinkedIn API, automated job-portal crawling, auto-sending email, Gmail sync, teams/shared workspaces, calendar, native mobile app, open/click tracking. Users always copy a draft and send it manually.
 
@@ -33,7 +32,6 @@ Isotope is a multi-user, AI-assisted job-search operations app for software engi
 | Styling        | Tailwind CSS v4 + CSS custom property tokens + shadcn/ui | Token system defined in `styles.css`                             |
 | Auth           | Clerk (`@clerk/tanstack-react-start`, `@clerk/backend`)  | Sign-up, sign-in, sessions                                       |
 | Server state   | TanStack Query                                           | Fetching, caching, mutations on the frontend                     |
-| Client state   | zustand                                                  | Local UI state                                                   |
 | Forms          | TanStack Form                                            | Never react-hook-form                                            |
 | Icons          | `@phosphor-icons/react`                                  |                                                                  |
 | Logging        | `@logtape/logtape` via `AppLogger`                       | Never `console.log`                                              |
@@ -57,7 +55,7 @@ Use `pnpm` only. Run an **unfiltered** `pnpm install` — `pnpm install --filter
 - `apps/web/src/utils/` — shared helpers; grep here before writing any new one.
 - `apps/extension/` — see [Capture extension](#capture-extension).
 
-**Golden files** — read the matching one before writing a layer: DAL `NotesDAL.ts`, Repo `NotesRepo.ts`, Routes `NotesRoutes.ts` (all under `apps/backend/src/`), frontend data `apps/web/src/routes/_authenticated/notes/-data.ts`, page `.../notes/index.tsx`. Status-enum example: `packages/schemas/src/notes/NotesCommon.ts`.
+**Golden files** — read the matching one before writing a layer: DAL `SavedFiltersDAL.ts`, Repo `SavedFiltersRepo.ts`, Routes `SavedFiltersRoutes.ts` (all under `apps/backend/src/`), frontend data `apps/web/src/routes/_authenticated/companies/-data.ts`, page `.../companies/index.tsx`. Status-enum example: `packages/schemas/src/tasks/TasksCommon.ts`.
 
 ## Standards
 
@@ -116,13 +114,12 @@ Endpoints that are semantically GET but need a request body (filters, search, pa
 
 ## Storage Model
 
-- **Cloudflare D1 is the only store.** No blob/file storage; all content (AI summaries, drafts, notes, history) is text in D1. Every user-owned table has `created_by` (Clerk user id). `wrangler.jsonc` has no local D1 — `dev:api` runs `wrangler dev --env staging`, so staging _is_ the dev database.
+- **Cloudflare D1 is the only store.** No blob/file storage; all content (AI summaries, drafts, history) is text in D1. Every user-owned table has `created_by` (Clerk user id). `wrangler.jsonc` has no local D1 — `dev:api` runs `wrangler dev --env staging`, so staging _is_ the dev database.
 - `tasks` — one row per follow-up step: `contactId` (nullable FK), `channel` (`ContactHistoryChannelEnum`, not null — email and LinkedIn sequences run independently), `title`, `dueAt` (date-only `YYYY-MM-DD` text; compared lexically), `status` (1 Pending, 2 Completed, 3 Missed, 4 Paused), `stepNumber`, `pausedAt`, `note`, `completedAt`. `IDX_tasks_contact_id_channel` is a plain (non-unique) index: a contact+channel accumulates one `Completed` row per finished step plus at most one active (Pending/Paused) row.
   - Logging an outbound (`Me`) message (`ContactsRepo.logContactHistory` → `TasksDAL.syncFollowUpForContact`, `completePriorStep: true`) completes the active row and inserts the next step. An inbound reply only pauses the active row. Editing/undoing a message recomputes the active row's `dueAt` in place (`completePriorStep: false`), completing nothing. Finishing the last step marks the dangling row `Completed`; the edit/undo path deletes it instead.
   - `TasksDAL.updateTaskStatus` refuses to un-complete a row if a newer row exists for that contact+channel (prevents two simultaneously active rows).
   - Overdue rollup is query-time: `getTasksForDate` for today also pulls any Pending/Missed/Paused row with `dueAt < today`. Past dates show only Completed rows (`GET /tasks/past`; a task completed before its `dueAt` won't appear there until that date passes — known gap). `POST /tasks/calendar` reports `hasPending/hasCompleted/hasMissed/hasPaused` per day. Design history: `context/plans/followup-sequences-plan.md` and its 2026-07-29 addendum.
 - `jobs` — `status` and `type` are IntEnums (status: 1 NotStarted [manual default], 2 WaitingForHuman [LLM default], 3 Accepted, 4 Applied, 5 CompanyAdded, 6 Interviewing, 7 Offer, 8 Rejected; type: 1 Manual, 2 LLM). `skills` is a JSON-stringified array, parsed at the application layer. `url` has a composite UNIQUE INDEX on `(url, created_by)`. `company_id` nullable FK; `roleType` nullable text; `match_score` nullable (reserved). Search is SQLite `LIKE` across title, location, salary, and company name (LEFT JOIN `companies`).
-- `job_search_frameworks` — versioned per user; latest via `ORDER BY version DESC LIMIT 1`; pruned to 5 versions. `isCustomized` is `false` for the seeded default and `true` once the user saves. Array columns are JSON-stringified text, parsed in the DAL. The default row is seeded by `FrameworksDAL.createDefaultIfAbsent` from `UsersRepo.syncClerkUser` on every Clerk webhook upsert (idempotent).
 - `role_types` — one non-versioned row per user (`labels` JSON array, max 3; `defaultLabel`; `isCustomized`). Feeds `jobs.roleType` and the Day-0 template variants.
 - `log_templates` — one row per `(user, step, variantLabel)`. `step` 0 = initial outbound, N ≥ 1 = follow-up N (matches `followup_settings.stepOffsetDays[N-1]`). `variantLabel` is populated only at step 0 (one row per role-type label plus one NULL "default" row); steps ≥ 1 have a single NULL row. `LogTemplateDAL.saveTemplate` does explicit find-then-update-or-insert (NULLs are distinct in a unique index). `renderTemplate` (in `packages/schemas`) substitutes `[Name]`/`[Company]`; the resolve endpoint returns the body pre-rendered.
 - `status_change_notes` — polymorphic: `entityType` (Company/Contact/Job), `entityId`, `fromStatus`, `toStatus`, `note` (nullable), `createdBy`, `createdAt`. Routes: `POST /status-change-notes`, `POST /status-change-notes/bulk` (one note over a batch of ids), `GET /status-change-notes?entityType=&entityId=`.
@@ -164,12 +161,9 @@ Extractor rules (each was a real bug):
 4. **Enums are stored as integers; responses carry both int and label; the Repo maps int → label** (never the DAL).
 5. **Every mutation hook declares an explicit `onError` that toasts.**
 6. **Every Drizzle schema change is immediately followed by `pnpm db:generate` and `pnpm db:migrate`**, with the migration file committed in the same change. `db:migrate` targets staging remotely (`--remote --env staging`).
-7. **Default framework documents are static string constants** in `apps/backend/src/config/Constants.ts`, injected into AI prompts as templates. The DB only stores user-customised versions.
-8. **`isCustomized` — not row presence — is the onboarding state.** Every user always has a `job_search_frameworks` row; the onboarding gate and the settings warning banner both read the flag.
-9. **Browser Run is rate-limited via D1, not KV or Durable Objects.** KV loses to eventual-consistency races (two concurrent batches read a stale count); Durable Objects are overkill at ≤3,600 calls/month and carry idle GB-second cost. D1 writes are serialised, free at this scale, and add ~5ms against a ~10s scrape. Shutdown threshold is 80% of the 10 h/month quota (28,800s), checked in `InboundJobAlertHandler` before each `scrapeJobUrl` and recorded after; the monthly reset is lazy.
-10. **Inbound job-alert URLs are not domain-filtered.** Alert emails wrap every link in a tracking redirect, so all unique `https://` hrefs go to Browser Run, which follows redirects; non-job pages store partial data with the title falling back to the URL slug. Redirect URLs are resolved with a `HEAD` fetch (`redirect: "follow"`) before scraping and before storing.
-11. **Follow-up task creation lives in `ContactsRepo`** (at the moment a message is logged), calling `TasksRepo.syncFollowUpForContact` directly — no cron scanning `contact_history`, no HTTP round-trip.
-12. **Notes is never a user-facing nav item** (see Scope).
+7. **Browser Run is rate-limited via D1, not KV or Durable Objects.** KV loses to eventual-consistency races (two concurrent batches read a stale count); Durable Objects are overkill at ≤3,600 calls/month and carry idle GB-second cost. D1 writes are serialised, free at this scale, and add ~5ms against a ~10s scrape. Shutdown threshold is 80% of the 10 h/month quota (28,800s), checked in `InboundJobAlertHandler` before each `scrapeJobUrl` and recorded after; the monthly reset is lazy.
+8. **Inbound job-alert URLs are not domain-filtered.** Alert emails wrap every link in a tracking redirect, so all unique `https://` hrefs go to Browser Run, which follows redirects; non-job pages store partial data with the title falling back to the URL slug. Redirect URLs are resolved with a `HEAD` fetch (`redirect: "follow"`) before scraping and before storing.
+9. **Follow-up task creation lives in `ContactsRepo`** (at the moment a message is logged), calling `TasksRepo.syncFollowUpForContact` directly — no cron scanning `contact_history`, no HTTP round-trip.
 
 ## Workflow
 
@@ -183,7 +177,7 @@ Extractor rules (each was a real bug):
 
 ## Open Items
 
-- **Migrations:** `0024` (`status_change_notes`) and `0025` (`saved_filters`) were applied to staging on 2026-08. Verify any newer migration is applied before assuming a table exists.
+- **Migrations:** `0024` (`status_change_notes`) and `0025` (`saved_filters`) were applied to staging on 2026-08. `0026` (drops `notes` table + its search triggers/index rows, relabels `contacts.source = 1` to Manual) and `0027` (drops `job_search_frameworks`) are generated but not yet applied — run `pnpm db:migrate` from `apps/backend`. Verify any newer migration is applied before assuming a table exists.
 - **Status-change notes (browser check):** the popover from all 6 single-entity surfaces, bulk note over a batch, and the mobile bulk bars not clipping the inline textarea have never been checked in a live session.
 - **Capture extension — never verified against real LinkedIn end to end:**
   - Generate a real CRX key (`.env.example` has the openssl commands) and fill `apps/extension/.env`; add `chrome-extension://<id>` to `ALLOWED_CORS_ORIGIN` in the staging and production wrangler vars; register it in Clerk via `PATCH /v1/instance` `allowed_origins`.

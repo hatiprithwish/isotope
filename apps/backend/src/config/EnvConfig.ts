@@ -7,7 +7,6 @@ export default class EnvConfig {
       "RESEND_API_KEY",
       "RESEND_INBOUND_DOMAIN",
       "RESEND_WEBHOOK_SECRET",
-      "TAVILY_API_KEY",
     ]);
   }
 
@@ -48,10 +47,6 @@ export default class EnvConfig {
 
   static resendWebhookSecret(env: Env): string {
     return env.RESEND_WEBHOOK_SECRET;
-  }
-
-  static tavilyApiKey(env: Env): string {
-    return env.TAVILY_API_KEY;
   }
 
   static cloudflareAccountId(env: Env): string {

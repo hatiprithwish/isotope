@@ -21,10 +21,6 @@ export interface UpdateJobApiResponse extends ApiResponse {
   job?: Job;
 }
 
-export interface DiscoverJobsApiResponse extends ApiResponse {
-  workflowInstanceId?: string;
-}
-
 export interface DeleteJobApiResponse extends ApiResponse {}
 
 export interface BulkDeleteJobsApiResponse extends ApiResponse {

@@ -25,7 +25,6 @@ import CompanySelect from "@/shared/fields/CompanySelect";
 type BulkField = "" | "status" | "companyId" | "source";
 
 const SOURCE_OPTIONS: { value: ContactSourceIntEnum; label: string }[] = [
-  { value: ContactSourceIntEnum.Apollo, label: ContactSourceLabelEnum.Apollo },
   { value: ContactSourceIntEnum.Manual, label: ContactSourceLabelEnum.Manual },
 ];
 

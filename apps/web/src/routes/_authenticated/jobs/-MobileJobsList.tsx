@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SparkleIcon, TrashIcon, CheckSquareIcon, SquareIcon } from "@phosphor-icons/react";
+import { TrashIcon, CheckSquareIcon, SquareIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 import type { JobStatusIntEnum } from "@app/schemas";
@@ -28,11 +28,9 @@ interface Props {
   mobileSearch: boolean;
   /** Shared status filter + saved filter controls — identical to the desktop table's. */
   filterBar: React.ReactNode;
-  discoverPending: boolean;
   isBulkPending: boolean;
   onSearchToggle: () => void;
   onSearchChange: (v: string) => void;
-  onDiscoverClick: () => void;
   onRowClick: (job: Schemas.Job) => void;
   onAddClick: () => void;
   onBulkDelete: (ids: number[]) => void;
@@ -51,11 +49,9 @@ export function MobileJobsList({
   deferredQuery,
   mobileSearch,
   filterBar,
-  discoverPending,
   isBulkPending,
   onSearchToggle,
   onSearchChange,
-  onDiscoverClick,
   onRowClick,
   onAddClick,
   onBulkDelete,
@@ -112,23 +108,6 @@ export function MobileJobsList({
         onSearchToggle={onSearchToggle}
         onSearchChange={onSearchChange}
       />
-
-      <div className="mx-4 mb-3 px-3.5 py-2.5 rounded-lg bg-(--ai-bg) border border-(--ai-border) flex items-center gap-2.5">
-        <SparkleIcon size={14} className="text-(--ai) shrink-0" weight="fill" />
-        <span className="flex-1 text-[12px] font-medium text-(--ai-text)">
-          Find new jobs matching your framework
-        </span>
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onClick={onDiscoverClick}
-          disabled={discoverPending}
-          className="shrink-0"
-        >
-          {discoverPending ? "Searching…" : "Discover"}
-        </Button>
-      </div>
 
       {!selectMode && !isPending && !isError && allJobs.length > 0 && (
         <div className="px-4 pb-2 flex items-center justify-between">

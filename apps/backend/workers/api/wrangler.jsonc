@@ -28,13 +28,6 @@
           "simple": { "limit": 20, "period": 60 }
         }
       ],
-      "workflows": [
-        {
-          "name": "job-discovery",
-          "binding": "JOB_DISCOVERY_WORKFLOW",
-          "class_name": "JobDiscoveryWorkflow"
-        }
-      ],
       "queues": {
         "producers": [
           {
@@ -88,13 +81,6 @@
           "name": "PROFILE_PARSE_LIMITER",
           "namespace_id": "1002",
           "simple": { "limit": 20, "period": 60 }
-        }
-      ],
-      "workflows": [
-        {
-          "name": "job-discovery",
-          "binding": "JOB_DISCOVERY_WORKFLOW",
-          "class_name": "JobDiscoveryWorkflow"
         }
       ],
       "queues": {

@@ -1,0 +1,1 @@
+DROP TABLE `job_search_frameworks`;

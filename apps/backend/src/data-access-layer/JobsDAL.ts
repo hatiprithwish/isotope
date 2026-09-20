@@ -250,50 +250,6 @@ export default class JobsDAL {
     }
   }
 
-  async bulkInsertJobs(params: {
-    createdBy: string;
-    jobs: Schemas.CreateJobDALRequest[];
-  }): Promise<number> {
-    let inserted = 0;
-
-    for (const job of params.jobs) {
-      try {
-        await this.db.insert(jobs).values({
-          title: job.title,
-          status: job.status,
-          type: job.type,
-          companyId: job.companyId,
-          url: job.url,
-          salary: job.salary,
-          source: job.source,
-          description: job.description,
-          skills: job.skills ? JSON.stringify(job.skills) : null,
-          matchScore: job.matchScore,
-          createdBy: job.createdBy,
-          createdAt: Utility.getCurrentISOTimestamp(),
-        });
-        inserted++;
-      } catch (error) {
-        AppLogger.error({
-          category: Schemas.LogCategory.DAL,
-          action: Schemas.LogAction.BulkInsertJobs,
-          message: "Failed to insert single job during bulk insert — continuing",
-          error,
-          metadata: { title: job.title, url: job.url, createdBy: job.createdBy },
-        });
-      }
-    }
-
-    AppLogger.info({
-      category: Schemas.LogCategory.DAL,
-      action: Schemas.LogAction.BulkInsertJobs,
-      message: "Bulk insert complete",
-      metadata: { attempted: params.jobs.length, inserted, createdBy: params.createdBy },
-    });
-
-    return inserted;
-  }
-
   async deleteJob(params: Schemas.DeleteJobDALRequest) {
     const response: Schemas.DeleteJobApiResponse = { isSuccess: false };
 

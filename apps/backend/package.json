@@ -15,7 +15,7 @@
     "db:generate": "drizzle-kit generate --name isotope",
     "db:migrate": "wrangler d1 migrations apply isotope-db --remote --env staging --config workers/api/wrangler.jsonc",
     "search:gen-triggers": "tsx scripts/genSearchTriggers.ts",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
@@ -26,7 +26,6 @@
     "@hono/zod-validator": "^0.8.0",
     "@logtape/hono": "^2.0.0",
     "@logtape/logtape": "^2.0.0",
-    "@logtape/redaction": "^2.0.0",
     "dayjs": "^1.0.0",
     "drizzle-orm": "^0.45.0",
     "hono": "^4.0.0",

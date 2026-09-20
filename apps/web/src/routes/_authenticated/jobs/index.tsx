@@ -1,27 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { useAuth } from "@clerk/tanstack-react-start";
-import { useState, useDeferredValue, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useDeferredValue } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import {
-  JobsQueries,
-  useJobs,
-  useJobsCount,
-  useDiscoverJobs,
-  useBulkDeleteJobs,
-  useBulkUpdateJobs,
-} from "./-data";
+import { JobsQueries, useJobs, useJobsCount, useBulkDeleteJobs, useBulkUpdateJobs } from "./-data";
 import { useBulkCreateStatusChangeNotes } from "../-status-change-notes-data";
 import { StatusChangeEntityTypeEnum } from "@app/schemas";
-import { FrameworkQueries } from "../../_without_nav/onboarding/job-search-framework/-data";
-import { ApiError } from "@/providers/apiClient";
 import { JobsTable } from "./-JobsTable";
 import { JobDetailPanel } from "./-JobDetailDrawer";
 import AddOrEditJobModal from "./-AddOrEditJobModal";
 import { MobileJobsList } from "./-MobileJobsList";
 import { useAddShortcut } from "@/hooks/useAddShortcut";
-import { SparkleIcon, PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import type * as Schemas from "@app/schemas";
 import { JobStatusIntEnum, JobStatusLabelEnum, SavedFilterEntityTypeIntEnum } from "@app/schemas";
@@ -32,7 +22,6 @@ const PAGE_SIZE = 20;
 
 const searchSchema = z.object({
   panel: z.number().optional(),
-  framework_saved: z.string().optional(),
   statuses: z.string().optional(),
   savedFilter: z.number().optional(),
 });
@@ -56,14 +45,10 @@ export const Route = createFileRoute("/_authenticated/jobs/")({
 
 function JobsPage() {
   const queryClient = useQueryClient();
-  const { getToken } = useAuth();
-  const { panel, framework_saved, statuses: statusesParam, savedFilter } = Route.useSearch();
+  const { panel, statuses: statusesParam, savedFilter } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const statuses = parseFilterParam(statusesParam);
 
-  const frameworkQuery = useQuery(FrameworkQueries.latest(getToken));
-  const hasFramework = Boolean(frameworkQuery.data?.framework?.isCustomized);
-  const discoverMutation = useDiscoverJobs();
   const bulkDeleteMutation = useBulkDeleteJobs();
   const bulkUpdateMutation = useBulkUpdateJobs();
   const bulkCreateStatusChangeNotes = useBulkCreateStatusChangeNotes();
@@ -121,29 +106,6 @@ function JobsPage() {
       onApplySavedFilter={handleApplySavedFilter}
     />
   );
-
-  useEffect(() => {
-    if (framework_saved === "1") {
-      toast.success("Job search criteria saved. You're ready to find jobs.", { duration: 4000 });
-      void navigate({ search: (prev) => ({ ...prev, framework_saved: undefined }), replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function handleDiscoverClick() {
-    if (!hasFramework) {
-      void navigate({ to: "/onboarding/job-search-framework" as string });
-      return;
-    }
-    try {
-      await discoverMutation.mutateAsync();
-      toast.success("Searching for jobs — new listings will appear shortly.", { duration: 5000 });
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 400) {
-        void navigate({ to: "/onboarding/job-search-framework" as string });
-      }
-    }
-  }
 
   async function handleRefresh() {
     await queryClient.invalidateQueries({ queryKey: JobsQueries.keys.all() });
@@ -226,14 +188,12 @@ function JobsPage() {
         deferredQuery={deferredQuery}
         mobileSearch={mobileSearch}
         filterBar={filterBar}
-        discoverPending={discoverMutation.isPending}
         isBulkPending={bulkDeleteMutation.isPending || bulkUpdateMutation.isPending}
         onSearchToggle={() => setMobileSearch((s) => !s)}
         onSearchChange={(v) => {
           setSearchQuery(v);
           setCurrentPage(1);
         }}
-        onDiscoverClick={() => void handleDiscoverClick()}
         onRowClick={(job) => navigate({ to: "/jobs/$jobId", params: { jobId: String(job.id) } })}
         onAddClick={() => setFormMode("create")}
         onBulkDelete={(ids) => void handleBulkDelete(ids)}
@@ -245,17 +205,6 @@ function JobsPage() {
           <header className="h-13 px-6 flex items-center justify-between border-b border-border bg-sidebar shrink-0">
             <span className="text-base font-semibold text-foreground tracking-tight">Jobs</span>
             <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={() => void handleDiscoverClick()}
-                disabled={discoverMutation.isPending}
-                className="bg-(--ai-bg) border-(--ai-border) text-(--ai-text) hover:bg-(--ai-bg)"
-              >
-                <SparkleIcon size={13} className="text-(--ai)" weight="fill" />
-                {discoverMutation.isPending ? "Searching…" : "Discover"}
-              </Button>
               <Button type="button" size="lg" onClick={() => setFormMode("create")}>
                 <PlusIcon size={13} />
                 Add

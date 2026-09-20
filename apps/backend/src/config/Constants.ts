@@ -42,23 +42,6 @@ export default class Constants {
   static readonly DEFAULT_PAGE_NO = 1 as const;
   static readonly DEFAULT_PAGE_SIZE = 20 as const;
 
-  static readonly JOB_SEARCH_FRAMEWORK_DEFAULTS = {
-    targetRoles: ["Backend Engineer", "SDE-1", "SDE-2", "Software Engineer", "Backend Developer"],
-    isRemote: true,
-    requiredSkills: ["Node.js", "Express.js"],
-    minSalaryLpa: 10,
-    minExp: 2,
-    maxExp: 5.5,
-    skills: [
-      { name: "AWS", priority: "High" as const },
-      { name: "Cloudflare Workers", priority: "Medium" as const },
-      { name: "Node.js", priority: "High" as const },
-      { name: "Express.js", priority: "Medium" as const },
-    ],
-    preferredLocations: ["Remote", "India (any city)"],
-    recencyWindow: 7,
-  } as const;
-
   static readonly BROWSER_RUN_DELAY_MS = 1_100 as const;
 
   static readonly INBOUND_BLOCKED_DOMAINS = [

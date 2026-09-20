@@ -134,41 +134,6 @@ export const jobs = table(
   ],
 );
 
-export const jobSearchFrameworks = table(
-  "job_search_frameworks",
-  {
-    id: t.int().primaryKey({ autoIncrement: true }),
-    createdBy: t.text("created_by").notNull(),
-    targetRoles: t.text("target_roles").notNull().default("[]"),
-    isRemote: t.integer("is_remote", { mode: "boolean" }).notNull().default(false),
-    requiredSkills: t.text("required_skills").notNull().default("[]"),
-    skills: t.text().notNull().default("[]"),
-    minSalaryLpa: t.real("min_salary_lpa").notNull().default(10),
-    minExp: t.real("min_exp").notNull().default(2),
-    maxExp: t.real("max_exp").notNull().default(5),
-    preferredLocations: t.text("preferred_locations").notNull().default("[]"),
-    recencyWindow: t.integer("recency_window").notNull().default(7),
-    version: t.integer().notNull().default(1),
-    isCustomized: t.integer("is_customized", { mode: "boolean" }).notNull().default(false),
-    createdAt: t.text("created_at").notNull(),
-    updatedAt: t.text("updated_at"),
-  },
-  (table) => [t.index("idx_job_fw_user").on(table.createdBy, table.version)],
-);
-
-export const notes = table(
-  "notes",
-  {
-    id: t.int().primaryKey({ autoIncrement: true }),
-    createdBy: t.text("created_by").notNull(),
-    title: t.text().notNull(),
-    body: t.text(),
-    createdAt: t.text("created_at").notNull(),
-    updatedAt: t.text("updated_at"),
-  },
-  (table) => [t.index("IDX_notes_created_by").on(table.createdBy)],
-);
-
 export const tasks = table(
   "tasks",
   {

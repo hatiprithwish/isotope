@@ -16,7 +16,6 @@ export default class HomeUtils {
 
   // Secondary items: linked directly on desktop (sidebar footer), grouped under
   // MobileTabBar's "More" sheet on mobile since the tab bar only has room for primary items.
-  // Notes is intentionally excluded — it's an internal/LLM-context feature, not user-facing.
   static readonly MORE_NAV_ITEMS = [
     { id: "settings", label: "Settings", icon: GearSixIcon, href: "/settings" },
   ] as const;

@@ -4,7 +4,6 @@ export enum SearchEntityType {
   Company = "company",
   Job = "job",
   Contact = "contact",
-  Note = "note",
 }
 export const ZSearchEntityType = z.enum(SearchEntityType);
 
@@ -29,11 +28,6 @@ export const SEARCH_PROJECTIONS: Record<
     table: "contacts",
     title: "name",
     body: ["designation", "email", "notes"],
-  },
-  [SearchEntityType.Note]: {
-    table: "notes",
-    title: "title",
-    body: ["body"],
   },
 };
 

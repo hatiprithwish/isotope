@@ -7,10 +7,8 @@ import * as Schemas from "@app/schemas";
 import Constants from "@/config/Constants";
 import EnvConfig from "@/config/EnvConfig";
 import UsersRoutes from "@/routes/UserRoutes";
-import NotesRoutes from "@/routes/NotesRoutes";
 import CompaniesRoutes from "@/routes/CompaniesRoutes";
 import ContactsRoutes from "@/routes/ContactsRoutes";
-import FrameworksRoutes from "@/routes/FrameworksRoutes";
 import FollowUpSettingsRoutes from "@/routes/FollowUpSettingsRoutes";
 import ContactRolePillsRoutes from "@/routes/ContactRolePillsRoutes";
 import RoleTypesRoutes from "@/routes/RoleTypesRoutes";
@@ -24,7 +22,6 @@ import SettingsRoutes from "@/routes/SettingsRoutes";
 import StatusChangeNotesRoutes from "@/routes/StatusChangeNotesRoutes";
 import SavedFiltersRoutes from "@/routes/SavedFiltersRoutes";
 import TaskMissedSweepHandler from "@/handlers/TaskMissedSweepHandler";
-export { JobDiscoveryWorkflow } from "@/workflows/JobDiscoveryWorkflow";
 
 // DEV_NOTE: Configure logger at the top level to ensure it's ready before handling any requests.
 await configureLogger();
@@ -62,10 +59,8 @@ app.route("/api/email-inbound", EmailInboundRoutes);
 
 app.route("/auth", AuthRoutes);
 app.route("/users", UsersRoutes);
-app.route("/notes", NotesRoutes);
 app.route("/companies", CompaniesRoutes);
 app.route("/contacts", ContactsRoutes);
-app.route("/frameworks", FrameworksRoutes);
 app.route("/followup-settings", FollowUpSettingsRoutes);
 app.route("/contact-role-pills", ContactRolePillsRoutes);
 app.route("/role-types", RoleTypesRoutes);

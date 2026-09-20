@@ -125,10 +125,10 @@ File: apps/web/src/**/*.tsx
 **Detection:**
 
 ```
-File: apps/backend/src/routes/NotesRoutes.ts (golden file)
-- ✅ import { NotesRepo } from "../repositories"
+File: apps/backend/src/routes/SavedFiltersRoutes.ts (golden file)
+- ✅ import { SavedFiltersRepo } from "../repositories"
 - ✅ import { LogCategory } from "@app/schemas"
-- ❌ import { NotesRepo } from "../../routes/../repositories" (verbose relative)
+- ❌ import { SavedFiltersRepo } from "../../routes/../repositories" (verbose relative)
 ```
 
 **Fix:** Relative imports for sibling layers, `@app/schemas` for cross-app schemas.
@@ -173,14 +173,14 @@ But does NOT contain:
 **Detection:**
 
 ```
-- ❌ apps/backend/src/repositories/NotesDAL.ts
-- ✅ apps/backend/src/data-access-layer/NotesDAL.ts
+- ❌ apps/backend/src/repositories/SavedFiltersDAL.ts
+- ✅ apps/backend/src/data-access-layer/SavedFiltersDAL.ts
 
-- ❌ apps/web/src/routes/_authenticated/notes/data.ts
-- ✅ apps/web/src/routes/_authenticated/notes/-data.ts
+- ❌ apps/web/src/routes/_authenticated/companies/data.ts
+- ✅ apps/web/src/routes/_authenticated/companies/-data.ts
 
-- ❌ apps/web/src/routes/_authenticated/notes/NoteCard.tsx
-- ✅ apps/web/src/routes/_authenticated/notes/-NoteCard.tsx
+- ❌ apps/web/src/routes/_authenticated/companies/Avatar.tsx
+- ✅ apps/web/src/routes/_authenticated/companies/-Avatar.tsx
 ```
 
 **Fix:** Move file to correct folder per CLAUDE.md structure.
@@ -193,8 +193,8 @@ But does NOT contain:
 
 **Violations:**
 
-- Class names not PascalCase (`notesRepo` instead of `NotesRepo`)
-- Function names not camelCase (`GetNotes` instead of `getNotes`)
+- Class names not PascalCase (`companiesRepo` instead of `CompaniesRepo`)
+- Function names not camelCase (`GetCompanies` instead of `getCompanies`)
 - Constants not SCREAMING_SNAKE_CASE (if not PascalCase)
 - DAL method names inconsistent with pattern
 - Repo method names inconsistent with pattern
@@ -207,8 +207,8 @@ Database columns:
 - ✅ user_name (in DB), userData (in code)
 
 TypeScript classes/functions:
-- ❌ class notesRepository
-- ✅ class NotesRepository
+- ❌ class companiesRepository
+- ✅ class CompaniesRepository
 
 - ❌ function GetUserById
 - ✅ function getUserById
@@ -232,8 +232,8 @@ TypeScript classes/functions:
 **Detection:**
 
 ```
-- ❌ async getNotes() { return await this.db.select() }
-- ✅ async getNotes() {
+- ❌ async getCompanies() { return await this.db.select() }
+- ✅ async getCompanies() {
       const response = { isSuccess: false }
       try { ... response.isSuccess = true }
       catch (error) { AppLogger.error({ ... }) }

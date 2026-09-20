@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { BriefcaseIcon, BuildingsIcon, NoteIcon, UserIcon } from "@phosphor-icons/react";
+import { BriefcaseIcon, BuildingsIcon, UserIcon } from "@phosphor-icons/react";
 import {
   Command,
   CommandDialog,
@@ -21,14 +21,12 @@ const ENTITY_LABELS: Record<SearchEntityType, string> = {
   [SearchEntityType.Company]: "Companies",
   [SearchEntityType.Job]: "Jobs",
   [SearchEntityType.Contact]: "Contacts",
-  [SearchEntityType.Note]: "Notes",
 };
 
 const ENTITY_ICONS: Record<SearchEntityType, typeof BuildingsIcon> = {
   [SearchEntityType.Company]: BuildingsIcon,
   [SearchEntityType.Job]: BriefcaseIcon,
   [SearchEntityType.Contact]: UserIcon,
-  [SearchEntityType.Note]: NoteIcon,
 };
 
 function resultRoute(result: SearchResultItem): {
@@ -43,8 +41,6 @@ function resultRoute(result: SearchResultItem): {
       return { to: "/jobs/$jobId", params: { jobId: String(result.entityId) } };
     case SearchEntityType.Contact:
       return { to: "/contacts/$contactId", params: { contactId: String(result.entityId) } };
-    case SearchEntityType.Note:
-      return { to: "/notes/$noteId", params: { noteId: String(result.entityId) } };
   }
 }
 
@@ -86,7 +82,7 @@ export function GlobalSearchPalette() {
       {/* DEV_NOTE: shouldFilter=false — results are already ranked server-side via FTS5 bm25(); cmdk's client fuzzy-filter would otherwise re-filter/hide valid matches whose item `value` doesn't fuzzy-match the raw query. */}
       <Command shouldFilter={false}>
         <CommandInput
-          placeholder="Search companies, jobs, contacts, notes…"
+          placeholder="Search companies, jobs, contacts…"
           value={query}
           onValueChange={setQuery}
         />

@@ -6,17 +6,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CopyIcon, CheckIcon } from "@phosphor-icons/react";
 import type {
-  FrameworkInput,
   FollowUpSettingsInput,
   ContactRolePillsInput,
   RoleTypesInput,
   SaveMessageTemplateApiRequest,
 } from "@app/schemas";
-import JobSearchFrameworkForm from "@/shared/forms/JobSearchFrameworkForm";
-import {
-  FrameworkQueries,
-  useSaveFramework,
-} from "../../_without_nav/onboarding/job-search-framework/-data";
 import {
   FollowUpSettingsQueries,
   useSaveFollowUpSettings,
@@ -31,16 +25,14 @@ import FollowUpSettingsForm from "./-FollowUpSettingsForm";
 import ContactRolePillsForm from "./-ContactRolePillsForm";
 import RoleTypesForm from "./-RoleTypesForm";
 import MessageTemplatesForm from "./-MessageTemplatesForm";
-import Utilities from "@/utils";
 import { apiClient } from "@/providers/apiClient";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
   head: () => ({ meta: [{ title: "Settings · Isotope" }] }),
-  component: SettingsFrameworksPage,
+  component: SettingsPage,
 });
 
 type Tab =
-  | "job-search"
   | "followups"
   | "contact-roles"
   | "role-types"
@@ -333,31 +325,11 @@ function MessageTemplatesTab({ getToken }: { getToken: () => Promise<string | nu
   );
 }
 
-function SettingsFrameworksPage() {
+function SettingsPage() {
   const { getToken } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>("job-search");
-  const [noticeDismissed, setNoticeDismissed] = useState(false);
-  const [submitError, setSubmitError] = useState<string | undefined>();
-
-  const frameworkQuery = useQuery(FrameworkQueries.latest(getToken));
-  const saveMutation = useSaveFramework();
-
-  const framework = frameworkQuery.data?.framework;
-
-  async function handleSubmit(values: FrameworkInput) {
-    setSubmitError(undefined);
-    try {
-      await saveMutation.mutateAsync(values);
-      toast.success("Job search criteria updated", { duration: 3000 });
-    } catch {
-      setSubmitError("Failed to save. Please try again.");
-    }
-  }
-
-  const showNotice = !noticeDismissed && framework != null && !framework.isCustomized;
+  const [activeTab, setActiveTab] = useState<Tab>("followups");
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: "job-search", label: "Job Search" },
     { key: "followups", label: "Follow-ups" },
     { key: "contact-roles", label: "Contact Roles" },
     { key: "role-types", label: "Role Types" },
@@ -370,7 +342,7 @@ function SettingsFrameworksPage() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* topbar */}
       <header className="h-13 px-6 flex items-center border-b border-border bg-sidebar shrink-0">
-        <span className="text-base font-semibold text-foreground tracking-tight">Frameworks</span>
+        <span className="text-base font-semibold text-foreground tracking-tight">Settings</span>
       </header>
 
       {/* tabs */}
@@ -397,53 +369,6 @@ function SettingsFrameworksPage() {
 
       {/* content */}
       <div className="flex-1 overflow-y-auto bg-background">
-        {activeTab === "job-search" && (
-          <div className="px-6 py-6">
-            {showNotice && (
-              <div className="mb-6 flex items-start gap-3 px-4 py-3 rounded-lg bg-(--warning-bg) border border-(--warning)">
-                <p className="flex-1 text-[13px] text-(--warning-text)">
-                  You're using default criteria. Update these to match your actual preferences — AI
-                  will use them for every future job search.
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={() => setNoticeDismissed(true)}
-                  aria-label="Dismiss"
-                  className="shrink-0 text-(--warning-text) hover:bg-(--warning-bg) hover:text-(--warning-text) mt-0.5"
-                >
-                  ×
-                </Button>
-              </div>
-            )}
-
-            {framework && (
-              <p className="text-[12px] text-(--text-secondary) mb-6">
-                Last updated: {Utilities.relativeTime(framework.createdAt)} · Version{" "}
-                {framework.version}
-              </p>
-            )}
-
-            {frameworkQuery.isPending || !framework ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-9 rounded-lg bg-(--surface-raised) animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <JobSearchFrameworkForm
-                key={framework.version}
-                initialValues={framework}
-                onSubmit={handleSubmit}
-                submitLabel="Save criteria"
-                isSubmitting={saveMutation.isPending}
-                submitError={submitError}
-              />
-            )}
-          </div>
-        )}
-
         {activeTab === "followups" && <FollowUpSettingsTab getToken={getToken} />}
 
         {activeTab === "contact-roles" && <ContactRolePillsTab getToken={getToken} />}

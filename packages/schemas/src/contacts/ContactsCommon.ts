@@ -43,19 +43,16 @@ export const CONTACT_TERMINAL_STATUSES: ContactStatusIntEnum[] = [
 ];
 
 export enum ContactSourceIntEnum {
-  Apollo = 1,
   Manual = 2,
 }
 export const ZContactSourceIntEnum = z.nativeEnum(ContactSourceIntEnum);
 
 export enum ContactSourceLabelEnum {
-  Apollo = "Apollo",
   Manual = "Manual",
 }
 export const ZContactSourceLabelEnum = z.nativeEnum(ContactSourceLabelEnum);
 
 export const contactSourceIntToLabel: Record<ContactSourceIntEnum, ContactSourceLabelEnum> = {
-  [ContactSourceIntEnum.Apollo]: ContactSourceLabelEnum.Apollo,
   [ContactSourceIntEnum.Manual]: ContactSourceLabelEnum.Manual,
 };
 

@@ -16,13 +16,6 @@ export enum LogAction {
   // User
   GetUserDetails = "GetUserDetails",
 
-  // Notes
-  CreateNote = "CreateNote",
-  GetNoteDetails = "GetNoteDetails",
-  ListNotes = "ListNotes",
-  UpdateNote = "UpdateNote",
-  DeleteNote = "DeleteNote",
-
   // Companies
   CreateCompany = "CreateCompany",
   GetCompanyDetails = "GetCompanyDetails",
@@ -56,10 +49,6 @@ export enum LogAction {
   RestoreContactHistory = "RestoreContactHistory",
   HardDeleteContactHistory = "HardDeleteContactHistory",
 
-  // Frameworks
-  SaveFramework = "SaveFramework",
-  GetFramework = "GetFramework",
-
   // Jobs
   SearchJobs = "SearchJobs",
   CreateJob = "CreateJob",
@@ -70,10 +59,6 @@ export enum LogAction {
   DeleteJob = "DeleteJob",
   RunJobIngestion = "RunJobIngestion",
   DuplicateJobBlocked = "DuplicateJobBlocked",
-  DiscoverJobs = "DiscoverJobs",
-  WebSearch = "WebSearch",
-  ExtractJobs = "ExtractJobs",
-  BulkInsertJobs = "BulkInsertJobs",
   BulkDeleteJobs = "BulkDeleteJobs",
   BulkUpdateJobs = "BulkUpdateJobs",
 

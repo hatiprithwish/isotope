@@ -127,7 +127,7 @@ export function AboutTab({ contact, getToken, statusLabel }: AboutTabProps) {
             { label: "Variable", value: contact.abVariable ?? "—" },
             {
               label: "Source",
-              value: contact.source === 1 ? "Apollo" : contact.source === 2 ? "Manual" : "—",
+              value: contact.source === Schemas.ContactSourceIntEnum.Manual ? "Manual" : "—",
             },
           ].map(({ label, value }) => (
             <div key={label} className="flex items-center justify-between">

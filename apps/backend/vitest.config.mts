@@ -23,7 +23,6 @@ export default defineConfig({
           RESEND_API_KEY: "test-resend-key",
           RESEND_INBOUND_DOMAIN: "test.example.com",
           RESEND_WEBHOOK_SECRET: "test-webhook-secret",
-          TAVILY_API_KEY: "test-tavily-key",
         },
       },
     }),
