@@ -55,7 +55,6 @@ export function CompanyContext({ companyId, contactId }: Props) {
             )}
             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
               <CompanyStatusBadge status={company.status} sm />
-              {company.fitBand != null && <CompanyStatusBadge fit={company.fitBand} sm />}
             </div>
           </button>
         )}

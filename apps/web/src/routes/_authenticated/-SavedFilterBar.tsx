@@ -29,10 +29,6 @@ interface Props {
   statusOptions: FilterOption[];
   statuses: number[];
   onStatusesChange: (next: number[]) => void;
-  /** Only Companies filters on fit band — omit both to hide the control. */
-  fitBandOptions?: FilterOption[];
-  fitBands?: number[];
-  onFitBandsChange?: (next: number[]) => void;
   activeSavedFilterId: number | null;
   onApplySavedFilter: (savedFilter: Schemas.SavedFilterWithLabel | null) => void;
   /** Rendered as a plain row for embedding in an existing toolbar. */
@@ -44,9 +40,6 @@ export function SavedFilterBar({
   statusOptions,
   statuses,
   onStatusesChange,
-  fitBandOptions,
-  fitBands = [],
-  onFitBandsChange,
   activeSavedFilterId,
   onApplySavedFilter,
   className,
@@ -64,17 +57,14 @@ export function SavedFilterBar({
 
   const savedFilters = savedFiltersQuery.data?.savedFilters ?? [];
   const activeSavedFilter = savedFilters.find((entry) => entry.id === activeSavedFilterId) ?? null;
-  const hasSelection = statuses.length > 0 || fitBands.length > 0;
+  const hasSelection = statuses.length > 0;
 
   // A loaded filter whose selection has since been edited can be updated in place.
-  const isDirty = activeSavedFilter
-    ? isCriteriaDirty(activeSavedFilter.criteria, statuses, fitBands)
-    : false;
+  const isDirty = activeSavedFilter ? isCriteriaDirty(activeSavedFilter.criteria, statuses) : false;
 
   function currentCriteria(): Schemas.SavedFilterCriteria {
     const criteria: Schemas.SavedFilterCriteria = {};
     if (statuses.length > 0) criteria.statuses = statuses;
-    if (fitBands.length > 0) criteria.fitBands = fitBands;
     return criteria;
   }
 
@@ -156,7 +146,6 @@ export function SavedFilterBar({
 
   function handleClearAll() {
     onStatusesChange([]);
-    onFitBandsChange?.([]);
     onApplySavedFilter(null);
   }
 
@@ -169,16 +158,6 @@ export function SavedFilterBar({
           selected={statuses}
           onChange={onStatusesChange}
         />
-
-        {fitBandOptions && onFitBandsChange && (
-          <StatusFilterPopover
-            label="Fit"
-            options={fitBandOptions}
-            selected={fitBands}
-            onChange={onFitBandsChange}
-            searchable={false}
-          />
-        )}
 
         {savedFilters.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">

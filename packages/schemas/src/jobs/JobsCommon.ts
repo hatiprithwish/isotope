@@ -69,15 +69,12 @@ export const ZJobBase = z.object({
   companyIndustry: z.string().nullable().optional(),
   companyLocation: z.string().nullable().optional(),
   companyStatusLabel: z.string().nullable().optional(),
-  companyFitBand: z.number().nullable().optional(),
-  companyFitBandLabel: z.string().nullable().optional(),
   url: z.string().nullable().optional(),
   salary: z.string().nullable().optional(),
   source: z.string().nullable().optional(),
   type: ZJobTypeIntEnum,
   description: z.string().nullable().optional(),
   skills: z.array(z.string()).nullable().optional(),
-  matchScore: z.number().nullable().optional(),
   roleType: z.string().nullable().optional(),
 });
 export type JobBase = z.infer<typeof ZJobBase>;

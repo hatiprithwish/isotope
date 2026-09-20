@@ -8,7 +8,6 @@ export type FindCompanyDALRequest = Pick<Company, "id" | "createdBy">;
 export type GetCompaniesDALRequest = Pick<Company, "createdBy"> & {
   search: string | null;
   statuses: Company["status"][] | null;
-  fitBands: NonNullable<Company["fitBand"]>[] | null;
 };
 
 export type UpdateCompanyDALRequest = FindCompanyDALRequest &

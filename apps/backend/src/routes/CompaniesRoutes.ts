@@ -46,10 +46,10 @@ CompaniesRoutes.get(
   zValidator("query", Schemas.ZGetCompaniesApiRequest),
   async (c) => {
     const userId = c.get("clerkUserId");
-    const { search, statuses, fitBands } = c.req.valid("query");
+    const { search, statuses } = c.req.valid("query");
 
     const repo = new CompaniesRepo(c.env);
-    const response = await repo.getCompanies({ userId, search, statuses, fitBands });
+    const response = await repo.getCompanies({ userId, search, statuses });
 
     return c.json(response, response.isSuccess ? 200 : 500);
   },

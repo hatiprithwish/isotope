@@ -4,18 +4,10 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useUpdateCompany } from "./-data";
 import * as Schemas from "@app/schemas";
 import Avatar from "./-Avatar";
-import {
-  ArrowsOutSimpleIcon,
-  CheckCircleIcon,
-  PencilSimpleIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { ArrowsOutSimpleIcon, PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import AddOrEditCompanyModal, { STATUS_OPTIONS } from "./-AddOrEditCompanyModal";
 import { StatusBadge } from "./-StatusBadge";
-import ScoreBar from "./-ScoreBar";
-import { MAX_SCORE } from "./-criteria";
-import { ScoredCriteria } from "./-ScoredCriteria";
 import { LinkedContacts } from "./-LinkedContacts";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
 import { StatusChangePopover } from "../-StatusChangePopover";
@@ -32,9 +24,6 @@ function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
   const { getToken } = useAuth();
   const updateCompany = useUpdateCompany();
   const [showEditModal, setShowEditModal] = useState(false);
-  const score = company.weightedScore ?? 0;
-  const hasEthicsFlag = company.isEthicsCompliant === false;
-  const isWaitingHuman = company.status === 1;
 
   function handleStatusChange(newStatus: number) {
     return updateCompany.mutateAsync({ id: company.id, body: { company: { status: newStatus } } });
@@ -130,7 +119,6 @@ function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
                 getToken={getToken}
               />
             )}
-            {company.fitBand && <StatusBadge fit={company.fitBand} />}
             {(company.updatedAt ?? company.createdAt) && (
               <span className="ml-auto text-[11px] text-(--text-secondary)">
                 Updated {company.updatedAt ?? company.createdAt}
@@ -140,71 +128,6 @@ function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="px-5 py-4.5 border-b border-border">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5">
-              Your context for AI
-            </div>
-            <textarea
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-[13px] text-foreground leading-[1.65] resize-none outline-none focus:border-primary transition-colors min-h-18"
-              defaultValue={company.userContext ?? ""}
-              placeholder="Anything you know about this company (injected into AI scoring)."
-              rows={3}
-            />
-          </div>
-
-          <div className="px-5 py-4.5 border-b border-border">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5">
-              Score
-            </div>
-            <ScoreBar score={score} max={MAX_SCORE} />
-          </div>
-
-          <div className="px-5 py-4.5 border-b border-border">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5">
-              Stage 1 · Pre-filters
-            </div>
-            <div className="flex gap-3">
-              {(
-                [
-                  { label: "Salary band", pass: company.isSalaryMatch },
-                  { label: "Location", pass: company.isLocationMatch },
-                ] as const
-              ).map(({ label, pass }) => (
-                <div key={label} className="flex-1 flex items-center gap-2">
-                  <CheckCircleIcon
-                    size={14}
-                    className={pass === true ? "text-(--success)" : "text-(--text-secondary)"}
-                  />
-                  <span className="text-xs font-medium text-foreground flex-1">{label}</span>
-                  {pass !== null && pass !== undefined && <StatusBadge status={pass ? 2 : 4} sm />}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {hasEthicsFlag && (
-            <div className="px-5 py-4.5 border-b border-border">
-              <div className="bg-(--danger-bg) border-l-[3px] border-(--danger) rounded-r-lg px-3.5 py-3 text-[13px] leading-[1.55] text-(--text-secondary)">
-                <strong className="text-(--danger-text)">Ethics flag.</strong>{" "}
-                {company.ethicsNotes ?? "Ethics concerns noted. Review before accepting."}
-              </div>
-            </div>
-          )}
-
-          {company.aiSummary && (
-            <div className="px-5 py-4.5 border-b border-border">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5 flex items-center gap-1.5">
-                <span className="text-(--warning) text-[13px]">✦</span>
-                AI research summary
-              </div>
-              <div className="bg-(--ai-bg) border border-border border-l-[3px] border-l-(--ai-border) rounded-r-lg px-3.5 py-3 text-[13px] leading-[1.7] text-(--text-secondary)">
-                {company.aiSummary}
-              </div>
-            </div>
-          )}
-
-          <ScoredCriteria companyId={company.id} isWaitingHuman={isWaitingHuman} />
-
           <LinkedContacts companyId={company.id} />
 
           <StatusChangeHistory

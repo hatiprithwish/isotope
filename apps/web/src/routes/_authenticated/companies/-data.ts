@@ -7,23 +7,20 @@ import { toast } from "sonner";
 export class CompaniesQueries {
   static readonly keys = {
     all: () => ["companies"] as const,
-    list: (search: string, statuses: number[], fitBands: number[]) =>
-      ["companies", "list", search, statuses, fitBands] as const,
+    list: (search: string, statuses: number[]) => ["companies", "list", search, statuses] as const,
     detail: (id: number) => ["companies", id] as const,
     contacts: (id: number) => ["companies", id, "contacts"] as const,
   };
 
   static list(params: Schemas.GetCompaniesApiRequest, getToken: () => Promise<string | null>) {
     const statuses = params.statuses ?? [];
-    const fitBands = params.fitBands ?? [];
 
     return queryOptions({
-      queryKey: CompaniesQueries.keys.list(params.search ?? "", statuses, fitBands),
+      queryKey: CompaniesQueries.keys.list(params.search ?? "", statuses),
       queryFn: ({ signal }) => {
         const query = new URLSearchParams();
         if (params.search) query.set("search", params.search);
         if (statuses.length > 0) query.set("statuses", statuses.join(","));
-        if (fitBands.length > 0) query.set("fitBands", fitBands.join(","));
         const queryString = query.toString();
 
         return apiClient<Schemas.GetCompaniesApiResponse>(

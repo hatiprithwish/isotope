@@ -13,8 +13,6 @@ import { DesktopCompaniesTable } from "./-DesktopCompaniesTable";
 import {
   CompanyStatusIntEnum,
   CompanyStatusLabelEnum,
-  CompanyFitBandIntEnum,
-  CompanyFitBandLabelEnum,
   SavedFilterEntityTypeIntEnum,
 } from "@app/schemas";
 import type * as Schemas from "@app/schemas";
@@ -24,7 +22,6 @@ import { parseFilterParam, serializeFilterParam, type FilterOption } from "../-t
 const searchSchema = z.object({
   panel: z.number().optional(),
   statuses: z.string().optional(),
-  fitBands: z.string().optional(),
   savedFilter: z.number().optional(),
 });
 
@@ -37,13 +34,6 @@ const STATUS_FILTER_OPTIONS: FilterOption[] = [
   { value: CompanyStatusIntEnum.Offer, label: CompanyStatusLabelEnum.Offer },
 ];
 
-const FIT_BAND_FILTER_OPTIONS: FilterOption[] = [
-  { value: CompanyFitBandIntEnum.StrongFit, label: CompanyFitBandLabelEnum.StrongFit },
-  { value: CompanyFitBandIntEnum.ConditionalFit, label: CompanyFitBandLabelEnum.ConditionalFit },
-  { value: CompanyFitBandIntEnum.WeakFit, label: CompanyFitBandLabelEnum.WeakFit },
-  { value: CompanyFitBandIntEnum.Disqualified, label: CompanyFitBandLabelEnum.Disqualified },
-];
-
 export const Route = createFileRoute("/_authenticated/companies/")({
   validateSearch: searchSchema,
   head: () => ({ meta: [{ title: "Companies · Isotope" }] }),
@@ -52,15 +42,9 @@ export const Route = createFileRoute("/_authenticated/companies/")({
 
 function CompaniesPage() {
   const { getToken } = useAuth();
-  const {
-    panel,
-    statuses: statusesParam,
-    fitBands: fitBandsParam,
-    savedFilter,
-  } = Route.useSearch();
+  const { panel, statuses: statusesParam, savedFilter } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const statuses = parseFilterParam(statusesParam);
-  const fitBands = parseFilterParam(fitBandsParam);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebouncedValue(searchQuery, 300);
@@ -73,7 +57,6 @@ function CompaniesPage() {
       {
         search: debouncedQuery || undefined,
         statuses: statuses.length > 0 ? statuses : undefined,
-        fitBands: fitBands.length > 0 ? fitBands : undefined,
       },
       getToken,
     ),
@@ -85,16 +68,11 @@ function CompaniesPage() {
     void navigate({ search: (prev) => ({ ...prev, statuses: serializeFilterParam(next) }) });
   }
 
-  function handleFitBandsChange(next: number[]) {
-    void navigate({ search: (prev) => ({ ...prev, fitBands: serializeFilterParam(next) }) });
-  }
-
   function handleApplySavedFilter(applied: Schemas.SavedFilterWithLabel | null) {
     void navigate({
       search: (prev) => ({
         ...prev,
         statuses: applied ? serializeFilterParam(applied.criteria.statuses ?? []) : undefined,
-        fitBands: applied ? serializeFilterParam(applied.criteria.fitBands ?? []) : undefined,
         savedFilter: applied?.id,
       }),
     });
@@ -106,9 +84,6 @@ function CompaniesPage() {
       statusOptions={STATUS_FILTER_OPTIONS}
       statuses={statuses}
       onStatusesChange={handleStatusesChange}
-      fitBandOptions={FIT_BAND_FILTER_OPTIONS}
-      fitBands={fitBands}
-      onFitBandsChange={handleFitBandsChange}
       activeSavedFilterId={savedFilter ?? null}
       onApplySavedFilter={handleApplySavedFilter}
     />

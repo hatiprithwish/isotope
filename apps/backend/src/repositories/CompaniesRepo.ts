@@ -67,7 +67,6 @@ export default class CompaniesRepo {
       createdBy: params.userId,
       search: params.search ?? null,
       statuses: params.statuses ?? null,
-      fitBands: params.fitBands ?? null,
     });
   }
 
@@ -80,14 +79,6 @@ export default class CompaniesRepo {
       industry: params.company.industry ?? null,
       size: params.company.size ?? null,
       location: params.company.location ?? null,
-      isSalaryMatch: params.company.isSalaryMatch ?? null,
-      isLocationMatch: params.company.isLocationMatch ?? null,
-      isEthicsCompliant: params.company.isEthicsCompliant ?? null,
-      ethicsNotes: params.company.ethicsNotes ?? null,
-      weightedScore: params.company.weightedScore ?? null,
-      fitBand: params.company.fitBand ?? null,
-      aiSummary: params.company.aiSummary ?? null,
-      userContext: params.company.userContext ?? null,
       notes: params.company.notes ?? null,
       status: params.company.status ?? null,
     });

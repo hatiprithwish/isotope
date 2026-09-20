@@ -10,7 +10,7 @@ interface Props {
   isError: boolean;
   onAddClick: () => void;
   searchQuery: string;
-  /** Shared status/fit filter + saved filter controls — identical to the desktop table's. */
+  /** Shared status filter + saved filter controls — identical to the desktop table's. */
   filterBar: React.ReactNode;
   onSearchChange: (value: string) => void;
   onBulkDelete: (ids: number[]) => Promise<unknown>;

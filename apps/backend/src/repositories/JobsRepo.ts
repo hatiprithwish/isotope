@@ -30,7 +30,6 @@ export default class JobsRepo {
       source: params.job.source ?? null,
       description: params.job.description ?? null,
       skills: null,
-      matchScore: null,
       createdBy: params.userId,
     });
   }
@@ -57,7 +56,6 @@ export default class JobsRepo {
     if (job.status !== undefined) dalParams.status = job.status;
     if (job.type !== undefined) dalParams.type = job.type;
     if (job.skills !== undefined) dalParams.skills = job.skills ?? null;
-    if (job.matchScore !== undefined) dalParams.matchScore = job.matchScore ?? null;
 
     return await this.dal.updateJob(dalParams);
   }

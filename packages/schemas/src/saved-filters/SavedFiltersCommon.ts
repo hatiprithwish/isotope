@@ -30,12 +30,10 @@ export const SAVED_FILTER_NAME_MAX_LENGTH = 60;
 
 /**
  * The filterable criteria a saved filter can capture. Persisted as a JSON string in the
- * `criteria` column so new filter dimensions can be added without a migration. `fitBands`
- * only applies to Companies; other entity types simply omit it.
+ * `criteria` column so new filter dimensions can be added without a migration.
  */
 export const ZSavedFilterCriteria = z.object({
   statuses: z.array(z.number().int().positive()).optional(),
-  fitBands: z.array(z.number().int().positive()).optional(),
 });
 export type SavedFilterCriteria = z.infer<typeof ZSavedFilterCriteria>;
 

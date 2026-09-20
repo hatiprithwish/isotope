@@ -1,4 +1,4 @@
-import type { CompanyStatusIntEnum, CompanyFitBandIntEnum } from "@app/schemas";
+import type { CompanyStatusIntEnum } from "@app/schemas";
 
 const STATUS_META: Record<CompanyStatusIntEnum, { label: string; cls: string }> = {
   1: { label: "Needs review", cls: "warning" },
@@ -7,13 +7,6 @@ const STATUS_META: Record<CompanyStatusIntEnum, { label: string; cls: string }> 
   4: { label: "Rejected", cls: "neutral" },
   5: { label: "Interviewed", cls: "pipeline" },
   6: { label: "Offer", cls: "success" },
-};
-
-const FIT_META: Record<CompanyFitBandIntEnum, { label: string; cls: string }> = {
-  1: { label: "Strong fit", cls: "success" },
-  2: { label: "Conditional", cls: "warning" },
-  3: { label: "Weak fit", cls: "neutral" },
-  4: { label: "Disqualified", cls: "danger" },
 };
 
 const CLS_MAP: Record<string, string> = {
@@ -26,12 +19,11 @@ const CLS_MAP: Record<string, string> = {
 
 interface StatusBadgeProps {
   status?: CompanyStatusIntEnum | null;
-  fit?: CompanyFitBandIntEnum | null;
   sm?: boolean;
 }
 
-export function StatusBadge({ status, fit, sm }: StatusBadgeProps) {
-  const meta = status != null ? STATUS_META[status] : fit != null ? FIT_META[fit] : null;
+export function StatusBadge({ status, sm }: StatusBadgeProps) {
+  const meta = status != null ? STATUS_META[status] : null;
   if (!meta) return null;
 
   const colorCls = CLS_MAP[meta.cls] ?? CLS_MAP.neutral;

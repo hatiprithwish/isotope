@@ -5,7 +5,6 @@ import { ZIntFilterList } from "../common";
 export const ZGetCompaniesApiRequest = z.object({
   search: z.string().nullable().optional(),
   statuses: ZIntFilterList.optional(),
-  fitBands: ZIntFilterList.optional(),
 });
 export type GetCompaniesApiRequest = z.infer<typeof ZGetCompaniesApiRequest>;
 

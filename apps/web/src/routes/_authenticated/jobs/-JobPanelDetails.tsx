@@ -38,22 +38,6 @@ export function JobPanelDetails({ job, getToken }: Props) {
                 </div>
               )}
             </div>
-            {job.companyFitBandLabel && (
-              <span
-                className={[
-                  "shrink-0 inline-flex items-center h-5 px-1.75 rounded-md text-[11px] font-semibold",
-                  job.companyFitBand === 1
-                    ? "bg-(--success-bg) text-(--success-text)"
-                    : job.companyFitBand === 2
-                      ? "bg-(--warning-bg) text-(--warning-text)"
-                      : job.companyFitBand === 4
-                        ? "bg-(--danger-bg) text-(--danger-text)"
-                        : "bg-(--surface-raised) text-(--text-secondary)",
-                ].join(" ")}
-              >
-                {job.companyFitBandLabel}
-              </span>
-            )}
             <CaretRightIcon size={12} className="text-(--text-secondary) shrink-0" />
           </a>
         </div>

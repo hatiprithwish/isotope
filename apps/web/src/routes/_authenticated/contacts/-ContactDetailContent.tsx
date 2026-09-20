@@ -6,19 +6,17 @@ import { Button } from "@/shadcn/ui/button";
 import { StatusBadge } from "./-StatusBadge";
 import { ContactsQueries, useDeleteContact, useUpdateContact } from "./-data";
 import Utilities from "@/utils";
-import { DraftTab } from "./-DraftTab";
 import { HistoryTab } from "./-HistoryTab";
 import { AboutTab } from "./-AboutTab";
 import AddOrEditContactModal, { STATUS_OPTIONS } from "./-AddOrEditContactModal";
 import { StatusChangePopover } from "../-StatusChangePopover";
 import { StatusNoteInfoIcon } from "../-StatusNoteInfoIcon";
 
-export type ContactDetailTab = "history" | "about" | "draft";
+export type ContactDetailTab = "history" | "about";
 
 const TABS: { id: ContactDetailTab; label: string }[] = [
   { id: "history", label: "History" },
   { id: "about", label: "About" },
-  { id: "draft", label: "✦ Draft" },
 ];
 
 function Avatar({ name }: { name: string }) {
@@ -174,12 +172,6 @@ export function ContactDetailContent({
               currentStatus={contact.status}
               getToken={getToken}
             />
-            {contact.abVariant && (
-              <span className="inline-flex items-center gap-1 h-5.5 px-2 rounded-full bg-(--warning-bg) text-(--warning-text) text-[11px] font-semibold">
-                <span className="text-[11px]">✦</span>
-                Variant {contact.abVariant}
-              </span>
-            )}
             <span className="ml-auto text-[11px] text-(--text-secondary)">{touchLabel}</span>
           </div>
         </div>
@@ -203,7 +195,6 @@ export function ContactDetailContent({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {activeTab === "draft" && <DraftTab contact={contact} />}
           {activeTab === "history" && <HistoryTab contact={contact} getToken={getToken} />}
           {activeTab === "about" && (
             <AboutTab contact={contact} getToken={getToken} statusLabel={statusLabel} />

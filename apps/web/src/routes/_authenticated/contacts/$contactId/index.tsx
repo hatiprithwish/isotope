@@ -6,7 +6,7 @@ import { ContactsQueries } from "../-data";
 import { ContactDetailContent, type ContactDetailTab } from "../-ContactDetailContent";
 
 const searchSchema = z.object({
-  tab: z.enum(["history", "about", "draft"]).optional(),
+  tab: z.enum(["history", "about"]).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId/")({

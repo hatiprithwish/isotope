@@ -90,12 +90,12 @@ Token system uses **shadcn's semantic bridge** (`--background`, `--foreground`, 
 
 **AI / machine-generated content** — amber, exclusive use. Amber = machine output. No other element uses amber tones.
 
-| CSS var       | Light     | Dark      | Usage                      |
-| ------------- | --------- | --------- | -------------------------- |
-| `--ai`        | `#D97706` | `#FCD34D` | AI sparkle icon colour     |
-| `--ai-bg`     | `#FFFBEB` | `#2A2010` | AI research box background |
-| `--ai-border` | `#FCD34D` | `#D97706` | AI box left border accent  |
-| `--ai-text`   | `#92400E` | `#FDE68A` | AI badge text              |
+| CSS var       | Light     | Dark      | Usage                       |
+| ------------- | --------- | --------- | --------------------------- |
+| `--ai`        | `#D97706` | `#FCD34D` | AI sparkle icon colour      |
+| `--ai-bg`     | `#FFFBEB` | `#2A2010` | AI-sourced badge background |
+| `--ai-border` | `#FCD34D` | `#D97706` | AI badge border accent      |
+| `--ai-text`   | `#92400E` | `#FDE68A` | AI badge text               |
 
 **Status colours:**
 
@@ -114,7 +114,7 @@ Token system uses **shadcn's semantic bridge** (`--background`, `--foreground`, 
 | `--danger-bg`     | `#FEF2F2`         | `#2A1212`         | Danger badge background     |
 | `--danger-text`   | `#991B1B`         | `#FCA5A5`         | Danger badge text           |
 
-**Accent badge tokens** (used for `accent` CSS class — Draft Ready, Touch labels, wordmark superscript):
+**Accent badge tokens** (used for `accent` CSS class — Draft Ready status, Touch labels, wordmark superscript):
 
 `--accent-bg` and `--accent-text` are referenced in components as CSS custom properties. **Note: these are not yet defined in `styles.css` — add them there before using in new components.**
 
@@ -122,7 +122,7 @@ Token system uses **shadcn's semantic bridge** (`--background`, `--foreground`, 
 
 ### Colour rules (strict)
 
-- **`--ai*` tokens are reserved exclusively for AI-generated content.** AI research boxes, sparkle icons, A/B variant pills, overnight-run output. No other element uses amber. Trains users: amber = machine output.
+- **`--ai*` tokens are reserved exclusively for AI-generated content.** Today that is the LLM job-type badge (jobs ingested from email alerts). No other element uses amber. Trains users: amber = machine output.
 - **`--primary` is reserved for actions and active states only.** Primary buttons, active nav, focus ring (`--ring`), touch labels (T1/T2/T3), draft-ready badges, wordmark superscript. Never used decoratively.
 - **shadcn's `--accent`** in this app = `--surface-raised` (ghost hover target). Do not confuse with the brand accent colour (`--primary`).
 
@@ -197,25 +197,6 @@ The badge CSS class system used in `-StatusBadge.tsx`:
 | Interviewing      | Interviewing   | `pipeline` |
 | Offer             | Offer          | `success`  |
 
-**Fit Band Badges:**
-
-| Band            | Label        | CSS class |
-| --------------- | ------------ | --------- |
-| Strong Fit      | Strong fit   | `success` |
-| Conditional Fit | Conditional  | `warning` |
-| Weak Fit        | Weak fit     | `neutral` |
-| Disqualified    | Disqualified | `danger`  |
-
-### AI Research Box
-
-Used wherever AI-generated content appears. Amber-accented to signal machine output.
-
-- Background: `bg-(--ai-bg)`
-- Border: `border border-border` + `border-l-[3px] border-l-(--ai-border)`
-- Border radius: `rounded-r-lg` (left side flat against the accent bar)
-- Font: 12px 400, `text-(--text-secondary)`, line-height 1.65
-- Section label icon: `✦` sparkle in `text-(--ai)` colour
-
 ### Avatar Component
 
 | State                   | Background              | Text                      |
@@ -238,13 +219,6 @@ Sizes: `sm` (24px), `md` (32px default), `lg` (40px). Content: initials (first l
 - `bg-background border border-border`
 - Focus: `border-primary`, no box shadow
 - Placeholder: `text-muted-foreground`, Font: 13px 400
-
-### A/B Variant Pill (AbPill)
-
-- `<span>` with spark icon + "Variant A" or "Variant B" text
-- `bg-(--ai-bg) text-(--ai-text)` (amber — AI-generated context)
-- `title` attribute shows the variable name (e.g. "Subject line")
-- Used in Contact panel header and table rows
 
 ### Tables
 

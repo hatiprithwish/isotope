@@ -5,12 +5,11 @@
    c. Change database name db:migrate command
 3. Write example utility functions in frontend too so that LLM understands where to put it, your utility functions also may be added in the rules file too.
 4. Add theme support in scaffold repo.
-5. Didn't put number for CompanyFitBandEnum
-6. Create ZSafeString and other input sanitization in scaffold repo
-7. Change User_id column in the scaffold's example table to created_by. and fix it everywhere.
-8. Usage of caseExpr in the scaffold's example DAL
-9. Use dayjs in both FE & BE
-10. All the packages should be like - "^x.0.0" so that it will get updated by themselves
-11. LLM is storing all FE components in one file!! This is happening because in Frontend we don't have a huge number of components that interact with each other. Need to store this in scaffolding.
-12. Instead of building table in shad
-13. Add EnvConfig.ts in both FE & BE
+5. Create ZSafeString and other input sanitization in scaffold repo
+6. Change User_id column in the scaffold's example table to created_by. and fix it everywhere.
+7. Usage of caseExpr in the scaffold's example DAL
+8. Use dayjs in both FE & BE
+9. All the packages should be like - "^x.0.0" so that it will get updated by themselves
+10. LLM is storing all FE components in one file!! This is happening because in Frontend we don't have a huge number of components that interact with each other. Need to store this in scaffolding.
+11. Instead of building table in shad
+12. Add EnvConfig.ts in both FE & BE

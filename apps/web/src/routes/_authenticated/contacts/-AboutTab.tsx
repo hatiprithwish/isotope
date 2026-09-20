@@ -115,16 +115,10 @@ export function AboutTab({ contact, getToken, statusLabel }: AboutTabProps) {
 
       <div className="px-5 py-4.5 border-b border-border">
         <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-(--text-secondary) mb-2.5">
-          Sequence
+          Details
         </div>
         <div className="bg-sidebar border border-border rounded-lg p-3.5 flex flex-col gap-2">
           {[
-            {
-              label: "Touch",
-              value: contact.sequencePosition != null ? `${contact.sequencePosition} of 3` : "—",
-            },
-            { label: "A/B", value: contact.abVariant ? `Variant ${contact.abVariant}` : "—" },
-            { label: "Variable", value: contact.abVariable ?? "—" },
             {
               label: "Source",
               value: contact.source === Schemas.ContactSourceIntEnum.Manual ? "Manual" : "—",

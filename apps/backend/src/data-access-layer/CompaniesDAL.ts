@@ -27,14 +27,6 @@ export default class CompaniesDAL {
           industry: params.industry,
           size: params.size,
           location: params.location,
-          isSalaryMatch: params.isSalaryMatch,
-          isLocationMatch: params.isLocationMatch,
-          isEthicsCompliant: params.isEthicsCompliant,
-          ethicsNotes: params.ethicsNotes,
-          weightedScore: params.weightedScore,
-          fitBand: params.fitBand,
-          aiSummary: params.aiSummary,
-          userContext: params.userContext,
           notes: params.notes,
           status: params.status,
           createdAt: Utility.getCurrentISOTimestamp(),
@@ -87,14 +79,6 @@ export default class CompaniesDAL {
           industry: companies.industry,
           size: companies.size,
           location: companies.location,
-          isSalaryMatch: companies.isSalaryMatch,
-          isLocationMatch: companies.isLocationMatch,
-          isEthicsCompliant: companies.isEthicsCompliant,
-          ethicsNotes: companies.ethicsNotes,
-          weightedScore: companies.weightedScore,
-          fitBand: companies.fitBand,
-          aiSummary: companies.aiSummary,
-          userContext: companies.userContext,
           notes: companies.notes,
           status: companies.status,
           statusLabel: sql<Schemas.CompanyStatusLabelEnum>`CASE
@@ -166,10 +150,6 @@ export default class CompaniesDAL {
         conditions.push(inArray(companies.status, params.statuses));
       }
 
-      if (params.fitBands && params.fitBands.length > 0) {
-        conditions.push(inArray(companies.fitBand, params.fitBands));
-      }
-
       const companiesResponse = await this.db
         .select({
           id: companies.id,
@@ -178,14 +158,6 @@ export default class CompaniesDAL {
           industry: companies.industry,
           size: companies.size,
           location: companies.location,
-          isSalaryMatch: companies.isSalaryMatch,
-          isLocationMatch: companies.isLocationMatch,
-          isEthicsCompliant: companies.isEthicsCompliant,
-          ethicsNotes: companies.ethicsNotes,
-          weightedScore: companies.weightedScore,
-          fitBand: companies.fitBand,
-          aiSummary: companies.aiSummary,
-          userContext: companies.userContext,
           notes: companies.notes,
           status: companies.status,
           statusLabel: sql<Schemas.CompanyStatusLabelEnum>`CASE
@@ -236,14 +208,6 @@ export default class CompaniesDAL {
           industry: params.industry,
           size: params.size,
           location: params.location,
-          isSalaryMatch: params.isSalaryMatch,
-          isLocationMatch: params.isLocationMatch,
-          isEthicsCompliant: params.isEthicsCompliant,
-          ethicsNotes: params.ethicsNotes,
-          weightedScore: params.weightedScore,
-          fitBand: params.fitBand,
-          aiSummary: params.aiSummary,
-          userContext: params.userContext,
           notes: params.notes,
           status: params.status ?? undefined,
           updatedAt: Utility.getCurrentISOTimestamp(),

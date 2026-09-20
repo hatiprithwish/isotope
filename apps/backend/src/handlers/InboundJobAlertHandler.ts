@@ -204,14 +204,6 @@ export default class InboundJobAlertHandler {
       industry: null,
       size: null,
       location: null,
-      isSalaryMatch: null,
-      isLocationMatch: null,
-      isEthicsCompliant: null,
-      ethicsNotes: null,
-      weightedScore: null,
-      fitBand: null,
-      aiSummary: null,
-      userContext: null,
       notes: null,
     });
 
@@ -374,7 +366,6 @@ export default class InboundJobAlertHandler {
           status: Schemas.JobStatusIntEnum.WaitingForHuman,
           createdBy: userId,
           source: null,
-          matchScore: null,
         });
 
         if (insertResult.isSuccess) {

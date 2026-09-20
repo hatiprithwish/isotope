@@ -64,22 +64,11 @@ export const ZContactBase = z.object({
   email: z.string().nullable().optional(),
   linkedinUrl: z.string().nullable().optional(),
   linkedinConnected: z.boolean().nullable().optional(),
-  sequencePosition: z.number().nullable().optional(),
   lastTouchAt: z.string().nullable().optional(),
   deadAt: z.string().nullable().optional(),
   reEngageAt: z.string().nullable().optional(),
-  abVariable: z.string().nullable().optional(),
-  abVariant: z.string().nullable().optional(),
-  abReplied: z.boolean().nullable().optional(),
-  draftBody: z.string().nullable().optional(),
-  draftSubject: z.string().nullable().optional(),
-  personalizationNotes: z.string().nullable().optional(),
-  manualPersonalizationNotes: z.string().nullable().optional(),
-  reengagementRecommendation: z.string().nullable().optional(),
   source: ZContactSourceIntEnum.nullable().optional(),
   notes: z.string().nullable().optional(),
-  failedAt: z.string().nullable().optional(),
-  retryCount: z.number().nullable().optional(),
 });
 export type ContactBase = z.infer<typeof ZContactBase>;
 
@@ -88,7 +77,6 @@ export const ZContact = ZContactBase.extend({
   createdBy: z.string(),
   statusLabel: ZContactStatusLabelEnum,
   companyName: z.string().nullable().optional(),
-  companyFitBand: z.number().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
 });
@@ -148,8 +136,6 @@ export const ZContactHistoryBase = z.object({
   subject: z.string().nullable().optional(),
   body: z.string(),
   sequencePosition: z.number().nullable().optional(),
-  abVariable: z.string().nullable().optional(),
-  abVariant: z.string().nullable().optional(),
   sentAt: z.string(),
 });
 export type ContactHistoryBase = z.infer<typeof ZContactHistoryBase>;

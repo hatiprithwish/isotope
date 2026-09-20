@@ -4,11 +4,11 @@ Single source of truth for product scope, system structure, standards, invariant
 
 ## Scope
 
-Isotope is a multi-user, AI-assisted job-search operations app for software engineers: track companies, contacts, outreach, and job applications; AI does research and drafting, the human reviews and sends.
+Isotope is a multi-user job-search operations app for software engineers: track companies, contacts, outreach, and job applications. Every message is written and sent by the user.
 
 **Built**
 
-- **Companies** — pipeline with AI research (3-stage: pre-filter, ethics gate, scored criteria), fit bands, user-context field, score override.
+- **Companies** — pipeline with status tracking, linked contacts and jobs.
 - **Contacts & outreach** — contact history (email + LinkedIn), configurable multi-step follow-up sequences, log-message templates with `[Name]`/`[Company]` substitution and Day-0 role-type variants.
 - **Jobs** — manual entry, inbound job-alert email ingestion (Browser Run scrape), server-side search/sort/pagination.
 - **Tasks** (`/tasks`) — follow-up tasks per contact + channel, week strip, overdue rollup onto Today, daily missed-sweep cron.
@@ -16,9 +16,9 @@ Isotope is a multi-user, AI-assisted job-search operations app for software engi
 - **Settings** — follow-up settings, contact role pills, role types, message templates, account.
 - **Capture extension** (`apps/extension`) — private, unpacked Chrome MV3 side panel: capture a LinkedIn profile as a contact, log a LinkedIn conversation to a contact's history.
 
-**Out of scope (V1):** LinkedIn API, automated job-portal crawling, auto-sending email, Gmail sync, teams/shared workspaces, calendar, native mobile app, open/click tracking. Users always copy a draft and send it manually.
+**Out of scope (V1):** LinkedIn API, automated job-portal crawling, auto-sending email, Gmail sync, teams/shared workspaces, calendar, native mobile app, open/click tracking. Users write and send every message themselves.
 
-**Not built from the original spec:** morning digest email, A/B analytics, onboarding wizard, and the other six Today-dashboard sections (Needs your input, Needs attention, Drafts ready, Stalled drafts, Companies to review, Jobs to review).
+**Dropped from the original spec:** AI company research and scoring, AI message drafting, A/B analytics, morning digest email, AI job discovery, onboarding wizard, and the Today-dashboard sections built on them. `/` redirects to `/tasks`.
 
 ## Stack
 
@@ -114,7 +114,7 @@ Endpoints that are semantically GET but need a request body (filters, search, pa
 
 ## Storage Model
 
-- **Cloudflare D1 is the only store.** No blob/file storage; all content (AI summaries, drafts, history) is text in D1. Every user-owned table has `created_by` (Clerk user id). `wrangler.jsonc` has no local D1 — `dev:api` runs `wrangler dev --env staging`, so staging _is_ the dev database.
+- **Cloudflare D1 is the only store.** No blob/file storage; all content (history, notes, tasks) is text in D1. Every user-owned table has `created_by` (Clerk user id). `wrangler.jsonc` has no local D1 — `dev:api` runs `wrangler dev --env staging`, so staging _is_ the dev database.
 - `tasks` — one row per follow-up step: `contactId` (nullable FK), `channel` (`ContactHistoryChannelEnum`, not null — email and LinkedIn sequences run independently), `title`, `dueAt` (date-only `YYYY-MM-DD` text; compared lexically), `status` (1 Pending, 2 Completed, 3 Missed, 4 Paused), `stepNumber`, `pausedAt`, `note`, `completedAt`. `IDX_tasks_contact_id_channel` is a plain (non-unique) index: a contact+channel accumulates one `Completed` row per finished step plus at most one active (Pending/Paused) row.
   - Logging an outbound (`Me`) message (`ContactsRepo.logContactHistory` → `TasksDAL.syncFollowUpForContact`, `completePriorStep: true`) completes the active row and inserts the next step. An inbound reply only pauses the active row. Editing/undoing a message recomputes the active row's `dueAt` in place (`completePriorStep: false`), completing nothing. Finishing the last step marks the dangling row `Completed`; the edit/undo path deletes it instead.
   - `TasksDAL.updateTaskStatus` refuses to un-complete a row if a newer row exists for that contact+channel (prevents two simultaneously active rows).
@@ -177,7 +177,7 @@ Extractor rules (each was a real bug):
 
 ## Open Items
 
-- **Migrations:** `0024` (`status_change_notes`) and `0025` (`saved_filters`) were applied to staging on 2026-08. `0026` (drops `notes` table + its search triggers/index rows, relabels `contacts.source = 1` to Manual) and `0027` (drops `job_search_frameworks`) are generated but not yet applied — run `pnpm db:migrate` from `apps/backend`. Verify any newer migration is applied before assuming a table exists.
+- **Migrations:** `0024` (`status_change_notes`) and `0025` (`saved_filters`) were applied to staging on 2026-08. `0026` (drops `notes` table + its search triggers/index rows, relabels `contacts.source = 1` to Manual), `0027` (drops `job_search_frameworks`) `0028` (drops the AI-research, scoring, draft and A/B columns from `companies`/`contacts`/`contact_history`; strips `fitBands` from saved filters) and `0029` (drops unused `failed_at`/`retry_count` on `companies`/`contacts` and `jobs.match_score`) are generated but not yet applied — run `pnpm db:migrate` from `apps/backend`. Verify any newer migration is applied before assuming a table exists.
 - **Status-change notes (browser check):** the popover from all 6 single-entity surfaces, bulk note over a batch, and the mobile bulk bars not clipping the inline textarea have never been checked in a live session.
 - **Capture extension — never verified against real LinkedIn end to end:**
   - Generate a real CRX key (`.env.example` has the openssl commands) and fill `apps/extension/.env`; add `chrome-extension://<id>` to `ALLOWED_CORS_ORIGIN` in the staging and production wrangler vars; register it in Clerk via `PATCH /v1/instance` `allowed_origins`.
@@ -187,7 +187,6 @@ Extractor rules (each was a real bug):
   - The parse → contact search → bulk log sequence has never run in-browser end to end.
   - The panel polls the LinkedIn tab every ~2.5s while open (a deliberate departure from "nothing runs until you click"); revert to event-driven + Rescan if unwanted.
 - **Mobile parity:** Settings mobile layout pass (currently reuses the desktop form). Visual verification of earlier phases needs an authenticated browser session.
-- **Tasks:** the other six original Today-dashboard sections were never built — decide whether they live on a separate page or fold into Tasks.
 - **Tasks gap:** `getPastTasks` filters `dueAt < today`, so a task completed before its scheduled date is missing from both the day view and Past tasks until that date passes.
 - **Known baseline:** `apps/backend` `tsc --noEmit` has 10 pre-existing errors (none in recently touched files); `packages/schemas`, `apps/web`, and `apps/extension` are at 0. Don't introduce new ones.
 - **Testing:** the vitest/`cloudflare:test` harness works locally, but authenticated-route assertions still need a live Clerk session token.

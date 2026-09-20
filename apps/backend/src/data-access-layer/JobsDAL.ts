@@ -38,7 +38,6 @@ export default class JobsDAL {
           description: params.description,
           skills: params.skills ? JSON.stringify(params.skills) : null,
           roleType: params.roleType,
-          matchScore: params.matchScore,
           createdBy: params.createdBy,
           createdAt: Utility.getCurrentISOTimestamp(),
         })
@@ -92,7 +91,6 @@ export default class JobsDAL {
         description,
         skills,
         roleType,
-        matchScore,
         updatedAt,
       } = params;
 
@@ -109,7 +107,6 @@ export default class JobsDAL {
       if (description !== undefined) setValues.description = description;
       if (skills !== undefined) setValues.skills = skills ? JSON.stringify(skills) : null;
       if (roleType !== undefined) setValues.roleType = roleType;
-      if (matchScore !== undefined) setValues.matchScore = matchScore;
 
       const row = await this.db
         .update(jobs)
@@ -169,14 +166,12 @@ export default class JobsDAL {
           companyIndustry: companies.industry,
           companyLocation: companies.location,
           companyStatus: companies.status,
-          companyFitBand: companies.fitBand,
           url: jobs.url,
           salary: jobs.salary,
           source: jobs.source,
           description: jobs.description,
           skills: jobs.skills,
           roleType: jobs.roleType,
-          matchScore: jobs.matchScore,
           createdAt: jobs.createdAt,
           updatedAt: jobs.updatedAt,
         })
@@ -207,10 +202,6 @@ export default class JobsDAL {
         companyStatusLabel:
           row.companyStatus != null
             ? (Schemas.companyStatusIntToLabel[row.companyStatus] ?? null)
-            : null,
-        companyFitBandLabel:
-          row.companyFitBand != null
-            ? (Schemas.companyFitBandIntToLabel[row.companyFitBand] ?? null)
             : null,
       };
     } catch (error) {
@@ -464,7 +455,6 @@ export default class JobsDAL {
           description: jobs.description,
           skills: jobs.skills,
           roleType: jobs.roleType,
-          matchScore: jobs.matchScore,
           createdAt: jobs.createdAt,
           updatedAt: jobs.updatedAt,
         })
@@ -518,7 +508,6 @@ export default class JobsDAL {
           description: jobs.description,
           skills: jobs.skills,
           roleType: jobs.roleType,
-          matchScore: jobs.matchScore,
           createdAt: jobs.createdAt,
           updatedAt: jobs.updatedAt,
         })

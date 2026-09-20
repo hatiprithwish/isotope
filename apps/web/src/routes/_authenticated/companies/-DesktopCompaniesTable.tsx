@@ -5,7 +5,6 @@ import {
   TrashIcon,
   CheckSquareIcon,
   SquareIcon,
-  WarningIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { AppTable } from "@/components/app-table";
@@ -25,7 +24,7 @@ interface Props {
   onBulkDelete: (ids: number[]) => Promise<unknown>;
   isBulkPending: boolean;
   searchQuery: string;
-  /** Shared status/fit filter + saved filter controls — identical to the mobile list's. */
+  /** Shared status filter + saved filter controls — identical to the mobile list's. */
   filterBar: React.ReactNode;
   onSearchChange: (value: string) => void;
 }
@@ -108,12 +107,7 @@ export function DesktopCompaniesTable({
       header: "Name",
       cell: (row) => (
         <div>
-          <div className="flex items-center gap-1.5 text-[13px] font-medium text-foreground">
-            {row.name}
-            {row.isEthicsCompliant === false && (
-              <WarningIcon size={13} className="text-(--warning)" />
-            )}
-          </div>
+          <div className="text-[13px] font-medium text-foreground">{row.name}</div>
           <div className="text-[11px] text-(--text-secondary) mt-0.5">{row.website}</div>
         </div>
       ),
@@ -127,29 +121,6 @@ export function DesktopCompaniesTable({
           <div className="text-[11px] text-(--text-secondary) mt-0.5 opacity-70">{row.size}</div>
         </div>
       ),
-    },
-    {
-      key: "fitBand",
-      header: "Fit",
-      cell: (row) => (row.fitBand ? <StatusBadge fit={row.fitBand} sm /> : null),
-    },
-    {
-      key: "weightedScore",
-      header: "Score",
-      cell: (row) => {
-        const score = row.weightedScore ?? 0;
-        const max = 135;
-        const pct = max > 0 ? Math.round((score / max) * 100) : 0;
-        return (
-          <div>
-            <div className="text-[13px] font-semibold text-primary">
-              {score}
-              <span className="text-(--text-secondary) font-normal">/{max}</span>
-            </div>
-            <div className="text-[11px] text-(--text-secondary) mt-0.5">{pct}%</div>
-          </div>
-        );
-      },
     },
     {
       key: "status",

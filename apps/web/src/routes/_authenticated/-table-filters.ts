@@ -8,7 +8,6 @@ import type * as Schemas from "@app/schemas";
  */
 export const ZTableFilterSearch = z.object({
   statuses: z.string().optional(),
-  fitBands: z.string().optional(),
   savedFilter: z.number().optional(),
 });
 export type TableFilterSearch = z.infer<typeof ZTableFilterSearch>;
@@ -41,12 +40,8 @@ export function isSameSelection(left: number[], right: number[]): boolean {
 export function isCriteriaDirty(
   criteria: Schemas.SavedFilterCriteria,
   statuses: number[],
-  fitBands: number[],
 ): boolean {
-  return (
-    !isSameSelection(criteria.statuses ?? [], statuses) ||
-    !isSameSelection(criteria.fitBands ?? [], fitBands)
-  );
+  return !isSameSelection(criteria.statuses ?? [], statuses);
 }
 
 export interface FilterOption {
