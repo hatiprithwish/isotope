@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { SignedIn, SignedOut } from "@clerk/chrome-extension";
 import CaptureForm from "./CaptureForm";
+import TasksPane from "./TasksPane";
 import ThreadPanel from "./ThreadPanel";
 import type { ExtractedThread } from "@/lib/extractThread";
 import {
@@ -187,9 +188,8 @@ function LinkedInPanes({ isProfile }: { isProfile: boolean }) {
  * from the active tab rather than showing both. Only the chosen pane mounts, which is also what
  * keeps the other surface's scan from running — and from injecting into the page — needlessly.
  */
-function SignedInPanes() {
+function CapturePanes() {
   const mode = useActiveTabMode();
-  useRescanOnTabChange();
 
   if (mode.isPending) {
     return <p className="p-4 text-[13px] text-muted-foreground">Reading tab…</p>;
@@ -207,6 +207,44 @@ function SignedInPanes() {
     <p className="p-4 text-[13px] leading-relaxed text-muted-foreground">
       Open a LinkedIn profile to capture it, or a conversation to log its messages.
     </p>
+  );
+}
+
+const SECTIONS = [
+  { id: "capture", label: "Capture" },
+  { id: "followups", label: "Follow-ups" },
+] as const;
+
+/**
+ * Capture is tied to the LinkedIn tab, but the follow-up list is not — it is the reason to keep the
+ * panel open while browsing LinkedIn — so the two live side by side rather than one replacing the
+ * other. The tab-mode and rescan hooks stay here so they keep running whichever section is showing;
+ * the sections themselves mount one at a time, so Capture's page polling stops while Follow-ups is up.
+ */
+function SignedInPanes() {
+  const [section, setSection] = useState<(typeof SECTIONS)[number]["id"]>("capture");
+  useRescanOnTabChange();
+
+  return (
+    <>
+      <div className="flex gap-1 border-b border-border px-4 pt-2" role="tablist">
+        {SECTIONS.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={section === id}
+            onClick={() => setSection(id)}
+            className={`rounded-t-md px-3 py-1.5 text-[12px] font-medium ${
+              section === id ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {section === "capture" ? <CapturePanes /> : <TasksPane />}
+    </>
   );
 }
 

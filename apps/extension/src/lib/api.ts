@@ -110,3 +110,26 @@ export async function captureContact(
     body: JSON.stringify(payload),
   });
 }
+
+/**
+ * Tasks due on `date`. Passing today's key also returns every overdue Pending/Missed/Paused task —
+ * the server does that rollup, so the panel gets its whole "what do I owe people" list in one call.
+ */
+export async function getTasksForDay(date: string, token: string | null) {
+  return await apiClient<Schemas.GetTasksForDateApiResponse>("/tasks/day", token, {
+    method: "POST",
+    body: JSON.stringify({ date }),
+  });
+}
+
+/**
+ * Every saved message template. Follow-up steps (>= 1) have exactly one body each and no variants,
+ * so the panel picks a task's message by `step` locally rather than asking the API per contact —
+ * the per-contact resolver counts sent messages across all channels, which can disagree with a
+ * task's per-channel step.
+ */
+export async function getMessageTemplates(token: string | null) {
+  return await apiClient<Schemas.GetMessageTemplatesApiResponse>("/message-template", token, {
+    method: "GET",
+  });
+}

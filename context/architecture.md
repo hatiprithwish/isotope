@@ -14,7 +14,7 @@ Isotope is a multi-user job-search operations app for software engineers: track 
 - **Tasks** (`/tasks`) — follow-up tasks per contact + channel, week strip, overdue rollup onto Today, daily missed-sweep cron.
 - **Status-change notes** — optional note on any Company/Contact/Job status change, shown as history in the detail panel.
 - **Settings** — follow-up settings, contact role pills, role types, message templates, account.
-- **Capture extension** (`apps/extension`) — private, unpacked Chrome MV3 side panel: capture a LinkedIn profile as a contact, log a LinkedIn conversation to a contact's history.
+- **Capture extension** (`apps/extension`) — private, unpacked Chrome MV3 side panel: capture a LinkedIn profile as a contact, log a LinkedIn conversation to a contact's history, list today's and overdue follow-ups.
 
 **Out of scope (V1):** LinkedIn API, automated job-portal crawling, auto-sending email, Gmail sync, teams/shared workspaces, calendar, native mobile app, open/click tracking. Users write and send every message themselves.
 
@@ -144,6 +144,13 @@ Endpoints that are semantically GET but need a request body (filters, search, pa
 
 Backend: `POST /contacts/capture` (201 create / 200 duplicate — an already-captured profile is a success carrying the existing row), `POST /contacts/parse-profile` (Workers AI JSON-mode fallback, only when Name or Company is blank; a failed parse is a success with no `parsed`; rate-limited by the `PROFILE_PARSE_LIMITER` binding, 20/60s per user — a burst guard, not a quota), and the existing `POST /contacts/history/bulk`, `GET /contacts?search=`, `GET /contacts/:id/history` for message logging. `CompaniesRepo.findOrCreateByName` creates companies at `WaitingHuman`.
 
+The panel has two sections, **Capture** and **Follow-ups**, chosen by a top tab bar; Follow-ups works on any page, not just LinkedIn. `TasksPane` calls the existing `POST /tasks/day` with today's local date key (the same call the web Tasks page makes), which returns due-today plus the overdue Pending/Missed/Paused rollup. Future-dated active tasks are not shown — that needs a new backend route. Each row also shows the message to send, with **Copy** and **Log as sent**:
+
+- The message is rendered **client-side** from `GET /message-template` (all templates, one call): the template with `step === task.stepNumber` and `variantLabel === null`, run through `renderTemplate` with the contact's first name and company. Do not use `GET /contacts/:id/message-template` here — it derives the step from the sent count across _all_ channels, while a task's `stepNumber` is per channel, so it can return the wrong step for a contact messaged on both.
+- **Log as sent** posts one `Me` entry (the rendered body, `channel = task.channel`, `sentAt = now`) to `POST /contacts/history/bulk` via `useLogMessages`, which completes the active task and schedules the next step server-side. The bulk endpoint answers 201 with per-entry `results`, so the row must read `results[].isSuccess`, not just the request status. The logged text is the template as rendered — edits made while sending are not captured.
+- Task list and templates refetch on panel focus (the only queries that do; the rest of the panel opts out in `main.tsx`), since tasks and templates are edited in the web app.
+- The extension has no toast library: mutation errors render inline from `mutation.error`/`results`, as in `ThreadPanel`/`CaptureForm`.
+
 Extractor rules (each was a real bug):
 
 - **Injected extractors must be self-contained.** `executeScript` serialises the function with `toString()`, so a module-scope binding the bundler hoists becomes a `ReferenceError` inside the LinkedIn page where nothing surfaces it. `apps/extension/scripts/verify-extractor-selfcontained.mjs` runs in `pnpm build` and fails the build if either extractor touches anything but `document`/`location`. Never reference a module-scope binding from an extractor.
@@ -180,6 +187,7 @@ Extractor rules (each was a real bug):
 - **Migrations:** `0024` (`status_change_notes`) and `0025` (`saved_filters`) were applied to staging on 2026-08. `0026` (drops `notes` table + its search triggers/index rows, relabels `contacts.source = 1` to Manual), `0027` (drops `job_search_frameworks`) `0028` (drops the AI-research, scoring, draft and A/B columns from `companies`/`contacts`/`contact_history`; strips `fitBands` from saved filters) and `0029` (drops unused `failed_at`/`retry_count` on `companies`/`contacts` and `jobs.match_score`) are generated but not yet applied — run `pnpm db:migrate` from `apps/backend`. Verify any newer migration is applied before assuming a table exists.
 - **Status-change notes (browser check):** the popover from all 6 single-entity surfaces, bulk note over a batch, and the mobile bulk bars not clipping the inline textarea have never been checked in a live session.
 - **Capture extension — never verified against real LinkedIn end to end:**
+  - The Follow-ups section has never been loaded in a live browser session either.
   - Generate a real CRX key (`.env.example` has the openssl commands) and fill `apps/extension/.env`; add `chrome-extension://<id>` to `ALLOWED_CORS_ORIGIN` in the staging and production wrangler vars; register it in Clerk via `PATCH /v1/instance` `allowed_origins`.
   - Whether JSON-LD or Voyager payloads exist on authenticated renders (if neither, every field falls back to `<title>`); the AI parse path has never run against live Workers AI.
   - **Known data bug:** the "first line after Contact info = company" heuristic returns a school for profiles with no current employer (e.g. a contact stored with company "The NorthCap University").

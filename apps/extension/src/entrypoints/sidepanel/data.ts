@@ -9,6 +9,8 @@ import {
   captureContact,
   checkDuplicate,
   getContactHistory,
+  getMessageTemplates,
+  getTasksForDay,
   parseProfile,
   searchContacts,
 } from "@/lib/api";
@@ -52,6 +54,12 @@ export const threadKeys = {
   scan: () => ["thread-scan"] as const,
   matches: (name: string) => ["thread-matches", name] as const,
   logged: (contactId: number) => ["thread-logged", contactId] as const,
+};
+
+export const taskKeys = {
+  all: () => ["tasks-today"] as const,
+  today: (dateKey: string) => ["tasks-today", dateKey] as const,
+  templates: () => ["message-templates"] as const,
 };
 
 /**
@@ -322,6 +330,9 @@ export function useLogMessages() {
       if (contactId !== undefined) {
         void queryClient.invalidateQueries({ queryKey: threadKeys.logged(contactId) });
       }
+      // Logging an outbound message completes the contact's active follow-up and schedules the
+      // next one, so the Follow-ups list is stale whichever pane the message was logged from.
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all() });
     },
   });
 }
@@ -338,5 +349,48 @@ export function useCaptureContact() {
         previous && response.contact ? { ...previous, existing: response.contact } : previous,
       );
     },
+  });
+}
+
+/** Local-calendar YYYY-MM-DD — the same key the web Tasks page sends for "today". */
+function getTodayDateKey(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Follow-ups due today plus everything overdue. Unlike the panel's page scans this is worth a short
+ * cache: switching between the Capture and Follow-ups tabs remounts the pane, and it should show
+ * the last list at once while a fresh one loads. Refetched on panel focus because tasks are
+ * completed in the web app, and coming back to the panel is the moment the list goes stale.
+ */
+export function useTasksForToday() {
+  const { getToken, isSignedIn } = useAuth();
+  const dateKey = getTodayDateKey();
+
+  return useQuery<Schemas.TaskWithMeta[], Error>({
+    queryKey: taskKeys.today(dateKey),
+    enabled: Boolean(isSignedIn),
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    queryFn: async () => (await getTasksForDay(dateKey, await getToken())).tasks ?? [],
+  });
+}
+
+/**
+ * All saved templates, for rendering each follow-up's message. Refetched on panel focus for the
+ * same reason as the task list: templates are edited in the web app.
+ */
+export function useMessageTemplates() {
+  const { getToken, isSignedIn } = useAuth();
+
+  return useQuery<Schemas.MessageTemplate[], Error>({
+    queryKey: taskKeys.templates(),
+    enabled: Boolean(isSignedIn),
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    queryFn: async () => (await getMessageTemplates(await getToken())).templates ?? [],
   });
 }
