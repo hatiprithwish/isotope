@@ -19,6 +19,15 @@
         "binding": "AI",
         "remote": true
       },
+      // Burst guard on the extension's AI profile parse. Period must be 10 or 60 (seconds) —
+      // this is deliberately not a daily quota, just protection against a client-side loop.
+      "ratelimits": [
+        {
+          "name": "PROFILE_PARSE_LIMITER",
+          "namespace_id": "1001",
+          "simple": { "limit": 20, "period": 60 }
+        }
+      ],
       "workflows": [
         {
           "name": "job-discovery",
@@ -72,6 +81,15 @@
         "binding": "AI",
         "remote": true
       },
+      // Burst guard on the extension's AI profile parse. Period must be 10 or 60 (seconds) —
+      // this is deliberately not a daily quota, just protection against a client-side loop.
+      "ratelimits": [
+        {
+          "name": "PROFILE_PARSE_LIMITER",
+          "namespace_id": "1002",
+          "simple": { "limit": 20, "period": 60 }
+        }
+      ],
       "workflows": [
         {
           "name": "job-discovery",

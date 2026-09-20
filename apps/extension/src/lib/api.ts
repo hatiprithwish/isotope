@@ -63,6 +63,13 @@ export async function checkDuplicate(linkedinUrl: string, token: string | null) 
   );
 }
 
+export async function parseProfile(payload: Schemas.ParseProfileApiRequest, token: string | null) {
+  return await apiClient<Schemas.ParseProfileApiResponse>("/contacts/parse-profile", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function captureContact(
   payload: Schemas.CaptureContactApiRequest,
   token: string | null,

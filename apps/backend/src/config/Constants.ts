@@ -7,6 +7,38 @@ export default class Constants {
     llama: "@cf/meta/llama-4-scout-17b-16e-instruct" as const,
   } as const;
 
+  /**
+   * Extraction-only prompt: the model reformats text it is given and is told to leave a field null
+   * rather than infer one. Guessing a company is worse than an empty box here, because capture
+   * *creates* the company and a hallucinated name silently pollutes the companies list.
+   */
+  static readonly PROFILE_PARSE_SYSTEM_PROMPT = [
+    "You extract contact details from the visible text of a LinkedIn profile page.",
+    "Return only what the text states. Never infer, translate, expand, or invent a value.",
+    "name: the profile owner's full name. Not a company, not a heading, not another person.",
+    "designation: their CURRENT job title only, e.g. 'Senior Software Engineer'.",
+    "companyName: the CURRENT employer only.",
+    "A headline is often a tagline, not a title — if it does not clearly state a current role",
+    "at a current employer, set those fields to null.",
+    "If the person has no current employer (student, open to work, between jobs),",
+    "set companyName and designation to null. Do not substitute a school or a past employer.",
+    "Use null for anything the text does not clearly state.",
+  ].join(" ");
+
+  /** A name/title/company longer than this is the model having run on — discard rather than show it. */
+  static readonly PROFILE_PARSE_MAX_FIELD_LENGTH = 120 as const;
+
+  /** Mirrors ParsedProfileFields — every key nullable so the model can decline a field. */
+  static readonly PROFILE_PARSE_JSON_SCHEMA = {
+    type: "object",
+    properties: {
+      name: { type: ["string", "null"] },
+      designation: { type: ["string", "null"] },
+      companyName: { type: ["string", "null"] },
+    },
+    required: ["name", "designation", "companyName"],
+  } as const;
+
   static readonly DEFAULT_PAGE_NO = 1 as const;
   static readonly DEFAULT_PAGE_SIZE = 20 as const;
 

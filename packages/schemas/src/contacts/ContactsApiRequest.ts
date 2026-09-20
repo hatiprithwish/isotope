@@ -31,6 +31,20 @@ export const ZCreateContactApiRequest = z.object({
 export type CreateContactApiRequest = z.infer<typeof ZCreateContactApiRequest>;
 
 /**
+ * Upper bound on the page text sent for AI parsing. A LinkedIn profile's full rendered text runs
+ * far longer than the top card we actually need, and every extra character is billed — the client
+ * trims to this, and the server refuses anything larger rather than silently paying for it.
+ */
+export const PARSE_PROFILE_MAX_TEXT_LENGTH = 4000;
+
+/** Raw visible page text from a LinkedIn profile, for the AI parse fallback. */
+export const ZParseProfileApiRequest = z.object({
+  pageText: z.string().trim().min(1).max(PARSE_PROFILE_MAX_TEXT_LENGTH),
+  linkedinUrl: z.string().trim().min(1),
+});
+export type ParseProfileApiRequest = z.infer<typeof ZParseProfileApiRequest>;
+
+/**
  * One-shot capture from the browser extension: the caller has a company *name* scraped off a
  * page, not a companyId, so the server resolves (or creates) the company itself. Status and
  * source are server-owned defaults, never sent by the client.

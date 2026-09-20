@@ -1,6 +1,6 @@
 import { SignedIn, SignedOut } from "@clerk/chrome-extension";
 import CaptureForm from "./CaptureForm";
-import { ScanError, useProfileScan } from "./data";
+import { ScanError, useProfileScan, useRescanOnTabChange } from "./data";
 
 const WEB_ORIGIN = import.meta.env.WXT_WEB_ORIGIN;
 
@@ -16,6 +16,7 @@ function Header() {
 
 function CapturePane() {
   const scan = useProfileScan();
+  useRescanOnTabChange();
 
   if (scan.isPending) {
     return <p className="p-4 text-[13px] text-muted-foreground">Reading profile…</p>;
@@ -68,7 +69,9 @@ function CapturePane() {
     );
   }
 
-  return <CaptureForm profile={profile} />;
+  // Keyed by URL so moving to another profile remounts the form — its fields and the capture
+  // mutation are seeded once from props and would otherwise keep the previous person's values.
+  return <CaptureForm key={profile.linkedinUrl} profile={profile} />;
 }
 
 export default function App() {

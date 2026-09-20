@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wxt",
-    "build": "wxt build",
+    "build": "wxt build && node scripts/verify-extractor-selfcontained.mjs",
     "zip": "wxt zip",
     "typecheck": "wxt prepare && tsc --noEmit",
     "lint": "eslint src",

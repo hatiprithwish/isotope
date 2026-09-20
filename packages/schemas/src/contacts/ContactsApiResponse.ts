@@ -23,6 +23,19 @@ export interface CheckDuplicateContactApiResponse extends ApiResponse {
   match?: Contact | null;
 }
 
+export interface ParsedProfileFields {
+  name: string | null;
+  designation: string | null;
+  companyName: string | null;
+}
+
+export interface ParseProfileApiResponse extends ApiResponse {
+  /** Absent when the model declined or returned unusable output — the caller keeps its own values. */
+  parsed?: ParsedProfileFields;
+  /** True when the caller was rate-limited rather than the parse failing. */
+  isRateLimited?: boolean;
+}
+
 export interface CaptureContactApiResponse extends ApiResponse {
   contact?: Contact;
   /** True when the profile was already in the pipeline — `contact` is the pre-existing row and nothing was created. */

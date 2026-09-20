@@ -6,6 +6,7 @@ import RoleTypesRepo from "@/repositories/RoleTypesRepo";
 import JobsRepo from "@/repositories/JobsRepo";
 import CompaniesRepo from "@/repositories/CompaniesRepo";
 import AppLogger from "@/providers/AppLogger";
+import AiProvider from "@/providers/AiProvider";
 import Constants from "@/config/Constants";
 import Utility from "@/utils";
 import * as Schemas from "@app/schemas"; // runtime `import *` (not `import type`): this repo consumes buildContactHistoryType for the history-type convention.
@@ -24,6 +25,60 @@ export default class ContactsRepo {
       createdBy: params.userId,
       ...params.contact,
     });
+  }
+
+  /**
+   * AI fallback for the browser extension's deterministic scraper. LinkedIn's markup changes
+   * between renders, so when selector-based extraction comes back empty the panel sends the page
+   * text here instead. A failed parse is a successful no-op response with no `parsed` — the panel
+   * keeps whatever it already had and the user types the rest, so this never blocks a capture.
+   */
+  async parseProfile(
+    params: Schemas.ParseProfileApiRequest & { userId: string },
+  ): Promise<Schemas.ParseProfileApiResponse> {
+    const response: Schemas.ParseProfileApiResponse = { isSuccess: false };
+
+    try {
+      const ai = new AiProvider(this.env);
+      const parsed = await ai.runJson<Partial<Schemas.ParsedProfileFields>>(
+        Constants.AI_MODELS.llama,
+        [
+          { role: "system", content: Constants.PROFILE_PARSE_SYSTEM_PROMPT },
+          { role: "user", content: params.pageText },
+        ],
+        Constants.PROFILE_PARSE_JSON_SCHEMA as unknown as Record<string, unknown>,
+      );
+
+      // The model can satisfy the schema and still return junk (empty strings, the literal
+      // "null", a whole headline as a title) — normalise before the panel ever shows it.
+      const clean = (value: unknown): string | null => {
+        if (typeof value !== "string") return null;
+        const trimmed = value.trim();
+        if (!trimmed || trimmed.toLowerCase() === "null") return null;
+        return trimmed.length > Constants.PROFILE_PARSE_MAX_FIELD_LENGTH ? null : trimmed;
+      };
+
+      response.isSuccess = true;
+      response.message = "Profile parsed";
+      response.parsed = {
+        name: clean(parsed?.name),
+        designation: clean(parsed?.designation),
+        companyName: clean(parsed?.companyName),
+      };
+      return response;
+    } catch (error) {
+      AppLogger.error({
+        category: Schemas.LogCategory.Repo,
+        action: Schemas.LogAction.ParseProfile,
+        message: "AI profile parse failed",
+        error,
+        metadata: { userId: params.userId, linkedinUrl: params.linkedinUrl },
+      });
+      // Deliberately a success with no `parsed`: the caller degrades to manual entry.
+      response.isSuccess = true;
+      response.message = "Could not parse this profile automatically";
+      return response;
+    }
   }
 
   /**

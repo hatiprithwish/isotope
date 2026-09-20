@@ -24,6 +24,36 @@ ContactsRoutes.post(
 );
 
 ContactsRoutes.post(
+  "/parse-profile",
+  checkAuth,
+  zValidator("json", Schemas.ZParseProfileApiRequest),
+  async (c) => {
+    const userId = c.get("clerkUserId");
+    const body = c.req.valid("json");
+
+    // Burst guard, not a quota: the panel parses on a page the user opened by hand, so a rapid
+    // series of calls means a client-side loop, not a real workload. Keyed per user so one
+    // runaway extension can't spend another user's allowance.
+    const { success } = await c.env.PROFILE_PARSE_LIMITER.limit({ key: userId });
+    if (!success) {
+      return c.json(
+        {
+          isSuccess: false,
+          isRateLimited: true,
+          message: "Too many parses in a row. Wait a moment and try again.",
+        } satisfies Schemas.ParseProfileApiResponse,
+        429,
+      );
+    }
+
+    const repo = new ContactsRepo(c.env);
+    const response = await repo.parseProfile({ ...body, userId });
+
+    return c.json(response, response.isSuccess ? 200 : 500);
+  },
+);
+
+ContactsRoutes.post(
   "/capture",
   checkAuth,
   zValidator("json", Schemas.ZCaptureContactApiRequest),

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type * as Schemas from "@app/schemas";
 import type { ExtractedProfile, ExtractionSource } from "@/lib/extractProfile";
-import { useCaptureContact } from "./data";
+import { useAiParse, useCaptureContact } from "./data";
 
 const WEB_ORIGIN = import.meta.env.WXT_WEB_ORIGIN;
 
@@ -13,7 +13,10 @@ const LABEL_CLASS =
 /** A guessed value is worth flagging; a value read from structured data is not. */
 function sourceHint(source: ExtractionSource): string | null {
   if (source === "slug") return "guessed from the profile URL";
+  if (source === "ai") return "filled by AI, check it";
   if (source === "none") return "not found on the page";
+  // Inferred from where the text sits on the page rather than read from a labelled field.
+  if (source === "page-text") return "read from the page text, check it";
   return null;
 }
 
@@ -27,8 +30,45 @@ export default function CaptureForm({ profile }: { profile: ExtractedProfile }) 
   const [name, setName] = useState(profile.name);
   const [companyName, setCompanyName] = useState(profile.companyName);
   const [designation, setDesignation] = useState(profile.designation);
+  // Tracks which inputs the user has typed in, so an AI result that lands mid-edit can fill the
+  // untouched fields without overwriting what they are working on. A ref, not state: nothing
+  // renders from it, and keeping it out of state keeps the fill effect's deps honest.
+  const editedFields = useRef<Record<string, boolean>>({});
 
   const capture = useCaptureContact();
+
+  // Name and company are the two fields a capture can't proceed without; a missing title is not
+  // worth an inference call on its own.
+  const needsAi = !profile.name || !profile.companyName;
+  const aiParse = useAiParse(profile, needsAi);
+  const aiResult = aiParse.data;
+
+  // Fill only what is still blank and still untouched. Functional updates read the latest value
+  // without naming it as a dependency, so this runs when the AI result lands and never re-fires
+  // to re-fill something the user just cleared.
+  useEffect(() => {
+    if (!aiResult) return;
+    const fillIfBlank =
+      (field: "name" | "designation" | "companyName", value: string | null) => (current: string) =>
+        value && !current && !editedFields.current[field] ? value : current;
+
+    setName(fillIfBlank("name", aiResult.name));
+    setCompanyName(fillIfBlank("companyName", aiResult.companyName));
+    setDesignation(fillIfBlank("designation", aiResult.designation));
+  }, [aiResult]);
+
+  const markEdited = (field: string) => {
+    editedFields.current[field] = true;
+  };
+
+  /** A field the AI supplied and the user hasn't touched is worth flagging as machine-written. */
+  const hintFor = (
+    field: "name" | "designation" | "companyName",
+    value: string,
+  ): ExtractionSource => {
+    if (aiResult?.[field] && value === aiResult[field] && !profile[field]) return "ai";
+    return profile.sources[field];
+  };
 
   const trimmedName = name.trim();
   const trimmedCompany = companyName.trim();
@@ -83,10 +123,13 @@ export default function CaptureForm({ profile }: { profile: ExtractedProfile }) 
           id="capture-name"
           className={FIELD_CLASS}
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => {
+            markEdited("name");
+            setName(event.target.value);
+          }}
           autoComplete="off"
         />
-        <FieldHint source={profile.sources.name} />
+        <FieldHint source={hintFor("name", name)} />
       </div>
 
       <div>
@@ -97,11 +140,14 @@ export default function CaptureForm({ profile }: { profile: ExtractedProfile }) 
           id="capture-company"
           className={FIELD_CLASS}
           value={companyName}
-          onChange={(event) => setCompanyName(event.target.value)}
+          onChange={(event) => {
+            markEdited("companyName");
+            setCompanyName(event.target.value);
+          }}
           autoComplete="off"
           placeholder="Required"
         />
-        <FieldHint source={profile.sources.companyName} />
+        <FieldHint source={hintFor("companyName", companyName)} />
       </div>
 
       <div>
@@ -112,12 +158,19 @@ export default function CaptureForm({ profile }: { profile: ExtractedProfile }) 
           id="capture-designation"
           className={FIELD_CLASS}
           value={designation}
-          onChange={(event) => setDesignation(event.target.value)}
+          onChange={(event) => {
+            markEdited("designation");
+            setDesignation(event.target.value);
+          }}
           autoComplete="off"
           placeholder="Optional"
         />
-        <FieldHint source={profile.sources.designation} />
+        <FieldHint source={hintFor("designation", designation)} />
       </div>
+
+      {aiParse.isFetching && (
+        <p className="text-[11px] text-muted-foreground">Reading the rest with AI…</p>
+      )}
 
       <p className="truncate text-[11px] text-muted-foreground" title={profile.linkedinUrl}>
         {profile.linkedinUrl}

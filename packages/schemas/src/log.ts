@@ -37,6 +37,7 @@ export enum LogAction {
   // Contacts
   CreateContact = "CreateContact",
   CaptureContact = "CaptureContact",
+  ParseProfile = "ParseProfile",
   GetContactDetails = "GetContactDetails",
   ListContacts = "ListContacts",
   UpdateContact = "UpdateContact",

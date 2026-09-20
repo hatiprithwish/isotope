@@ -42,6 +42,33 @@ export default class AiProvider {
     return result;
   }
 
+  /**
+   * JSON-mode inference. Workers AI returns `response` already parsed into an object when
+   * `response_format` is a json_schema, so there is no string to JSON.parse here. The model can
+   * still fail to satisfy the schema (Workers AI surfaces "JSON Mode couldn't be met"), which
+   * throws — callers treat that as "no result", never as a hard failure.
+   */
+  async runJson<TResult>(
+    model: AiModel,
+    messages: AiMessage[],
+    jsonSchema: Record<string, unknown>,
+  ): Promise<TResult> {
+    AppLogger.info({
+      category: Schemas.LogCategory.Provider,
+      action: Schemas.LogAction.AiRun,
+      message: "Running AI inference (JSON mode)",
+      metadata: { model, messageCount: messages.length },
+    });
+
+    const result = (await this.ai.run(model, {
+      messages,
+      response_format: { type: "json_schema", json_schema: jsonSchema },
+    } as never)) as unknown as { response?: TResult };
+
+    if (!result?.response) throw new Error("AI returned no JSON response");
+    return result.response;
+  }
+
   async runWithRetry(
     model: AiModel,
     messages: AiMessage[],
