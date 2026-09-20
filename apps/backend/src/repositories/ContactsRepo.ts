@@ -798,7 +798,8 @@ export default class ContactsRepo {
    * (never trusted from the client as-is — see plan §8a).
    */
   async updateContact(params: Schemas.UpdateContactApiRequest & { userId: string; id: number }) {
-    let deadAt = params.contact.deadAt ?? null;
+    // Partial update: `undefined` leaves a column untouched, an explicit `null` clears it.
+    let deadAt: string | null | undefined = params.contact.deadAt;
 
     // Fetched once up front whenever the incoming status is terminal — feeds both the deadAt
     // stamping below (Dead only) and the previous-status check before clearing follow-up tasks.
@@ -809,28 +810,31 @@ export default class ContactsRepo {
         : null;
     const previousStatus = existing?.contact?.status;
 
-    if (newStatus === Schemas.ContactStatusIntEnum.Dead && deadAt === null) {
+    if (newStatus === Schemas.ContactStatusIntEnum.Dead && deadAt == null) {
       const wasAlreadyDead = previousStatus === Schemas.ContactStatusIntEnum.Dead;
       deadAt = wasAlreadyDead
         ? (existing?.contact?.deadAt ?? null)
         : Utility.getCurrentISOTimestamp();
+    } else if (newStatus != null && deadAt === undefined) {
+      // Moving to any non-Dead status clears the Dead stamp; an update with no status leaves it.
+      deadAt = null;
     }
 
     const response = await this.dal.updateContact({
       id: params.id,
       createdBy: params.userId,
       name: params.contact.name ?? null,
-      designation: params.contact.designation ?? null,
-      email: params.contact.email ?? null,
-      linkedinUrl: params.contact.linkedinUrl ?? null,
-      linkedinConnected: params.contact.linkedinConnected ?? null,
+      designation: params.contact.designation,
+      email: params.contact.email,
+      linkedinUrl: params.contact.linkedinUrl,
+      linkedinConnected: params.contact.linkedinConnected,
       companyId: params.contact.companyId ?? null,
-      lastTouchAt: params.contact.lastTouchAt ?? null,
+      lastTouchAt: params.contact.lastTouchAt,
       deadAt,
-      reEngageAt: params.contact.reEngageAt ?? null,
+      reEngageAt: params.contact.reEngageAt,
       status: params.contact.status ?? null,
-      source: params.contact.source ?? null,
-      notes: params.contact.notes ?? null,
+      source: params.contact.source,
+      notes: params.contact.notes,
       companyName: null,
       updatedAt: null,
     });
