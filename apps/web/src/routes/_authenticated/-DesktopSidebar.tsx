@@ -64,8 +64,8 @@ export function DesktopSidebar() {
       >
         {!collapsed && (
           <span className="font-semibold leading-none tracking-[-0.012em] text-foreground">
-            Isotope
-            <sup className="text-xxxs font-semibold text-primary align-super ml-0.5">¹³</sup>
+            isotope
+            <sup className="text-xxxs font-semibold text-primary align-super">13</sup>
           </span>
         )}
         <Tooltip>
