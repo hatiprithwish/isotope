@@ -17,7 +17,8 @@ interface Props {
   companies: Schemas.Company[];
   isLoading: boolean;
   isError: boolean;
-  selectedCompany: Schemas.Company | null;
+  /** Company id from `?panel=`; the panel fetches it itself, so it needn't be on this page. */
+  selectedCompanyId: number | null;
   onOpenPanel: (id: number) => void;
   onClosePanel: () => void;
   onAddClick: () => void;
@@ -33,7 +34,7 @@ export function DesktopCompaniesTable({
   companies,
   isLoading,
   isError,
-  selectedCompany,
+  selectedCompanyId,
   onOpenPanel,
   onClosePanel,
   onAddClick,
@@ -218,10 +219,10 @@ export function DesktopCompaniesTable({
             skeletonRows={5}
             errorMsg={isError ? "Failed to load companies. Please refresh." : undefined}
             onRowClick={(row) =>
-              selectedCompany?.id === row.id ? onClosePanel() : onOpenPanel(row.id)
+              selectedCompanyId === row.id ? onClosePanel() : onOpenPanel(row.id)
             }
             getRowClassName={(row) =>
-              row.id === selectedCompany?.id ? "bg-sidebar" : "hover:bg-(--surface-raised)"
+              row.id === selectedCompanyId ? "bg-sidebar" : "hover:bg-(--surface-raised)"
             }
             emptyState={
               companies.length === 0 ? "No companies yet." : "No companies match this filter."
@@ -234,8 +235,8 @@ export function DesktopCompaniesTable({
       </div>
 
       <CompanyDetailPanel
-        companyId={selectedCompany?.id ?? null}
-        company={selectedCompany}
+        companyId={selectedCompanyId}
+        company={companies.find((c) => c.id === selectedCompanyId)}
         onClose={onClosePanel}
       />
     </div>

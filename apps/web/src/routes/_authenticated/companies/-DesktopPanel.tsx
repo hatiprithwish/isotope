@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { useUpdateCompany } from "./-data";
+import { useQuery } from "@tanstack/react-query";
+import { CompaniesQueries, useUpdateCompany } from "./-data";
 import * as Schemas from "@app/schemas";
 import Avatar from "./-Avatar";
-import { ArrowsOutSimpleIcon, PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
+import { PencilSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import AddOrEditCompanyModal, { STATUS_OPTIONS } from "./-AddOrEditCompanyModal";
 import { StatusBadge } from "./-StatusBadge";
@@ -13,6 +13,8 @@ import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/
 import { StatusChangePopover } from "../-StatusChangePopover";
 import { StatusChangeHistory } from "../-StatusChangeHistory";
 import { StatusNoteInfoIcon } from "../-StatusNoteInfoIcon";
+import { PanelPlaceholder } from "../-PanelPlaceholder";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface CompanyPanelProps {
   company: Schemas.Company;
@@ -20,7 +22,6 @@ interface CompanyPanelProps {
 }
 
 function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
-  const navigate = useNavigate();
   const { getToken } = useAuth();
   const updateCompany = useUpdateCompany();
   const [showEditModal, setShowEditModal] = useState(false);
@@ -69,20 +70,6 @@ function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
                 title="Edit company"
               >
                 <PencilSimpleIcon size={14} />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() =>
-                  navigate({
-                    to: "/companies/$companyId",
-                    params: { companyId: String(company.id) },
-                  })
-                }
-                title="Open full page"
-              >
-                <ArrowsOutSimpleIcon size={14} />
               </Button>
               <Button
                 type="button"
@@ -181,13 +168,33 @@ function CompanyPanelContent({ company, onClose }: CompanyPanelProps) {
 }
 
 interface CompanyDetailPanelProps {
+  /** The company to show, from `?panel=<id>`. The panel fetches it itself, so it never depends on the list page. */
   companyId: number | null;
-  company: Schemas.Company | null;
+  /** A list row already in hand, shown instantly while the detail query loads. Optional. */
+  company?: Schemas.Company | null;
   onClose: () => void;
 }
 
+function CompanyPanelBody({
+  companyId,
+  company: rowCompany,
+  onClose,
+}: CompanyDetailPanelProps & { companyId: number }) {
+  const { getToken } = useAuth();
+  const { data, isError } = useQuery({
+    ...CompaniesQueries.detail(companyId, getToken),
+    placeholderData: rowCompany ? { isSuccess: true, company: rowCompany } : undefined,
+  });
+  const company = data?.company ?? rowCompany ?? null;
+
+  if (!company)
+    return <PanelPlaceholder entityLabel="Company" isError={isError} onClose={onClose} />;
+
+  return <CompanyPanelContent company={company} onClose={onClose} />;
+}
+
 export function CompanyDetailPanel({ companyId, company, onClose }: CompanyDetailPanelProps) {
-  const isOpen = companyId != null && company != null;
+  const isOpen = companyId != null;
 
   return (
     <aside
@@ -198,7 +205,7 @@ export function CompanyDetailPanel({ companyId, company, onClose }: CompanyDetai
       ].join(" ")}
       aria-hidden={!isOpen}
     >
-      {isOpen && <CompanyPanelContent company={company} onClose={onClose} />}
+      {isOpen && <CompanyPanelBody companyId={companyId} company={company} onClose={onClose} />}
     </aside>
   );
 }
@@ -208,18 +215,8 @@ export function CompanyDetailMobileDrawer({
   company,
   onClose,
 }: CompanyDetailPanelProps) {
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  const isOpen = companyId != null && company != null && isMobile;
+  const isMobile = useIsMobile();
+  const isOpen = companyId != null && isMobile;
 
   return (
     <Drawer
@@ -232,7 +229,7 @@ export function CompanyDetailMobileDrawer({
       <DrawerPortal>
         <DrawerOverlay />
         <DrawerContent className="h-[90vh] w-full p-0 bg-card border-t border-border rounded-t-xl">
-          {isOpen && <CompanyPanelContent company={company} onClose={onClose} />}
+          {isOpen && <CompanyPanelBody companyId={companyId} company={company} onClose={onClose} />}
         </DrawerContent>
       </DrawerPortal>
     </Drawer>

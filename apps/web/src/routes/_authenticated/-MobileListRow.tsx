@@ -1,6 +1,4 @@
 import type { KeyboardEvent, ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
-import type { LinkProps } from "@tanstack/react-router";
 import { CheckSquareIcon, SquareIcon } from "@phosphor-icons/react";
 
 export const MOBILE_LIST_ROW_CLASS =
@@ -80,33 +78,30 @@ export function MobileListRowShell({ role, onActivate, children }: MobileListRow
   );
 }
 
-interface MobileListRowLinkShellProps {
-  to: LinkProps["to"];
-  params: LinkProps["params"];
-  /** Accessible name for the stretched link, since its visible content is the whole card, not link text — e.g. "Open Jane Doe" */
+interface MobileListRowStretchedShellProps {
+  onActivate: () => void;
+  /** Accessible name for the stretched button, since its visible content is the whole card, not button text — e.g. "Open Jane Doe" */
   label: string;
   children: ReactNode;
 }
 
 /**
- * Row wrapper for cards that need a real <a> (native cmd/ctrl-click new tab, right-click copy
- * link, hover URL preview) AND nested interactive children (e.g. copy buttons) — <button> inside
- * <a> is invalid HTML, so the <Link> is stretched to cover the row via absolute positioning
- * ("stretched link" pattern) instead of wrapping the content directly. Row content sits above it
- * with `relative z-10` + `pointer-events-auto` on its own buttons so they stay independently
- * clickable; the link itself stays focusable/tabbable (not aria-hidden) so keyboard/screen-reader
- * users can still reach and activate it, just like the buttons that come after it in tab order.
+ * Row wrapper for cards that need nested interactive children (e.g. copy buttons) — <button>
+ * inside <button> is invalid HTML, so a <button> is stretched to cover the row via absolute
+ * positioning ("stretched" pattern) instead of wrapping the content directly. Row content sits
+ * above it with `relative z-10` + `pointer-events-auto` on its own buttons so they stay
+ * independently clickable; the stretched button itself stays focusable/tabbable (not aria-hidden)
+ * so keyboard/screen-reader users can still reach and activate it.
  */
-export function MobileListRowLinkShell({
-  to,
-  params,
+export function MobileListRowStretchedShell({
+  onActivate,
   label,
   children,
-}: MobileListRowLinkShellProps) {
+}: MobileListRowStretchedShellProps) {
   return (
     <div className={`relative ${MOBILE_LIST_ROW_CLASS}`}>
-      <Link to={to} params={params} className="absolute inset-0" aria-label={label} />
-      <div className="relative z-10 flex items-center gap-3 w-full pointer-events-none [&_button]:pointer-events-auto [&_a:not(:first-child)]:pointer-events-auto">
+      <button type="button" onClick={onActivate} className="absolute inset-0" aria-label={label} />
+      <div className="relative z-10 flex items-center gap-3 w-full pointer-events-none [&_button]:pointer-events-auto">
         {children}
       </div>
     </div>

@@ -15,6 +15,7 @@ interface Props {
   onSearchChange: (value: string) => void;
   onBulkDelete: (ids: number[]) => Promise<unknown>;
   isBulkPending: boolean;
+  onOpenPanel: (id: number) => void;
 }
 
 export function MobileCompaniesList({
@@ -27,6 +28,7 @@ export function MobileCompaniesList({
   onSearchChange,
   onBulkDelete,
   isBulkPending,
+  onOpenPanel,
 }: Props) {
   const [mobileSearch, setMobileSearch] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
@@ -153,6 +155,7 @@ export function MobileCompaniesList({
               selectMode={selectMode}
               selected={selectedIds.has(co.id)}
               onToggleSelect={toggleOne}
+              onOpen={onOpenPanel}
             />
           ))}
       </div>

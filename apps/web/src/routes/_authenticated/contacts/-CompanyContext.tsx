@@ -40,9 +40,7 @@ export function CompanyContext({ companyId, contactId }: Props) {
         ) : (
           <button
             type="button"
-            onClick={() =>
-              navigate({ to: "/companies/$companyId", params: { companyId: String(company.id) } })
-            }
+            onClick={() => navigate({ to: "/companies", search: { panel: company.id } })}
             className="w-full text-left bg-sidebar border border-border rounded-lg p-3.5 hover:bg-(--surface-raised) transition-colors"
           >
             <div className="text-[13px] font-semibold text-foreground truncate">{company.name}</div>
@@ -76,7 +74,7 @@ export function CompanyContext({ companyId, contactId }: Props) {
               <button
                 key={job.id}
                 type="button"
-                onClick={() => navigate({ to: "/jobs/$jobId", params: { jobId: String(job.id) } })}
+                onClick={() => navigate({ to: "/jobs", search: { panel: job.id } })}
                 className={[
                   "flex items-center gap-2.5 py-2 w-full text-left hover:bg-(--surface-raised) -mx-1 px-1 rounded-md transition-colors",
                   i < jobs.length - 1 ? "border-b border-border" : "",
@@ -110,12 +108,7 @@ export function CompanyContext({ companyId, contactId }: Props) {
               <button
                 key={contact.id}
                 type="button"
-                onClick={() =>
-                  navigate({
-                    to: "/contacts/$contactId",
-                    params: { contactId: String(contact.id) },
-                  })
-                }
+                onClick={() => navigate({ to: "/contacts", search: { panel: contact.id } })}
                 className={[
                   "flex items-center gap-2.5 py-2 w-full text-left hover:bg-(--surface-raised) -mx-1 px-1 rounded-md transition-colors",
                   i < otherContacts.length - 1 ? "border-b border-border" : "",

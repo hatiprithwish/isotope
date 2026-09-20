@@ -1,45 +1,61 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import type * as Schemas from "@app/schemas";
 import { Drawer, DrawerContent, DrawerOverlay, DrawerPortal } from "@/shadcn/ui/drawer";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { PanelPlaceholder } from "../-PanelPlaceholder";
 import { ContactDetailContent, type ContactDetailTab } from "./-ContactDetailContent";
 import { ContactsQueries } from "./-data";
 
 interface ContactDetailPanelProps {
+  /** The contact to show, from `?panel=<id>`. The panel fetches it itself, so it never depends on the list page. */
   contactId: number | null;
-  contact: Schemas.Contact | null;
+  /** A list row already in hand, shown instantly while the detail query loads. Optional. */
+  contact?: Schemas.Contact | null;
   onClose: () => void;
 }
 
 /**
- * The list-page row (`contact` prop) is only refetched when the list query is invalidated,
- * so it goes stale after mutations that invalidate `keys.detail` but not `keys.list` (e.g.
- * logging/editing/deleting history, which can change status/follow-up state). Fetching the
- * detail query here too — seeded with the row as a placeholder so there's no loading flash —
- * makes the panel self-heal on those invalidations instead of relying on the list row.
+ * The detail query is the source of truth: the list row (`rowContact`) is only a placeholder, since
+ * it goes stale after mutations that invalidate `keys.detail` but not `keys.list` (e.g.
+ * logging/editing/deleting history, which can change status/follow-up state).
  */
-function useLiveContact(contactId: number | null, rowContact: Schemas.Contact | null) {
+function useLiveContact(contactId: number, rowContact: Schemas.Contact | null | undefined) {
   const { getToken } = useAuth();
-  const { data } = useQuery({
-    ...ContactsQueries.detail(contactId ?? 0, getToken),
-    enabled: contactId != null,
+  const { data, isError } = useQuery({
+    ...ContactsQueries.detail(contactId, getToken),
     placeholderData: rowContact ? { isSuccess: true, contact: rowContact } : undefined,
   });
-  return data?.contact ?? rowContact;
+  return { contact: data?.contact ?? rowContact ?? null, isError };
 }
 
-export function ContactDetailPanel({
+function ContactPanelBody({
   contactId,
   contact: rowContact,
   onClose,
-}: ContactDetailPanelProps) {
+}: ContactDetailPanelProps & { contactId: number }) {
   const [activeTab, setActiveTab] = useState<ContactDetailTab>("history");
   const { getToken } = useAuth();
-  const navigate = useNavigate();
-  const contact = useLiveContact(contactId, rowContact);
-  const isOpen = contactId != null && contact != null;
+  const { contact, isError } = useLiveContact(contactId, rowContact);
+
+  if (!contact)
+    return <PanelPlaceholder entityLabel="Contact" isError={isError} onClose={onClose} />;
+
+  return (
+    <ContactDetailContent
+      contact={contact}
+      getToken={getToken}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      onClose={onClose}
+      onDeleted={onClose}
+    />
+  );
+}
+
+export function ContactDetailPanel({ contactId, contact, onClose }: ContactDetailPanelProps) {
+  const isOpen = contactId != null;
 
   return (
     <aside
@@ -50,43 +66,18 @@ export function ContactDetailPanel({
       ].join(" ")}
       aria-hidden={!isOpen}
     >
-      {isOpen && (
-        <ContactDetailContent
-          contact={contact}
-          getToken={getToken}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onClose={onClose}
-          onExpand={() =>
-            navigate({ to: "/contacts/$contactId", params: { contactId: String(contact.id) } })
-          }
-          onDeleted={onClose}
-        />
-      )}
+      {isOpen && <ContactPanelBody contactId={contactId} contact={contact} onClose={onClose} />}
     </aside>
   );
 }
 
 export function ContactDetailMobileDrawer({
   contactId,
-  contact: rowContact,
+  contact,
   onClose,
 }: ContactDetailPanelProps) {
-  const [activeTab, setActiveTab] = useState<ContactDetailTab>("history");
-  const { getToken } = useAuth();
-  const contact = useLiveContact(contactId, rowContact);
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  const isOpen = contactId != null && contact != null && isMobile;
+  const isMobile = useIsMobile();
+  const isOpen = contactId != null && isMobile;
 
   return (
     <Drawer
@@ -99,16 +90,7 @@ export function ContactDetailMobileDrawer({
       <DrawerPortal>
         <DrawerOverlay />
         <DrawerContent className="h-[90vh] w-full p-0 bg-card border-t border-border rounded-t-xl">
-          {isOpen && (
-            <ContactDetailContent
-              contact={contact}
-              getToken={getToken}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-              onClose={onClose}
-              onDeleted={onClose}
-            />
-          )}
+          {isOpen && <ContactPanelBody contactId={contactId} contact={contact} onClose={onClose} />}
         </DrawerContent>
       </DrawerPortal>
     </Drawer>

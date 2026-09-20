@@ -154,7 +154,7 @@ export default function ThreadPanel({
         <div className="flex items-center gap-4">
           <a
             className="text-[13px] font-medium text-primary underline underline-offset-2"
-            href={`${WEB_ORIGIN}/contacts/${contactId}`}
+            href={`${WEB_ORIGIN}/contacts?panel=${contactId}`}
             target="_blank"
             rel="noreferrer"
           >

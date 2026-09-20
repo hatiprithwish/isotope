@@ -43,12 +43,7 @@ export function LinkedContacts({ companyId }: Props) {
             <button
               key={contact.id}
               type="button"
-              onClick={() =>
-                navigate({
-                  to: "/contacts/$contactId",
-                  params: { contactId: String(contact.id) },
-                })
-              }
+              onClick={() => navigate({ to: "/contacts", search: { panel: contact.id } })}
               className={[
                 "flex items-center gap-2.5 py-2 w-full text-left hover:bg-(--surface-raised) -mx-1 px-1 rounded-md transition-colors",
                 i < linkedContacts.length - 1 ? "border-b border-border" : "",

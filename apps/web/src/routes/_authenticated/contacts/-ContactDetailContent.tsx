@@ -1,22 +1,33 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Schemas from "@app/schemas"; // runtime `import *`: consumes CONTACT_HISTORY_CHANNEL_LABEL_MAP alongside types.
-import { ArrowsOutSimpleIcon, PencilSimpleIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
+import {
+  ArrowSquareOutIcon,
+  CheckIcon,
+  CopyIcon,
+  EnvelopeSimpleIcon,
+  LinkedinLogoIcon,
+  PencilSimpleIcon,
+  TrashIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { StatusBadge } from "./-StatusBadge";
 import { ContactsQueries, useDeleteContact, useUpdateContact } from "./-data";
 import Utilities from "@/utils";
 import { HistoryTab } from "./-HistoryTab";
 import { AboutTab } from "./-AboutTab";
+import { NotesTab } from "./-NotesTab";
 import AddOrEditContactModal, { STATUS_OPTIONS } from "./-AddOrEditContactModal";
 import { StatusChangePopover } from "../-StatusChangePopover";
 import { StatusNoteInfoIcon } from "../-StatusNoteInfoIcon";
 
-export type ContactDetailTab = "history" | "about";
+export type ContactDetailTab = "history" | "about" | "notes";
 
 const TABS: { id: ContactDetailTab; label: string }[] = [
   { id: "history", label: "History" },
   { id: "about", label: "About" },
+  { id: "notes", label: "Notes" },
 ];
 
 function Avatar({ name }: { name: string }) {
@@ -27,16 +38,73 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
+function ContactLinks({ contact }: { contact: Schemas.Contact }) {
+  const [emailCopied, setEmailCopied] = useState(false);
+
+  if (!contact.email && !contact.linkedinUrl) return null;
+
+  const copyEmail = () => {
+    if (!contact.email) return;
+    void navigator.clipboard.writeText(contact.email);
+    setEmailCopied(true);
+    setTimeout(() => setEmailCopied(false), 2000);
+  };
+
+  return (
+    <div className="flex flex-col gap-0.5 mt-2.5 -mx-2">
+      {contact.email && (
+        <button
+          type="button"
+          onClick={copyEmail}
+          title="Copy email"
+          className="flex items-center gap-2 h-7 px-2 rounded-md text-left hover:bg-(--surface-raised) transition-colors"
+        >
+          <EnvelopeSimpleIcon size={14} className="text-(--text-secondary) shrink-0" />
+          <span className="flex-1 min-w-0 text-[13px] text-foreground truncate">
+            {contact.email}
+          </span>
+          {emailCopied ? (
+            <span className="flex items-center gap-1 text-[11px] text-(--success-text) shrink-0">
+              <CheckIcon size={12} weight="bold" />
+              Copied
+            </span>
+          ) : (
+            <CopyIcon size={14} className="text-(--text-secondary) shrink-0" />
+          )}
+        </button>
+      )}
+      {contact.linkedinUrl && (
+        <a
+          href={Utilities.toHref(contact.linkedinUrl)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open LinkedIn profile"
+          className="flex items-center gap-2 h-7 px-2 rounded-md hover:bg-(--surface-raised) transition-colors"
+        >
+          <LinkedinLogoIcon size={14} className="text-(--text-secondary) shrink-0" />
+          <span className="flex-1 min-w-0 text-[13px] text-foreground truncate">
+            {contact.linkedinUrl}
+          </span>
+          {contact.linkedinConnected && (
+            <span className="flex items-center gap-1 text-[11px] text-(--success-text) shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-(--success)" />
+              Connected
+            </span>
+          )}
+          <ArrowSquareOutIcon size={14} className="text-(--text-secondary) shrink-0" />
+        </a>
+      )}
+    </div>
+  );
+}
+
 interface ContactDetailContentProps {
   contact: Schemas.Contact;
   getToken: () => Promise<string | null>;
   activeTab: ContactDetailTab;
   onTabChange: (tab: ContactDetailTab) => void;
-  /** Present in the slide-out panel; absent on the full page route. */
-  onClose?: () => void;
-  /** Present in the slide-out panel to jump to the full page route; absent on the full page route. */
-  onExpand?: () => void;
-  /** Called after a successful delete so each surface can navigate/close appropriately. */
+  onClose: () => void;
+  /** Called after a successful delete so the surface can close itself. */
   onDeleted: () => void;
 }
 
@@ -46,7 +114,6 @@ export function ContactDetailContent({
   activeTab,
   onTabChange,
   onClose,
-  onExpand,
   onDeleted,
 }: ContactDetailContentProps) {
   const [showEditModal, setShowEditModal] = useState(false);
@@ -128,28 +195,15 @@ export function ContactDetailContent({
               >
                 <TrashIcon size={14} />
               </Button>
-              {onExpand && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={onExpand}
-                  title="Open full page"
-                >
-                  <ArrowsOutSimpleIcon size={14} />
-                </Button>
-              )}
-              {onClose && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={onClose}
-                  title="Close panel"
-                >
-                  <XIcon size={14} />
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={onClose}
+                title="Close panel"
+              >
+                <XIcon size={14} />
+              </Button>
             </div>
           </div>
           <div className="flex gap-2 items-center mt-3 flex-wrap">
@@ -174,6 +228,7 @@ export function ContactDetailContent({
             />
             <span className="ml-auto text-[11px] text-(--text-secondary)">{touchLabel}</span>
           </div>
+          <ContactLinks contact={contact} />
         </div>
 
         <div className="flex border-b border-border bg-card shrink-0 px-1">
@@ -199,6 +254,7 @@ export function ContactDetailContent({
           {activeTab === "about" && (
             <AboutTab contact={contact} getToken={getToken} statusLabel={statusLabel} />
           )}
+          {activeTab === "notes" && <NotesTab key={contact.id} contact={contact} />}
         </div>
       </div>
     </>

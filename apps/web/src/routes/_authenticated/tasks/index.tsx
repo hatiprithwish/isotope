@@ -7,7 +7,7 @@ import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { z } from "zod";
 import { Input } from "@/shadcn/ui/input";
 import * as Schemas from "@app/schemas";
-import { ContactDetailPanel } from "../contacts/-DesktopPanel";
+import { ContactDetailMobileDrawer, ContactDetailPanel } from "../contacts/-DesktopPanel";
 import { TasksQueries, useUpdateTaskStatus } from "./-data";
 import { WeekStrip } from "./-WeekStrip";
 import { TaskSection } from "./-TaskSection";
@@ -76,6 +76,10 @@ function TasksPage() {
     });
   }
 
+  function openContactPanel(contactId: number) {
+    void navigate({ search: (prev) => ({ ...prev, panel: contactId }) });
+  }
+
   function closeConversationPanel() {
     void navigate({ search: (prev) => ({ ...prev, panel: undefined }) });
   }
@@ -124,6 +128,7 @@ function TasksPage() {
               emptyLabel="No tasks found."
               onToggleTask={toggleTask}
               updatingTaskId={updatingTaskId}
+              onOpenContact={openContactPanel}
               collapsible={false}
             />
           ) : (
@@ -137,6 +142,7 @@ function TasksPage() {
                 emptyLabel="No follow-ups for this day."
                 onToggleTask={toggleTask}
                 updatingTaskId={updatingTaskId}
+                onOpenContact={openContactPanel}
                 collapsible={false}
               />
 
@@ -149,11 +155,14 @@ function TasksPage() {
                 emptyLabel="No past follow-ups."
                 onToggleTask={toggleTask}
                 updatingTaskId={updatingTaskId}
+                onOpenContact={openContactPanel}
               />
             </>
           )}
         </div>
       </div>
+
+      <ContactDetailMobileDrawer contactId={panel ?? null} onClose={closeConversationPanel} />
 
       <div className="hidden md:flex h-full overflow-hidden bg-background relative">
         <div className="flex-1 min-w-0 overflow-y-auto">
@@ -247,11 +256,7 @@ function TasksPage() {
           </div>
         </div>
 
-        <ContactDetailPanel
-          contactId={panel ?? null}
-          contact={null}
-          onClose={closeConversationPanel}
-        />
+        <ContactDetailPanel contactId={panel ?? null} onClose={closeConversationPanel} />
       </div>
     </>
   );

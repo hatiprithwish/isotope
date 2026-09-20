@@ -7,7 +7,7 @@ import { JobsQueries, useJobs, useJobsCount, useBulkDeleteJobs, useBulkUpdateJob
 import { useBulkCreateStatusChangeNotes } from "../-status-change-notes-data";
 import { StatusChangeEntityTypeEnum } from "@app/schemas";
 import { JobsTable } from "./-JobsTable";
-import { JobDetailPanel } from "./-JobDetailDrawer";
+import { JobDetailMobileDrawer, JobDetailPanel } from "./-JobDetailDrawer";
 import AddOrEditJobModal from "./-AddOrEditJobModal";
 import { MobileJobsList } from "./-MobileJobsList";
 import { useAddShortcut } from "@/hooks/useAddShortcut";
@@ -194,10 +194,17 @@ function JobsPage() {
           setSearchQuery(v);
           setCurrentPage(1);
         }}
-        onRowClick={(job) => navigate({ to: "/jobs/$jobId", params: { jobId: String(job.id) } })}
+        onRowClick={(job) => navigate({ search: (prev) => ({ ...prev, panel: job.id }) })}
         onAddClick={() => setFormMode("create")}
         onBulkDelete={(ids) => void handleBulkDelete(ids)}
         onBulkStatusUpdate={(ids, status, note) => handleBulkStatusUpdate(ids, status, note)}
+      />
+
+      <JobDetailMobileDrawer
+        jobId={panel ?? null}
+        onClose={() => navigate({ search: (prev) => ({ ...prev, panel: undefined }) })}
+        onEdit={(job) => setFormMode(job)}
+        onDelete={handlePanelDelete}
       />
 
       <div className="hidden md:flex h-full overflow-hidden relative">

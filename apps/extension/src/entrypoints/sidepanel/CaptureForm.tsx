@@ -126,7 +126,7 @@ export default function CaptureForm({ profile }: { profile: ExtractedProfile }) 
         </p>
         <a
           className="text-[13px] font-medium text-primary underline underline-offset-2"
-          href={`${WEB_ORIGIN}/contacts/${contact.id}`}
+          href={`${WEB_ORIGIN}/contacts?panel=${contact.id}`}
           target="_blank"
           rel="noreferrer"
         >

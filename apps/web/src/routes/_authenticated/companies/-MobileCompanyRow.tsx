@@ -1,12 +1,6 @@
-import { Link } from "@tanstack/react-router";
 import { StatusBadge } from "./-StatusBadge";
 import Avatar from "./-Avatar";
-import {
-  MOBILE_LIST_ROW_CLASS,
-  MobileListRowCheckbox,
-  MobileListRowChevron,
-  MobileListRowShell,
-} from "../-MobileListRow";
+import { MobileListRowCheckbox, MobileListRowChevron, MobileListRowShell } from "../-MobileListRow";
 import type * as Schemas from "@app/schemas";
 
 interface MobileCompanyRowProps {
@@ -14,6 +8,7 @@ interface MobileCompanyRowProps {
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: number) => void;
+  onOpen: (id: number) => void;
 }
 
 function MobileCompanyRow({
@@ -21,6 +16,7 @@ function MobileCompanyRow({
   selectMode = false,
   selected = false,
   onToggleSelect,
+  onOpen,
 }: MobileCompanyRowProps) {
   const content = (
     <>
@@ -50,13 +46,9 @@ function MobileCompanyRow({
   }
 
   return (
-    <Link
-      to="/companies/$companyId"
-      params={{ companyId: String(company.id) }}
-      className={MOBILE_LIST_ROW_CLASS}
-    >
+    <MobileListRowShell role="button" onActivate={() => onOpen(company.id)}>
       {content}
-    </Link>
+    </MobileListRowShell>
   );
 }
 export default MobileCompanyRow;

@@ -22,6 +22,7 @@ interface Props {
     statusNote: string | null,
   ) => Promise<unknown>;
   isBulkPending: boolean;
+  onOpenPanel: (id: number) => void;
 }
 
 export function MobileContactsList({
@@ -35,6 +36,7 @@ export function MobileContactsList({
   onBulkDelete,
   onBulkUpdate,
   isBulkPending,
+  onOpenPanel,
 }: Props) {
   const [mobileSearch, setMobileSearch] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
@@ -184,6 +186,7 @@ export function MobileContactsList({
               selectMode={selectMode}
               selected={selectedIds.has(co.id)}
               onToggleSelect={toggleOne}
+              onOpen={onOpenPanel}
             />
           ))}
       </div>

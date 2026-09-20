@@ -32,7 +32,8 @@ interface Props {
   contacts: Schemas.Contact[];
   isLoading: boolean;
   isError: boolean;
-  selectedContact: Schemas.Contact | null;
+  /** Contact id from `?panel=`; the panel fetches it itself, so it needn't be on this page. */
+  selectedContactId: number | null;
   onOpenPanel: (id: number) => void;
   onClosePanel: () => void;
   onAddClick: () => void;
@@ -54,7 +55,7 @@ export function DesktopContactsTable({
   contacts,
   isLoading,
   isError,
-  selectedContact,
+  selectedContactId,
   onOpenPanel,
   onClosePanel,
   onAddClick,
@@ -420,10 +421,10 @@ export function DesktopContactsTable({
             skeletonRows={5}
             errorMsg={isError ? "Failed to load contacts. Please refresh." : undefined}
             onRowClick={(row) =>
-              selectedContact?.id === row.id ? onClosePanel() : onOpenPanel(row.id)
+              selectedContactId === row.id ? onClosePanel() : onOpenPanel(row.id)
             }
             getRowClassName={(row) =>
-              row.id === selectedContact?.id ? "bg-sidebar" : "hover:bg-(--surface-raised)"
+              row.id === selectedContactId ? "bg-sidebar" : "hover:bg-(--surface-raised)"
             }
             emptyState="No contacts yet."
             stickyHeader
@@ -436,8 +437,8 @@ export function DesktopContactsTable({
       </div>
 
       <ContactDetailPanel
-        contactId={selectedContact?.id ?? null}
-        contact={selectedContact}
+        contactId={selectedContactId}
+        contact={contacts.find((c) => c.id === selectedContactId)}
         onClose={onClosePanel}
       />
     </div>

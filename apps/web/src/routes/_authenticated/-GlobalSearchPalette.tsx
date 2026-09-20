@@ -38,9 +38,9 @@ function resultRoute(result: SearchResultItem): {
     case SearchEntityType.Company:
       return { to: "/companies", search: { panel: result.entityId } };
     case SearchEntityType.Job:
-      return { to: "/jobs/$jobId", params: { jobId: String(result.entityId) } };
+      return { to: "/jobs", search: { panel: result.entityId } };
     case SearchEntityType.Contact:
-      return { to: "/contacts/$contactId", params: { contactId: String(result.entityId) } };
+      return { to: "/contacts", search: { panel: result.entityId } };
   }
 }
 

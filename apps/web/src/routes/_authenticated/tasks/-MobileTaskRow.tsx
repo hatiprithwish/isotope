@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { Checkbox } from "@/shadcn/ui/checkbox";
 import * as Schemas from "@app/schemas"; // runtime `import *`: consumes CONTACT_HISTORY_CHANNEL_LABEL_MAP alongside types.
 import { formatRowDate } from "./-utils";
@@ -9,6 +8,7 @@ interface MobileTaskRowProps {
   isUpdating: boolean;
   /** Shown when the row sits in a mixed-date list (search results, Past tasks) with no single section date to rely on. */
   showDate?: boolean;
+  onOpenContact: (contactId: number) => void;
 }
 
 export function MobileTaskRow({
@@ -16,6 +16,7 @@ export function MobileTaskRow({
   onToggle,
   isUpdating,
   showDate = false,
+  onOpenContact,
 }: MobileTaskRowProps) {
   const isCompleted = task.status === Schemas.TaskStatusIntEnum.Completed;
   const isPaused = task.status === Schemas.TaskStatusIntEnum.Paused;
@@ -63,15 +64,15 @@ export function MobileTaskRow({
   );
 
   // The checkbox is a real, independently focusable form control — it must be a sibling of
-  // the Link below, not a descendant. A control nested inside an <a> would have its own
-  // semantics swallowed into the anchor's single accessible name, same defect as the now-
+  // the stretched button below, not a descendant. A control nested inside a <button> would have its own
+  // semantics swallowed into the button's single accessible name, same defect as the now-
   // hidden text nodes above. `relative z-10` lifts it into its own stacking context so it
-  // sits above the absolutely-positioned Link overlay and receives its own clicks/taps.
+  // sits above the absolutely-positioned button overlay and receives its own clicks/taps.
   // checkbox.tsx expands the tap target via `after:-inset-x-3 after:-inset-y-2`; that
   // pseudo-element is composited as part of the checkbox's own box (same stacking context,
-  // same z-10 layer), so it should win over the Link the same way the visible box does — but
+  // same z-10 layer), so it should win over the button the same way the visible box does — but
   // this hasn't been confirmed on a real touch device. If a tap near the checkbox's edge ever
-  // navigates instead of toggling, that's the thing to re-check first.
+  // opens the panel instead of toggling, that's the thing to re-check first.
   const checkbox = (
     <Checkbox
       checked={isCompleted}
@@ -82,13 +83,13 @@ export function MobileTaskRow({
     />
   );
 
-  if (task.contactId != null) {
+  const contactId = task.contactId;
+  if (contactId != null) {
     return (
       <div className="relative flex items-start gap-3 px-4 py-3 border-b border-border last:border-b-0">
-        <Link
-          to="/contacts/$contactId"
-          params={{ contactId: String(task.contactId) }}
-          search={{ tab: "history" }}
+        <button
+          type="button"
+          onClick={() => onOpenContact(contactId)}
           aria-label={`View conversation with ${task.companyName ?? "contact"}: ${task.title}`}
           className="absolute inset-0 rounded-sm active:bg-(--surface-raised)"
         />

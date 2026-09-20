@@ -6,7 +6,7 @@ import Utilities from "@/utils";
 import {
   MobileListRowCheckbox,
   MobileListRowChevron,
-  MobileListRowLinkShell,
+  MobileListRowStretchedShell,
   MobileListRowShell,
 } from "../-MobileListRow";
 
@@ -15,6 +15,7 @@ interface MobileContactRowProps {
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: number) => void;
+  onOpen: (id: number) => void;
 }
 
 function copyToClipboard(e: React.MouseEvent, value: string, label: string) {
@@ -30,6 +31,7 @@ function MobileContactRow({
   selectMode = false,
   selected = false,
   onToggleSelect,
+  onOpen,
 }: MobileContactRowProps) {
   const email = contact.email;
   const linkedinUrl = contact.linkedinUrl;
@@ -88,13 +90,12 @@ function MobileContactRow({
   }
 
   return (
-    <MobileListRowLinkShell
-      to="/contacts/$contactId"
-      params={{ contactId: String(contact.id) }}
+    <MobileListRowStretchedShell
+      onActivate={() => onOpen(contact.id)}
       label={`Open ${contact.name}`}
     >
       {content}
-    </MobileListRowLinkShell>
+    </MobileListRowStretchedShell>
   );
 }
 

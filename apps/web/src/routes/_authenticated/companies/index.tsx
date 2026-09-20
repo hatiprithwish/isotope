@@ -10,6 +10,7 @@ import { CompaniesQueries, useBulkDeleteCompanies } from "./-data";
 import AddOrEditCompanyModal from "./-AddOrEditCompanyModal";
 import { MobileCompaniesList } from "./-MobileCompaniesList";
 import { DesktopCompaniesTable } from "./-DesktopCompaniesTable";
+import { CompanyDetailMobileDrawer } from "./-DesktopPanel";
 import {
   CompanyStatusIntEnum,
   CompanyStatusLabelEnum,
@@ -62,7 +63,6 @@ function CompaniesPage() {
     ),
   );
   const companies = data?.companies ?? [];
-  const selectedCompany = panel ? (companies.find((c) => c.id === panel) ?? null) : null;
 
   function handleStatusesChange(next: number[]) {
     void navigate({ search: (prev) => ({ ...prev, statuses: serializeFilterParam(next) }) });
@@ -119,13 +119,20 @@ function CompaniesPage() {
         onSearchChange={setSearchQuery}
         onBulkDelete={handleBulkDelete}
         isBulkPending={bulkDeleteMutation.isPending}
+        onOpenPanel={openPanel}
+      />
+
+      <CompanyDetailMobileDrawer
+        companyId={panel ?? null}
+        company={companies.find((c) => c.id === panel)}
+        onClose={closePanel}
       />
 
       <DesktopCompaniesTable
         companies={companies}
         isLoading={isPending}
         isError={isError}
-        selectedCompany={selectedCompany}
+        selectedCompanyId={panel ?? null}
         onOpenPanel={openPanel}
         onClosePanel={closePanel}
         onAddClick={() => setShowAddModal(true)}

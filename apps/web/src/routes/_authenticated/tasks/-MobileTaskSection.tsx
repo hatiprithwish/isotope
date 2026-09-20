@@ -13,6 +13,7 @@ interface MobileTaskSectionProps {
   emptyLabel: string;
   onToggleTask: (task: Schemas.TaskWithMeta) => void;
   updatingTaskId: number | null;
+  onOpenContact: (contactId: number) => void;
   /** Collapsible with a caret trigger when true; a plain always-open section when false. */
   collapsible?: boolean;
   defaultOpen?: boolean;
@@ -49,10 +50,17 @@ function SectionBody({
   emptyLabel,
   onToggleTask,
   updatingTaskId,
+  onOpenContact,
   showDate,
 }: Pick<
   MobileTaskSectionProps,
-  "tasks" | "isLoading" | "isError" | "emptyLabel" | "onToggleTask" | "updatingTaskId"
+  | "tasks"
+  | "isLoading"
+  | "isError"
+  | "emptyLabel"
+  | "onToggleTask"
+  | "updatingTaskId"
+  | "onOpenContact"
 > & { showDate: boolean }) {
   if (isError) {
     return <p className="px-4 py-3 text-[13px] text-(--danger-text)">Failed to load.</p>;
@@ -80,6 +88,7 @@ function SectionBody({
           onToggle={onToggleTask}
           isUpdating={updatingTaskId === task.id}
           showDate={showDate}
+          onOpenContact={onOpenContact}
         />
       ))}
     </>
@@ -95,6 +104,7 @@ export function MobileTaskSection({
   emptyLabel,
   onToggleTask,
   updatingTaskId,
+  onOpenContact,
   collapsible = true,
   defaultOpen = true,
 }: MobileTaskSectionProps) {
@@ -108,6 +118,7 @@ export function MobileTaskSection({
       emptyLabel={emptyLabel}
       onToggleTask={onToggleTask}
       updatingTaskId={updatingTaskId}
+      onOpenContact={onOpenContact}
       showDate={!dateLabel}
     />
   );

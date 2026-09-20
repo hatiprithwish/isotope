@@ -444,7 +444,7 @@ export function DuplicateContactWarning({
       <div className="flex-1">
         Possible match:{" "}
         <a
-          href={`/contacts/${match.id}`}
+          href={`/contacts?panel=${match.id}`}
           target="_blank"
           rel="noreferrer"
           className="font-semibold underline underline-offset-2"

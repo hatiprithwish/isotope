@@ -50,7 +50,7 @@ Use `pnpm` only. Run an **unfiltered** `pnpm install` — `pnpm install --filter
 - `apps/backend/src/handlers/` (queue/cron/scheduled) — `export default class <Feature>Handler` with `static` methods only; entry point `static handle(batch, env)`; helpers are private static methods.
 - `apps/backend/src/config/` — `AppContext`, `EnvConfig`, `Constants`.
 - `apps/backend/src/db/tables.ts` — all Drizzle table definitions.
-- `apps/web/src/routes/_authenticated/<feature>/` — authenticated pages; `-data.ts` (query-options class + mutation hooks), `index.tsx`, `new/index.tsx`, `$<id>/index.tsx`, and `-`-prefixed co-located components. The layout wrapper enforces the Clerk session.
+- `apps/web/src/routes/_authenticated/<feature>/` — authenticated pages; `-data.ts` (query-options class + mutation hooks), `index.tsx`, and `-`-prefixed co-located components. There are no per-entity detail pages: the detail panel is the only detail surface. The layout wrapper enforces the Clerk session.
 - `apps/web/src/shadcn/ui/` — shadcn files; never modify.
 - `apps/web/src/utils/` — shared helpers; grep here before writing any new one.
 - `apps/extension/` — see [Capture extension](#capture-extension).
@@ -101,7 +101,7 @@ Use `pnpm` only. Run an **unfiltered** `pnpm install` — `pnpm install --filter
 - Loading (`if (isPending)`), error (`if (isError)`), and empty states are mandatory on every page.
 - `-data.ts`: a static query-options class with hierarchical keys (invalidating `keys.all()` invalidates all details); `setQueryData` on update mutations, `removeQueries` on delete; `mutateAsync` when you must await before navigating/closing, otherwise `mutate` with `onSuccess`.
 - Every `useMutation` declares an `onError` that surfaces the failure via `toast.error(...)` (sonner). Absent or empty `onError` is forbidden.
-- Detail-panel state is derivable from the URL: `?panel=<id>`.
+- Detail-panel state is derivable from the URL: `?panel=<id>`. The panel opens by id and fetches its own detail (a list row, when in hand, is only a `placeholderData`), so it never depends on the list page/filter. Desktop is a side `aside`; mobile is a bottom `Drawer` mounted by each list page. Cross-entity links and extension links go to `/<feature>?panel=<id>` — never a `/<feature>/<id>` route.
 - **Mobile parity**: any UI change touches both the Desktop and Mobile variants (`-DesktopSidebar.tsx` / `-MobileTabBar.tsx`, `-DesktopContactsTable.tsx` / `-MobileContactsList.tsx`, etc.) in the same commit.
 
 **Styling** — Tailwind utilities only; no `style={{}}`, CSS modules, or styled-components. Extend shadcn via `className`. Pixel-perfect and responsive (`md:`/`lg:` prefixes). Check `styles.css` for exact token names before writing colour classes. Prefer a real Tailwind v4 class over `[]` arbitrary values — v4 accepts decimals (`w-1.25`, `gap-0.75`); check the Tailwind v4 docs first. If a design value cannot be expressed in Tailwind, flag it — do not approximate.

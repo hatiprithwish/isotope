@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { useNavigate } from "@tanstack/react-router";
-import { ArrowsOutSimpleIcon, XIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
+import { XIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { toast } from "sonner";
 import { JobsQueries, useDeleteJob, useUpdateJob } from "./-data";
@@ -21,7 +20,6 @@ interface Props {
 
 export function JobPanelContent({ jobId, onClose, onEdit, onDelete }: Props) {
   const { getToken } = useAuth();
-  const navigate = useNavigate();
   const { data, isPending, isError } = useQuery(JobsQueries.detail(jobId, getToken));
   const deleteMutation = useDeleteJob();
   const updateJob = useUpdateJob();
@@ -84,15 +82,6 @@ export function JobPanelContent({ jobId, onClose, onEdit, onDelete }: Props) {
                 <TrashIcon size={14} />
               </Button>
             )}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => navigate({ to: "/jobs/$jobId", params: { jobId: String(jobId) } })}
-              title="Open full page"
-            >
-              <ArrowsOutSimpleIcon size={14} />
-            </Button>
             <Button
               type="button"
               variant="ghost"

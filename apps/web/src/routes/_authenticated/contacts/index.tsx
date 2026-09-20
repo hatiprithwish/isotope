@@ -9,6 +9,7 @@ import { useAddShortcut } from "@/hooks/useAddShortcut";
 import { ContactsQueries, useBulkDeleteContacts, useBulkUpdateContacts } from "./-data";
 import { MobileContactsList } from "./-MobileContactsList";
 import { DesktopContactsTable } from "./-DesktopContactsTable";
+import { ContactDetailMobileDrawer } from "./-DesktopPanel";
 import { useBulkCreateStatusChangeNotes } from "../-status-change-notes-data";
 import {
   StatusChangeEntityTypeEnum,
@@ -74,7 +75,6 @@ function ContactsPage() {
   const contacts = data?.contacts ?? [];
   const totalRecords = data?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
-  const selectedContact = panel ? (contacts.find((c) => c.id === panel) ?? null) : null;
 
   function handleStatusesChange(next: number[]) {
     setCurrentPage(1);
@@ -170,16 +170,23 @@ function ContactsPage() {
         filterBar={filterBar}
         onSearchChange={setSearchQuery}
         onAddClick={() => navigate({ to: "/contacts/bulk-add" })}
+        onOpenPanel={openPanel}
         onBulkDelete={handleBulkDelete}
         onBulkUpdate={handleBulkUpdate}
         isBulkPending={bulkDeleteMutation.isPending || bulkUpdateMutation.isPending}
+      />
+
+      <ContactDetailMobileDrawer
+        contactId={panel ?? null}
+        contact={contacts.find((c) => c.id === panel)}
+        onClose={closePanel}
       />
 
       <DesktopContactsTable
         contacts={contacts}
         isLoading={isPending}
         isError={isError}
-        selectedContact={selectedContact}
+        selectedContactId={panel ?? null}
         onOpenPanel={openPanel}
         onClosePanel={closePanel}
         onAddClick={() => navigate({ to: "/contacts/bulk-add" })}

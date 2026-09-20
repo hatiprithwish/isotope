@@ -128,7 +128,7 @@ function CapturePane() {
         </p>
         <a
           className="text-[13px] font-medium text-primary underline underline-offset-2"
-          href={`${WEB_ORIGIN}/contacts/${existing.id}`}
+          href={`${WEB_ORIGIN}/contacts?panel=${existing.id}`}
           target="_blank"
           rel="noreferrer"
         >
