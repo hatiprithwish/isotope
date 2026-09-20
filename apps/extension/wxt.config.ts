@@ -36,7 +36,10 @@ export default defineConfig({
     key: requireEnv("WXT_CRX_PUBLIC_KEY"),
     permissions: ["storage", "cookies", "scripting", "activeTab"],
     host_permissions: [
-      "https://www.linkedin.com/in/*",
+      // All of LinkedIn, not just /in/ and /messaging/: a chat bubble floats over the feed,
+      // company pages and search too, and `tab.url` is only readable — and a page only scriptable —
+      // for hosts listed here. Nothing runs on any of them until the user opens the panel.
+      "https://www.linkedin.com/*",
       `${requireEnv("WXT_CLERK_FRONTEND_API")}/*`,
       `${requireEnv("WXT_WEB_ORIGIN")}/*`,
       `${requireEnv("WXT_API_ORIGIN")}/*`,

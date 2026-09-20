@@ -3,9 +3,27 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/chrome-extension";
 import type * as Schemas from "@app/schemas";
 import { extractLinkedInProfile, type ExtractedProfile } from "@/lib/extractProfile";
-import { captureContact, checkDuplicate, parseProfile } from "@/lib/api";
+import { extractLinkedInThread, type ExtractedThread } from "@/lib/extractThread";
+import {
+  bulkLogHistory,
+  captureContact,
+  checkDuplicate,
+  getContactHistory,
+  parseProfile,
+  searchContacts,
+} from "@/lib/api";
 
 const PROFILE_URL_PATTERN = /^https:\/\/(www\.)?linkedin\.com\/in\/[^/]+/i;
+/** Quiet period after the last tab event before the page is re-read. */
+const RESCAN_SETTLE_MS = 800;
+/**
+ * How often an open conversation is re-read. Sending or receiving a message changes nothing the
+ * panel can observe from outside the page — no tab event, no URL change, no focus change — so the
+ * only way to see it is to look again. Only runs while the panel is open and visible.
+ */
+const THREAD_POLL_MS = 2500;
+const THREAD_URL_PATTERN = /^https:\/\/(www\.)?linkedin\.com\/messaging\/thread\/[^/]+/i;
+const LINKEDIN_URL_PATTERN = /^https:\/\/(www\.)?linkedin\.com\//i;
 
 export interface ScanResult {
   profile: ExtractedProfile;
@@ -28,6 +46,41 @@ export const captureKeys = {
   scan: () => ["scan"] as const,
   aiParse: (linkedinUrl: string) => ["ai-parse", linkedinUrl] as const,
 };
+
+export const threadKeys = {
+  mode: () => ["active-tab-mode"] as const,
+  scan: () => ["thread-scan"] as const,
+  matches: (name: string) => ["thread-matches", name] as const,
+  logged: (contactId: number) => ["thread-logged", contactId] as const,
+};
+
+/**
+ * Which LinkedIn surface the user is on — decides which pane the panel shows. "linkedin" is any
+ * other LinkedIn page: a chat bubble can float over the feed, a company page or a search, so a
+ * conversation can be open anywhere and the URL alone cannot say.
+ */
+export type PanelMode = "profile" | "thread" | "linkedin" | "other";
+
+/**
+ * The panel is a single window that outlives every tab switch, so the surface it should show is
+ * a piece of live state, not something read once on open. Re-read alongside the scans by
+ * `useRescanOnTabChange`.
+ */
+export function useActiveTabMode() {
+  return useQuery<PanelMode, Error>({
+    queryKey: threadKeys.mode(),
+    queryFn: async () => {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      // `tab.url` is only populated for origins in host_permissions, so anywhere else it is
+      // undefined — which is exactly "not a surface we handle".
+      if (!tab?.url) return "other";
+      if (THREAD_URL_PATTERN.test(tab.url)) return "thread";
+      if (PROFILE_URL_PATTERN.test(tab.url)) return "profile";
+      if (LINKEDIN_URL_PATTERN.test(tab.url)) return "linkedin";
+      return "other";
+    },
+  });
+}
 
 /**
  * AI fallback, run only when deterministic extraction left a field blank. Keyed and cached by
@@ -104,8 +157,21 @@ export function useRescanOnTabChange() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // LinkedIn changes the URL before it has finished rendering the new page — a thread paints its
+    // newest message first and fills in the rest. Scanning on the URL event alone reads that
+    // half-built DOM, so the scan waits for the events to go quiet. Trailing debounce: every new
+    // event restarts the wait.
+    let settleTimer: ReturnType<typeof setTimeout> | undefined;
+    // Each key is invalidated by name rather than invalidating everything: the AI-parse cache is
+    // deliberately `staleTime: Infinity`, and a blanket invalidate would refetch — and re-bill —
+    // it on every tab switch.
     const rescan = () => {
-      void queryClient.invalidateQueries({ queryKey: captureKeys.scan() });
+      void queryClient.invalidateQueries({ queryKey: threadKeys.mode() });
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: captureKeys.scan() });
+        void queryClient.invalidateQueries({ queryKey: threadKeys.scan() });
+      }, RESCAN_SETTLE_MS);
     };
     const onUpdated = (
       _tabId: number,
@@ -117,11 +183,147 @@ export function useRescanOnTabChange() {
 
     browser.tabs.onActivated.addListener(rescan);
     browser.tabs.onUpdated.addListener(onUpdated);
+    // Opening a chat bubble changes neither the URL nor the active tab, so no tab event says a
+    // conversation appeared. But the user has to click into this panel to log it, and that focus is
+    // the signal: re-read the page then.
+    window.addEventListener("focus", rescan);
     return () => {
+      clearTimeout(settleTimer);
+      window.removeEventListener("focus", rescan);
       browser.tabs.onActivated.removeListener(rescan);
       browser.tabs.onUpdated.removeListener(onUpdated);
     };
   }, [queryClient]);
+}
+
+/**
+ * Reads the open conversation out of the active tab, and re-reads it every few seconds so a message
+ * sent or received while the panel is open shows up without the user having to prompt a rescan.
+ *
+ * Deliberately page-only: contact matching lives in `useContactMatches`, keyed by name, so a poll
+ * that finds the same conversation costs one in-page script and no API call.
+ */
+export function useThreadScan() {
+  const { isSignedIn } = useAuth();
+
+  return useQuery<ExtractedThread, Error>({
+    queryKey: threadKeys.scan(),
+    enabled: Boolean(isSignedIn),
+    refetchInterval: THREAD_POLL_MS,
+    queryFn: async () => {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+
+      if (!tab?.id) throw new ScanError("Could not read the active tab.");
+      if (!tab.url || !LINKEDIN_URL_PATTERN.test(tab.url)) {
+        throw new ScanError("Open LinkedIn to log a conversation.", true);
+      }
+
+      const [injection] = await browser.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: extractLinkedInThread,
+      });
+
+      const thread = injection?.result;
+      if (!thread) {
+        throw new ScanError("Could not read this conversation. Try reloading the page.");
+      }
+      if (!thread.messages.length) {
+        // No name means no conversation was found at all; a name with no messages means one is
+        // open but empty (or its messages have not loaded yet). Checked first so the direction
+        // error below can never mask "there is nothing open".
+        throw new ScanError(
+          thread.otherName
+            ? "No messages found in this conversation yet."
+            : "Open a LinkedIn conversation to log its messages.",
+          true,
+        );
+      }
+      // Without a way to tell which messages are the user's, every one would be filed as inbound.
+      // Better to stop than to log backwards.
+      if (!thread.isDirectionKnown) {
+        throw new ScanError(
+          "Could not tell which messages are yours. Reload LinkedIn and try again.",
+        );
+      }
+      // The contact is matched by this name, so a missing one must stop the scan: offering an
+      // empty picker reads as "not in Isotope", which sends the user off to capture a duplicate.
+      if (!thread.otherName) {
+        throw new ScanError("Could not tell who this conversation is with. Reload and try again.");
+      }
+
+      return thread;
+    },
+  });
+}
+
+/**
+ * The user's contacts whose name matches the conversation's other participant. Matches by *name*:
+ * LinkedIn's messaging UI links participants by opaque member URN (`ACoAAD…`), never by the
+ * `/in/<slug>` that `duplicate-check` keys on, so there is no URL to match with. Cached by name so
+ * the thread poll never re-asks for a person it already resolved.
+ */
+export function useContactMatches(name: string) {
+  const { getToken } = useAuth();
+
+  return useQuery<Schemas.Contact[], Error>({
+    queryKey: threadKeys.matches(name),
+    queryFn: async () => (await searchContacts(name, await getToken())).contacts ?? [],
+  });
+}
+
+/**
+ * Body text and minute-of-send, for every LinkedIn message already on a contact. Re-logging the
+ * same thread is the obvious way to use this panel twice, and nothing server-side rejects a
+ * duplicate — so the panel pre-unchecks what it recognises.
+ */
+export function useLoggedFingerprints(contactId: number | null) {
+  const { getToken } = useAuth();
+
+  return useQuery<Set<string>, Error>({
+    queryKey: threadKeys.logged(contactId ?? 0),
+    enabled: contactId !== null,
+    queryFn: async () => {
+      if (contactId === null) return new Set<string>();
+      const response = await getContactHistory(contactId, await getToken());
+      const fingerprints = new Set<string>();
+      for (const entry of response.history ?? []) {
+        if (entry.deletedAt) continue;
+        fingerprints.add(buildMessageFingerprint(entry.sentAt, entry.body));
+      }
+      return fingerprints;
+    },
+  });
+}
+
+/**
+ * Identity of a logged message, to the minute. LinkedIn renders no seconds, so a re-scan of the
+ * same thread produces the same minute; the body is whitespace-normalised because the page's
+ * line wrapping is not stable across renders.
+ */
+export function buildMessageFingerprint(sentAt: string | null, body: string): string {
+  const minute = sentAt ? new Date(sentAt).toISOString().slice(0, 16) : "";
+  return `${minute}|${body.replace(/\s+/g, " ").trim().toLowerCase()}`;
+}
+
+export function useLogMessages() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation<
+    Schemas.BulkLogContactHistoryApiResponse,
+    Error,
+    Schemas.BulkLogContactHistoryApiRequest
+  >({
+    mutationFn: async (payload) => await bulkLogHistory(payload, await getToken()),
+    onSuccess: (_response, payload) => {
+      // What was just logged is now part of the contact's history, so the fingerprints the panel
+      // de-duplicates against are stale.
+      const contactId = payload.entries[0]?.contactId;
+      if (contactId !== undefined) {
+        void queryClient.invalidateQueries({ queryKey: threadKeys.logged(contactId) });
+      }
+    },
+  });
 }
 
 export function useCaptureContact() {

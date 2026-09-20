@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Schemas from "@app/schemas"; // runtime `import *`: consumes CONTACT_HISTORY_CHANNEL_LABEL_MAP alongside types.
-import {
-  ArrowLeftIcon,
-  ArrowsOutSimpleIcon,
-  PencilSimpleIcon,
-  TrashIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { ArrowsOutSimpleIcon, PencilSimpleIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@/shadcn/ui/button";
 import { StatusBadge } from "./-StatusBadge";
 import { ContactsQueries, useDeleteContact, useUpdateContact } from "./-data";
@@ -44,8 +38,6 @@ interface ContactDetailContentProps {
   onClose?: () => void;
   /** Present in the slide-out panel to jump to the full page route; absent on the full page route. */
   onExpand?: () => void;
-  /** Present on the full page route to navigate back; absent in the slide-out panel. */
-  onBack?: () => void;
   /** Called after a successful delete so each surface can navigate/close appropriately. */
   onDeleted: () => void;
 }
@@ -57,7 +49,6 @@ export function ContactDetailContent({
   onTabChange,
   onClose,
   onExpand,
-  onBack,
   onDeleted,
 }: ContactDetailContentProps) {
   const [showEditModal, setShowEditModal] = useState(false);
@@ -104,17 +95,6 @@ export function ContactDetailContent({
         <div className="px-5 pt-4 pb-3.5 border-b border-border shrink-0">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              {onBack && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-lg"
-                  onClick={onBack}
-                  className="-ml-2 shrink-0"
-                >
-                  <ArrowLeftIcon size={20} />
-                </Button>
-              )}
               <Avatar name={contact.name} />
               <div className="min-w-0">
                 <div className="text-base font-semibold text-foreground leading-snug truncate">

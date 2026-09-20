@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { z } from "zod";
@@ -19,7 +19,6 @@ function ContactDetailPage() {
   const { contactId } = Route.useParams();
   const { tab: tabParam } = Route.useSearch();
   const { getToken } = useAuth();
-  const router = useRouter();
   const navigate = useNavigate({ from: Route.fullPath });
   // Derived from the URL (Route.useSearch is reactive) so back/forward and deep links always render the right tab.
   const activeTab: ContactDetailTab = tabParam ?? "history";
@@ -40,7 +39,6 @@ function ContactDetailPage() {
         getToken={getToken}
         activeTab={activeTab}
         onTabChange={(tab) => void navigate({ search: (prev) => ({ ...prev, tab }) })}
-        onBack={() => router.history.back()}
         onDeleted={() => navigate({ to: "/contacts" })}
       />
     </div>

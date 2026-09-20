@@ -63,6 +63,37 @@ export async function checkDuplicate(linkedinUrl: string, token: string | null) 
   );
 }
 
+/**
+ * Messaging threads link to participants by opaque member URN, not by `/in/<slug>`, so a thread
+ * can only be matched to a contact by name. Kept small: the panel shows the matches for the user
+ * to choose between rather than guessing past the first page.
+ */
+export async function searchContacts(search: string, token: string | null) {
+  const query = new URLSearchParams({ search, pageSize: "10" });
+  return await apiClient<Schemas.GetContactsApiResponse>(`/contacts?${query.toString()}`, token, {
+    method: "GET",
+  });
+}
+
+export async function getContactHistory(contactId: number, token: string | null) {
+  return await apiClient<Schemas.GetContactHistoryApiResponse>(
+    `/contacts/${contactId}/history`,
+    token,
+    { method: "GET" },
+  );
+}
+
+export async function bulkLogHistory(
+  payload: Schemas.BulkLogContactHistoryApiRequest,
+  token: string | null,
+) {
+  return await apiClient<Schemas.BulkLogContactHistoryApiResponse>(
+    "/contacts/history/bulk",
+    token,
+    { method: "POST", body: JSON.stringify(payload) },
+  );
+}
+
 export async function parseProfile(payload: Schemas.ParseProfileApiRequest, token: string | null) {
   return await apiClient<Schemas.ParseProfileApiResponse>("/contacts/parse-profile", token, {
     method: "POST",

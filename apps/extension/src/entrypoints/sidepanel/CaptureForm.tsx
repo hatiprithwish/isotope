@@ -57,6 +57,29 @@ export default function CaptureForm({ profile }: { profile: ExtractedProfile }) 
     setDesignation(fillIfBlank("designation", aiResult.designation));
   }, [aiResult]);
 
+  // Every way the AI step can end must be visible. Failing silently made "it isn't running",
+  // "it failed" and "it found nothing" indistinguishable, which is unusable for debugging.
+  const aiStatus = ((): { message: string; isError: boolean } | null => {
+    if (!needsAi) return null;
+    if (!profile.pageText) {
+      return {
+        message: "Couldn't read this page's text, so AI wasn't run. Fill the blanks manually.",
+        isError: false,
+      };
+    }
+    if (aiParse.isFetching) return { message: "Reading the rest with AI…", isError: false };
+    if (aiParse.isError) {
+      return { message: `AI parse failed: ${aiParse.error.message}`, isError: true };
+    }
+    if (aiParse.isSuccess && !companyName.trim()) {
+      return {
+        message: "AI couldn't find a company on this profile. Enter it manually.",
+        isError: false,
+      };
+    }
+    return null;
+  })();
+
   const markEdited = (field: string) => {
     editedFields.current[field] = true;
   };
@@ -168,8 +191,13 @@ export default function CaptureForm({ profile }: { profile: ExtractedProfile }) 
         <FieldHint source={hintFor("designation", designation)} />
       </div>
 
-      {aiParse.isFetching && (
-        <p className="text-[11px] text-muted-foreground">Reading the rest with AI…</p>
+      {aiStatus && (
+        <p
+          className={`text-[11px] leading-relaxed ${aiStatus.isError ? "text-destructive" : "text-muted-foreground"}`}
+          role={aiStatus.isError ? "alert" : undefined}
+        >
+          {aiStatus.message}
+        </p>
       )}
 
       <p className="truncate text-[11px] text-muted-foreground" title={profile.linkedinUrl}>
