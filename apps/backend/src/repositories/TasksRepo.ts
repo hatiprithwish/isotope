@@ -10,17 +10,27 @@ export default class TasksRepo {
     this.dal = new TasksDAL(env);
   }
 
+  /** Int → label for the joined contact's status; null when the task has no contact. Lives here, never in the DAL. */
+  private contactStatusLabel(row: Schemas.TaskRecord): Schemas.ContactStatusLabelEnum | null {
+    return row.contactStatus != null ? Schemas.contactStatusIntToLabel[row.contactStatus] : null;
+  }
+
   /** Maps DAL rows (int status) to the API shape — label + overdueByDays. Label mapping lives here, never in the DAL. */
   private withMeta(row: Schemas.TaskRecord, today: string): Schemas.TaskWithMeta {
     return {
       ...row,
       statusLabel: Schemas.taskStatusIntToLabel[row.status],
+      contactStatusLabel: this.contactStatusLabel(row),
       overdueByDays: Math.max(0, dayjs(today).diff(dayjs(row.dueAt), "day")),
     };
   }
 
   private withStatusLabel(row: Schemas.TaskRecord): Schemas.Task {
-    return { ...row, statusLabel: Schemas.taskStatusIntToLabel[row.status] };
+    return {
+      ...row,
+      statusLabel: Schemas.taskStatusIntToLabel[row.status],
+      contactStatusLabel: this.contactStatusLabel(row),
+    };
   }
 
   async getTasksCalendar(params: Schemas.GetTasksCalendarApiRequest & { userId: string }) {

@@ -19,6 +19,7 @@ const taskSelection = {
   note: tasks.note,
   completedAt: tasks.completedAt,
   contactName: contacts.name,
+  contactStatus: contacts.status,
   designation: contacts.designation,
   companyName: companies.name,
   createdAt: tasks.createdAt,

@@ -1,5 +1,9 @@
 import z from "zod";
-import { ZContactHistoryChannelEnum } from "../contacts/ContactsCommon";
+import {
+  ZContactHistoryChannelEnum,
+  ZContactStatusIntEnum,
+  ZContactStatusLabelEnum,
+} from "../contacts/ContactsCommon";
 
 /** YYYY-MM-DD date key — the wire format for all task/follow-up date fields. Queries compare these lexically, so the shape must be enforced at the validation boundary. */
 export const ZDateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD date key");
@@ -46,6 +50,8 @@ export const ZTaskRecord = ZTaskBase.extend({
   pausedAt: z.string().nullable().optional(),
   completedAt: z.string().nullable().optional(),
   contactName: z.string().nullable().optional(),
+  /** The linked contact's current status, joined in so a task row can show and change it. Null when the task has no contact. */
+  contactStatus: ZContactStatusIntEnum.nullable().optional(),
   companyName: z.string().nullable().optional(),
   designation: z.string().nullable().optional(),
   createdAt: z.string(),
@@ -55,6 +61,7 @@ export type TaskRecord = z.infer<typeof ZTaskRecord>;
 
 export const ZTask = ZTaskRecord.extend({
   statusLabel: ZTaskStatusLabelEnum,
+  contactStatusLabel: ZContactStatusLabelEnum.nullable().optional(),
 });
 export type Task = z.infer<typeof ZTask>;
 

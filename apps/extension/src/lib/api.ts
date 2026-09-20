@@ -75,6 +75,24 @@ export async function searchContacts(search: string, token: string | null) {
   });
 }
 
+/**
+ * One page of the user's contacts, newest first. `search` is optional: with none this is the plain
+ * pipeline list the Contacts tab shows before the user types anything.
+ */
+export async function listContacts(
+  params: { search: string; pageNo: number; pageSize: number },
+  token: string | null,
+) {
+  const query = new URLSearchParams({
+    pageNo: String(params.pageNo),
+    pageSize: String(params.pageSize),
+  });
+  if (params.search) query.set("search", params.search);
+  return await apiClient<Schemas.GetContactsApiResponse>(`/contacts?${query.toString()}`, token, {
+    method: "GET",
+  });
+}
+
 export async function getContactHistory(contactId: number, token: string | null) {
   return await apiClient<Schemas.GetContactHistoryApiResponse>(
     `/contacts/${contactId}/history`,
@@ -131,5 +149,27 @@ export async function getTasksForDay(date: string, token: string | null) {
 export async function getMessageTemplates(token: string | null) {
   return await apiClient<Schemas.GetMessageTemplatesApiResponse>("/message-template", token, {
     method: "GET",
+  });
+}
+
+export async function updateContactStatus(
+  contactId: number,
+  status: Schemas.ContactStatusIntEnum,
+  token: string | null,
+) {
+  const payload: Schemas.UpdateContactApiRequest = { contact: { status } };
+  return await apiClient<Schemas.UpdateContactApiResponse>(`/contacts/${contactId}`, token, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createStatusChangeNote(
+  payload: Schemas.CreateStatusChangeNoteApiRequest,
+  token: string | null,
+) {
+  return await apiClient<Schemas.CreateStatusChangeNoteApiResponse>("/status-change-notes", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }

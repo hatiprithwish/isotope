@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { SignedIn, SignedOut } from "@clerk/chrome-extension";
 import CaptureForm from "./CaptureForm";
+import ContactCard from "./ContactCard";
+import ContactsPane from "./ContactsPane";
 import TasksPane from "./TasksPane";
 import ThreadPanel from "./ThreadPanel";
 import type { ExtractedThread } from "@/lib/extractThread";
@@ -121,21 +123,12 @@ function CapturePane() {
 
   if (existing) {
     return (
-      <div className="flex flex-col gap-3 p-4">
-        <p className="text-[13px] font-semibold text-foreground">Already in your pipeline</p>
-        <p className="text-[13px] leading-relaxed text-muted-foreground">
-          {existing.name}
-          {existing.companyName ? ` · ${existing.companyName}` : ""} · {existing.statusLabel}
+      <>
+        <p className="px-4 pt-3 text-[13px] font-semibold text-foreground">
+          Already in your pipeline
         </p>
-        <a
-          className="text-[13px] font-medium text-primary underline underline-offset-2"
-          href={`${WEB_ORIGIN}/contacts?panel=${existing.id}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open in Isotope
-        </a>
-      </div>
+        <ContactCard contact={existing} />
+      </>
     );
   }
 
@@ -213,12 +206,13 @@ function CapturePanes() {
 const SECTIONS = [
   { id: "capture", label: "Capture" },
   { id: "followups", label: "Follow-ups" },
+  { id: "contacts", label: "Contacts" },
 ] as const;
 
 /**
- * Capture is tied to the LinkedIn tab, but the follow-up list is not — it is the reason to keep the
- * panel open while browsing LinkedIn — so the two live side by side rather than one replacing the
- * other. The tab-mode and rescan hooks stay here so they keep running whichever section is showing;
+ * Capture is tied to the LinkedIn tab, but the follow-up list and contact lookup are not — it is the reason to keep the
+ * panel open while browsing LinkedIn — so the sections live side by side rather than one replacing the
+ * others. The tab-mode and rescan hooks stay here so they keep running whichever section is showing;
  * the sections themselves mount one at a time, so Capture's page polling stops while Follow-ups is up.
  */
 function SignedInPanes() {
@@ -243,7 +237,9 @@ function SignedInPanes() {
           </button>
         ))}
       </div>
-      {section === "capture" ? <CapturePanes /> : <TasksPane />}
+      {section === "capture" && <CapturePanes />}
+      {section === "followups" && <TasksPane />}
+      {section === "contacts" && <ContactsPane />}
     </>
   );
 }

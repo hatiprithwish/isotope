@@ -1,18 +1,29 @@
 import { useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useAuth } from "@clerk/chrome-extension";
-import type * as Schemas from "@app/schemas";
+import * as Schemas from "@app/schemas"; // runtime `import *`: uses StatusChangeEntityTypeEnum alongside types.
+import { setFollowUpBadge } from "@/lib/badge";
+import { getTodayDateKey } from "@/lib/dates";
 import { extractLinkedInProfile, type ExtractedProfile } from "@/lib/extractProfile";
 import { extractLinkedInThread, type ExtractedThread } from "@/lib/extractThread";
 import {
   bulkLogHistory,
   captureContact,
   checkDuplicate,
+  createStatusChangeNote,
   getContactHistory,
   getMessageTemplates,
   getTasksForDay,
+  listContacts,
   parseProfile,
   searchContacts,
+  updateContactStatus,
 } from "@/lib/api";
 
 const PROFILE_URL_PATTERN = /^https:\/\/(www\.)?linkedin\.com\/in\/[^/]+/i;
@@ -54,6 +65,10 @@ export const threadKeys = {
   scan: () => ["thread-scan"] as const,
   matches: (name: string) => ["thread-matches", name] as const,
   logged: (contactId: number) => ["thread-logged", contactId] as const,
+};
+
+export const contactKeys = {
+  search: (term: string) => ["contact-search", term] as const,
 };
 
 export const taskKeys = {
@@ -352,14 +367,6 @@ export function useCaptureContact() {
   });
 }
 
-/** Local-calendar YYYY-MM-DD — the same key the web Tasks page sends for "today". */
-function getTodayDateKey(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
-}
-
 /**
  * Follow-ups due today plus everything overdue. Unlike the panel's page scans this is worth a short
  * cache: switching between the Capture and Follow-ups tabs remounts the pane, and it should show
@@ -375,7 +382,13 @@ export function useTasksForToday() {
     enabled: Boolean(isSignedIn),
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
-    queryFn: async () => (await getTasksForDay(dateKey, await getToken())).tasks ?? [],
+    queryFn: async () => {
+      const tasks = (await getTasksForDay(dateKey, await getToken())).tasks ?? [];
+      // The list is the freshest count there is, so the toolbar badge follows it immediately
+      // instead of waiting for the background worker's next tick.
+      void setFollowUpBadge(tasks.length);
+      return tasks;
+    },
   });
 }
 
@@ -392,5 +405,117 @@ export function useMessageTemplates() {
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
     queryFn: async () => (await getMessageTemplates(await getToken())).templates ?? [],
+  });
+}
+
+/** Below this a search matches half the pipeline, so the tab shows the plain list instead. */
+export const CONTACT_SEARCH_MIN_LENGTH = 2;
+const CONTACTS_PAGE_SIZE = 20;
+
+export interface ContactsListResult {
+  contacts: Schemas.Contact[];
+  /** Matches on the server across every page, not just the ones loaded. */
+  totalCount: number;
+}
+
+/**
+ * The Contacts tab's list: the user's contacts newest-first, narrowed by name once `term` is long
+ * enough to mean something. Paged with "load more" so a large pipeline is never fetched at once.
+ * The previous result stays on screen while the next term loads, so typing does not flash the list
+ * empty between keystrokes, and the list is cached briefly so switching tabs shows it at once.
+ */
+export function useContacts(term: string) {
+  const { getToken, isSignedIn } = useAuth();
+  const search = term.length >= CONTACT_SEARCH_MIN_LENGTH ? term : "";
+
+  return useInfiniteQuery({
+    queryKey: contactKeys.search(search),
+    enabled: Boolean(isSignedIn),
+    initialPageParam: 1,
+    placeholderData: keepPreviousData,
+    gcTime: 5 * 60 * 1000,
+    queryFn: async ({ pageParam }): Promise<ContactsListResult> => {
+      const response = await listContacts(
+        { search, pageNo: pageParam, pageSize: CONTACTS_PAGE_SIZE },
+        await getToken(),
+      );
+      return { contacts: response.contacts ?? [], totalCount: response.totalCount ?? 0 };
+    },
+    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+      const loaded = allPages.reduce((sum, page) => sum + page.contacts.length, 0);
+      // An empty page ends the walk even if totalCount says otherwise, so a count that drifts
+      // mid-scroll cannot loop forever.
+      return lastPage.contacts.length > 0 && loaded < lastPage.totalCount
+        ? lastPageParam + 1
+        : undefined;
+    },
+    select: (data) => ({
+      contacts: data.pages.flatMap((page) => page.contacts),
+      totalCount: data.pages[data.pages.length - 1]?.totalCount ?? 0,
+    }),
+  });
+}
+
+export interface ChangeContactStatusInput {
+  contactId: number;
+  fromStatus: Schemas.ContactStatusIntEnum;
+  toStatus: Schemas.ContactStatusIntEnum;
+  /** Blank means "no note" — the trimmed text is what is stored. */
+  note: string;
+}
+
+export interface ChangeContactStatusResult {
+  contact: Schemas.Contact | null;
+  /** Set when the status changed but its note could not be written. */
+  noteError: string | null;
+}
+
+/**
+ * Changes a contact's status, then records the optional note. Ordered the way the web app's status
+ * popover is: the note is only written once the status change has succeeded, because a note for a
+ * transition that never happened is a false record. A failed note does not fail the mutation — the
+ * status did change — it is reported through `noteError`.
+ */
+export function useChangeContactStatus() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation<ChangeContactStatusResult, Error, ChangeContactStatusInput>({
+    mutationFn: async ({ contactId, fromStatus, toStatus, note }) => {
+      const updated = await updateContactStatus(contactId, toStatus, await getToken());
+
+      let noteError: string | null = null;
+      const trimmed = note.trim();
+      if (trimmed) {
+        try {
+          await createStatusChangeNote(
+            {
+              statusChangeNote: {
+                entityType: Schemas.StatusChangeEntityTypeEnum.Contact,
+                entityId: contactId,
+                fromStatus,
+                toStatus,
+                note: trimmed,
+              },
+            },
+            await getToken(),
+          );
+        } catch (error) {
+          noteError = error instanceof Error ? error.message : "Could not save the note.";
+        }
+      }
+
+      return { contact: updated.contact ?? null, noteError };
+    },
+    onSuccess: ({ contact }) => {
+      if (!contact) return;
+      // The Capture pane's "already in your pipeline" card reads the status from the scan.
+      queryClient.setQueryData<ScanResult>(captureKeys.scan(), (previous) =>
+        previous?.existing?.id === contact.id ? { ...previous, existing: contact } : previous,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["contact-search"] });
+      // A terminal status (Dead/Failed/Closed) clears the contact's follow-up tasks server-side.
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all() });
+    },
   });
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import * as Schemas from "@app/schemas";
+import ContactStatusControl from "./ContactStatusControl";
 import { useLogMessages, useMessageTemplates, useTasksForToday } from "./data";
 
 const WEB_ORIGIN = import.meta.env.WXT_WEB_ORIGIN;
@@ -68,6 +69,10 @@ function MessageBlock({
   templates: ReturnType<typeof useMessageTemplates>;
 }) {
   const logMessages = useLogMessages();
+  // null means "untouched, follow the template". Kept as an override rather than seeded into state
+  // because the template arrives after this block first renders, and because a template edited in
+  // the web app mid-session must not silently overwrite something the user has already reworded.
+  const [draft, setDraft] = useState<string | null>(null);
 
   if (templates.isPending) {
     return <p className="mt-2 text-[12px] text-muted-foreground">Loading message…</p>;
@@ -109,20 +114,28 @@ function MessageBlock({
   }
 
   const contactId = task.contactId;
+  // What actually gets sent and logged: the user's wording when they have reworded it, the
+  // template otherwise. Every action below reads this, never `message`, so the history can never
+  // record something the user did not see in the box.
+  const body = draft ?? message;
+  const isEdited = draft !== null && draft !== message;
+  // The log endpoint requires a non-empty body, so an emptied box is caught here rather than
+  // coming back as a validation error after the round trip.
+  const isEmpty = body.trim().length === 0;
   // The bulk endpoint answers 201 with a per-entry outcome, so a rejected entry arrives as a
   // successful response — the row has to read it, not just the request status.
   const entryFailure = logMessages.data?.results?.find((result) => !result.isSuccess);
   const isLogged = logMessages.isSuccess && !entryFailure;
 
   const handleLog = () => {
-    if (contactId == null) return;
+    if (contactId == null || isEmpty) return;
     logMessages.mutate({
       entries: [
         {
           contactId,
           direction: Schemas.ContactHistoryDirectionEnum.Me,
           channel: task.channel,
-          body: message,
+          body,
           sentAt: new Date().toISOString(),
         },
       ],
@@ -131,19 +144,30 @@ function MessageBlock({
 
   return (
     <div className="mt-2">
-      <p className="whitespace-pre-wrap rounded-md bg-muted px-2.5 py-2 text-[13px] leading-relaxed text-foreground">
-        {message}
-      </p>
-      <div className="mt-2 flex items-center gap-2">
-        <CopyButton text={message} />
+      <textarea
+        value={body}
+        onChange={(event) => setDraft(event.target.value)}
+        // Once logged the box is a record of what was sent, not a draft to keep editing.
+        readOnly={isLogged}
+        rows={5}
+        aria-label={`Follow-up message for ${task.contactName ?? "this contact"}`}
+        className="w-full resize-y rounded-md border border-input bg-card px-2.5 py-2 text-[13px] leading-relaxed text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring read-only:bg-muted"
+      />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <CopyButton text={body} />
         {contactId != null && !isLogged && (
           <button
             type="button"
             onClick={handleLog}
-            disabled={logMessages.isPending}
+            disabled={logMessages.isPending || isEmpty}
             className={ACTION_CLASS}
           >
             {logMessages.isPending ? "Logging…" : "Log as sent"}
+          </button>
+        )}
+        {isEdited && !isLogged && (
+          <button type="button" onClick={() => setDraft(null)} className={LINK_CLASS}>
+            Reset
           </button>
         )}
         {isLogged && <span className="text-[12px] font-medium text-primary">Logged ✓</span>}
@@ -203,6 +227,16 @@ function TaskRow({
         )}
         {!isOverdue && !isPaused && <span className={BADGE_CLASS}>Due today</span>}
       </div>
+      {task.contactId != null && task.contactStatus != null && (
+        <ContactStatusControl
+          contactId={task.contactId}
+          name={task.contactName ?? "this contact"}
+          status={task.contactStatus}
+          statusLabel={
+            task.contactStatusLabel ?? Schemas.contactStatusIntToLabel[task.contactStatus]
+          }
+        />
+      )}
       <MessageBlock task={task} templates={templates} />
     </li>
   );

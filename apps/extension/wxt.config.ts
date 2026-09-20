@@ -34,7 +34,7 @@ export default defineConfig({
     version: "0.1.0",
     description: "Add the LinkedIn profile you are viewing to your Isotope pipeline.",
     key: requireEnv("WXT_CRX_PUBLIC_KEY"),
-    permissions: ["storage", "cookies", "scripting", "activeTab"],
+    permissions: ["storage", "cookies", "scripting", "activeTab", "alarms"],
     host_permissions: [
       // All of LinkedIn, not just /in/ and /messaging/: a chat bubble floats over the feed,
       // company pages and search too, and `tab.url` is only readable — and a page only scriptable —
